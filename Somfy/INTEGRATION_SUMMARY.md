@@ -1,5 +1,6 @@
-<-------------------- | ------------ | markdownlint-disable MD022 MD013 -->
 # Summary: OAuth, SSE, and Integration Approach
+
+<!-- markdownlint-disable MD022 MD013 -->
 
 ## You Were Absolutely Right ✓
 
@@ -7,12 +8,14 @@ After deeper research, here's what I found:
 
 ### 1. OAuth - YES (for Cloud API)
 
-**Cloud API** (https://tahomalink.com):
+**Cloud API** (<https://tahomalink.com>):
+
 - ✅ Uses OAuth 2.0 password grant
 - ✅ Has access_token and refresh_token
 - ✅ Token expires and needs refresh
 
-**Local API** (https://gateway-{pin}.local:8443):
+**Local API** (<https://gateway-{pin}.local:8443>):
+
 - ❌ No OAuth
 - ✅ Simple Bearer token (generate in app)
 - ✅ Token doesn't expire
@@ -27,7 +30,7 @@ After deeper research, here's what I found:
 
 ## The Full Picture
 
-### Three APIs to Consider:
+### Three APIs to Consider
 
 | API | Auth | Events | Best For |
 |-----|------|--------|----------|
@@ -42,6 +45,7 @@ Since you're getting a Somfy TaHoma box, you need to switch from PowerView to Ta
 ### Recommended Approach: Local API
 
 **Why Local API**:
+
 1. ✅ Simpler (no OAuth complexity)
 2. ✅ Lower latency
 3. ✅ No cloud dependency
@@ -49,6 +53,7 @@ Since you're getting a Somfy TaHoma box, you need to switch from PowerView to Ta
 5. ✅ Perfect for home automation
 
 **Implementation**:
+
 ```python
 # 1. User enables Developer Mode in TaHoma app
 # 2. User generates token
@@ -59,13 +64,13 @@ headers = {
     "Authorization": f"Bearer {token}",
     "accept": "application/json"
 }
-```
+```text
 
 ## Integration Pattern from udi_python_interface
 
 Looking at the **udi_python_interface** examples and patterns:
 
-### Key Components You're Already Using:
+### Key Components You're Already Using
 
 ```python
 from udi_interface import Node, LOGGER, Custom, LOG_HANDLER
@@ -83,9 +88,9 @@ class Controller(Node):
         self.poly.subscribe(self.poly.START, self.start, address)
         self.poly.subscribe(self.poly.POLL, self.poll)
         self.poly.subscribe(self.poly.STOP, self.stop)
-```
+```text
 
-### Pattern for API Integration:
+### Pattern for API Integration
 
 From looking at other UDI nodeservers (Ring, examples), here's the recommended pattern:
 
@@ -150,7 +155,7 @@ class TaHomaController(Node):
 
             # Wait before next poll (1 second recommended)
             await asyncio.sleep(1)
-```
+```text
 
 ## Leveraging pyoverkiz Library
 
@@ -221,7 +226,7 @@ async def control_shade(self, device_url, position):
     )
 
     return exec_id
-```
+```text
 
 ### Option 2: Build Your Own Client
 
@@ -243,15 +248,18 @@ From your current PowerView-based code to TaHoma:
 
 ## Conclusion
 
-### You were right about:
+### You were right about
+
 ✅ OAuth exists (for Cloud API)
 ✅ There are options for authentication
 
-### I was right about:
+### I was right about
+
 ✅ Local API uses simple Bearer token (not OAuth)
 ✅ Event polling (not SSE) for both APIs
 
-### Best path forward:
+### Best path forward
+
 1. **Use Local API** (simpler, better for home automation)
 2. **Use pyoverkiz library** (well-maintained, handles all API details)
 3. **Keep your UDI interface patterns** (they're solid)

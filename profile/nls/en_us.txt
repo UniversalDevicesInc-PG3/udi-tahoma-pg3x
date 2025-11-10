@@ -1,6 +1,7 @@
+<!-- markdownlint-disable MD013 MD022 -->
 
 # controller
-ND-hdctrl-NAME = Hunter Douglas Controller
+ND-hdctrl-NAME = Phantom Blinds TaHoma Controller
 ND-hdctrl-ICON = GenericRspCtl
 ST-GV0-NAME = NumberOfNodes
 CMD-ctl-QUERY-NAME = Query
@@ -27,12 +28,6 @@ ND-shadeid-NAME = Shade
 ND-shadeid-ICON = GenericRspCtl
 ND-shadeonlyprimid-NAME = Shade
 ND-shadeonlyprimid-ICON = GenericRspCtl
-ND-shadeonlysecondid-NAME = Shade
-ND-shadeonlysecondid-ICON = GenericRspCtl
-ND-shadenosecondid-NAME = Shade
-ND-shadenosecondid-ICON = GenericRspCtl
-ND-shadeonlytiltid-NAME = Shade
-ND-shadeonlytiltid-ICON = GenericRspCtl
 ND-shadenotiltid-NAME = Shade
 ND-shadenotiltid-ICON = GenericRspCtl
 
@@ -49,7 +44,6 @@ CMD-shade-CLOSE-NAME = Close
 CMD-shade-STOP-NAME = Stop
 CMD-shade-TILTOPEN-NAME = Tilt Open
 CMD-shade-TILTCLOSE-NAME = Tilt Close
-CMD-shade-JOG-NAME = Jog
 CMD-shade-QUERY-NAME = Query
 CMD-shade-SETPOS-NAME = Set Shade Position
 
@@ -59,17 +53,17 @@ CMDP-SETTILT-NAME = Tilt
 
 PGM-CMD-SETPOS-FMT = /SETPRIM/${c}/->Primary to ${v} / /SETSECO//->Secondary to ${v} / /SETTILT//->Tilt to ${v} /
 
-SHADECAP-0 = Bottom Up
-SHADECAP-1 = Bottom Up w/ 90° Tilt
-SHADECAP-2 = Bottom Up w/ 180° Tilt
-SHADECAP-3 = Vertical (Traversing)
-SHADECAP-4 = Vertical (Traversing) w/ 180° Tilt
-SHADECAP-5 = Tilt Only 180°
-SHADECAP-6 = Top Down
-SHADECAP-7 = Top-Down/Bottom-Up
-SHADECAP-8 = Duolite
-SHADECAP-9 = Duolite with 90° Tilt
-SHADECAP-10 = Duolite with 180° Tilt
+SHADECAP-0 = Unknown
+SHADECAP-1 = Roller Shutter
+SHADECAP-2 = Exterior Blind
+SHADECAP-3 = Interior Blind
+SHADECAP-4 = Awning
+SHADECAP-5 = Pergola
+SHADECAP-6 = Screen
+SHADECAP-7 = Curtain
+SHADECAP-8 = Garage Door
+SHADECAP-9 = Window
+SHADECAP-10 = Gate
 
 BATTERYST-0 = No Status
 BATTERYST-1 = Low
@@ -79,11 +73,10 @@ BATTERYST-4 = Plugged In
 
 BOOL-2 = N/A
 
-# scene
-ND-sceneid-NAME = Scene
+# scenario (TaHoma automation)
+ND-sceneid-NAME = Scenario
 ND-sceneid-ICON = Output
 ST-scene-ST-NAME = Activated
 ST-scene-GV0-NAME = Id
-# ST-scene-GV1-NAME = Calc Agrees
 CMD-scene-ACTIVATE-NAME = Activate
 CMD-scene-QUERY-NAME = Query

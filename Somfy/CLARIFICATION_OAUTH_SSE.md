@@ -1,13 +1,16 @@
-<-------------------- | ------------ | markdownlint-disable MD022 MD013 -->
 # CLARIFICATION: OAuth and SSE in TaHoma
 
-## You Were Right!
+<!-- markdownlint-disable MD022 MD013 -->
 
-You correctly questioned my initial findings. Let me clarify the **two different Somfy APIs**:
+## You Were Right
+
+You correctly questioned my initial findings. Let me clarify the **two
+different Somfy APIs**:
 
 ## Two Different Somfy TaHoma APIs
 
 ### 1. LOCAL API (Developer Mode)
+
 **What I initially documented** - This is what the official Somfy Developer Mode uses:
 
 - **URL**: `https://gateway-{pin}.local:8443/enduser-mobile-web/1/enduserAPI/`
@@ -16,13 +19,15 @@ You correctly questioned my initial findings. Let me clarify the **two different
 - **Use Case**: Direct local access to your TaHoma gateway
 
 **From Official Docs**:
+
 ```python
 # Events are polled, not streamed
 await client.register_event_listener()  # Returns listener_id
 events = await client.fetch_events()    # Poll this every ~1 second
-```
+```text
 
 ### 2. CLOUD API (Somfy Open API)
+
 **What you were thinking of** - This is the cloud-based API:
 
 - **URL**: `https://tahomalink.com/enduser-mobile-web/1/enduserAPI/`
@@ -31,6 +36,7 @@ events = await client.fetch_events()    # Poll this every ~1 second
 - **Use Case**: Cloud access via Somfy's servers
 
 **OAuth Flow**:
+
 ```python
 # From pyoverkiz/client.py lines 276-303
 async def somfy_tahoma_get_access_token(self) -> str:
@@ -47,7 +53,7 @@ async def somfy_tahoma_get_access_token(self) -> str:
         token = await response.json()
         self._access_token = token["access_token"]
         self._refresh_token = token["refresh_token"]
-```
+```text
 
 ## The SSE Question
 
@@ -69,9 +75,10 @@ async def fetch_events(self) -> list[Event]:
     """
     response = await self.__post(f"events/{self.event_listener_id}/fetch")
     return [Event(**e) for e in response]
-```
+```text
 
 The typical pattern is:
+
 ```python
 # Register once
 listener_id = await client.register_event_listener()
@@ -81,7 +88,7 @@ while True:
     events = await client.fetch_events()
     # Process events...
     await asyncio.sleep(1)  # Wait 1 second between polls
-```
+```text
 
 ## Why I Was Confused
 
@@ -102,24 +109,30 @@ while True:
 ## What This Means for Your Plugin
 
 ### Option 1: Use Local API (Simplest)
+
 **Pros**:
+
 - Direct local connection (no cloud dependency)
 - Simpler auth (just generate token in app)
 - Lower latency
 - No OAuth complexity
 
 **Cons**:
+
 - Requires Developer Mode enabled
 - User must generate token manually
 - Need to handle self-signed certificates
 
 ### Option 2: Use Cloud API
+
 **Pros**:
+
 - Works from anywhere (cloud access)
 - More "production ready" feel
 - Automatic token refresh
 
 **Cons**:
+
 - OAuth 2.0 complexity
 - Requires Somfy developer account
 - Requires client_id and client_secret
@@ -127,11 +140,13 @@ while True:
 - Rate limited (1 call per minute for GET endpoints)
 
 ### Option 3: Support Both
+
 Like the `python-overkiz-api` library does.
 
 ## Example: Event Handling Comparison
 
-### Your Current PowerView SSE Code:
+### Your Current PowerView SSE Code
+
 ```python
 async def _client_sse(self):
     async with aiohttp.ClientSession() as session:
@@ -140,9 +155,10 @@ async def _client_sse(self):
                 # Events stream continuously
                 event = json.loads(line.decode())
                 self.process_event(event)
-```
+```text
 
-### What TaHoma Needs (Polling):
+### What TaHoma Needs (Polling)
+
 ```python
 async def _poll_events(self):
     # Register listener once
@@ -159,7 +175,7 @@ async def _poll_events(self):
             listener_id = await self.register_event_listener()
 
         await asyncio.sleep(1)  # Poll every 1 second max
-```
+```text
 
 ## Recommendation for Your Project
 
@@ -185,10 +201,10 @@ This is simpler than OAuth and works great for home automation!
 
 ## References
 
-- Local API: https://github.com/Somfy-Developer/Somfy-TaHoma-Developer-Mode
-- Cloud API: https://github.com/tetienne/somfy-open-api
-- Python Client (both): https://github.com/iMicknl/python-overkiz-api
-- Home Assistant Integration: https://github.com/home-assistant/core/tree/dev/homeassistant/components/overkiz
+- Local API: <https://github.com/Somfy-Developer/Somfy-TaHoma-Developer-Mode>
+- Cloud API: <https://github.com/tetienne/somfy-open-api>
+- Python Client (both): <https://github.com/iMicknl/python-overkiz-api>
+- Home Assistant Integration: <https://github.com/home-assistant/core/tree/dev/homeassistant/components/overkiz>
 
 ---
 

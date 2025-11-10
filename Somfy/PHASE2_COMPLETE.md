@@ -9,12 +9,14 @@
 ### 1. Replaced SSE Streaming with Event Polling ✅
 
 **Removed**:
+
 - `start_sse_client()` method
 - `_client_sse()` async method (SSE streaming)
 - `stop_sse_client_event` flag
 - All SSE-related code (~50 lines)
 
 **Added**:
+
 - `_poll_events()` async method (event polling)
 - Event listener registration/re-registration
 - Automatic handling of listener expiration (10 min)
@@ -24,6 +26,7 @@
 ### 2. Updated TaHoma Client Initialization ✅
 
 **In `start()` method**:
+
 - Initialize `TaHomaClient` with token and PIN
 - Call `connect()` with 30-second timeout
 - Proper error handling with user-friendly notices
@@ -45,6 +48,7 @@ Maps TaHoma events to actions:
 | `DeviceRemovedEvent` | Trigger discovery |
 
 **Created `_handle_device_state_event()` helper**:
+
 - Finds node by `device_url`
 - Updates node drivers from new states
 - Error handling for missing nodes
@@ -52,6 +56,7 @@ Maps TaHoma events to actions:
 ### 4. Updated Stop Method ✅
 
 **Enhanced shutdown**:
+
 - Sets `stop_event` to halt polling
 - Disconnects TaHoma client gracefully
 - 10-second timeout for cleanup
@@ -60,6 +65,7 @@ Maps TaHoma events to actions:
 ### 5. Code Quality Improvements ✅
 
 **Added**:
+
 - `from typing import Optional` for type hints
 - Exception imports from pyoverkiz:
   - `InvalidEventListenerIdException`
@@ -70,6 +76,7 @@ Maps TaHoma events to actions:
 ## Key Differences: SSE vs Polling
 
 ### Old SSE Streaming
+
 ```python
 async def _client_sse(self):
     url = URL_EVENTS.format(g=self.gateway)
@@ -78,9 +85,10 @@ async def _client_sse(self):
             async for line in response.content:  # Continuous stream
                 data = json.loads(line)
                 self.append_gateway_event(data)
-```
+```text
 
 ### New Event Polling
+
 ```python
 async def _poll_events(self):
     # Register listener once
@@ -92,11 +100,12 @@ async def _poll_events(self):
         for event in events:
             self.process_tahoma_event(event)
         await asyncio.sleep(1)  # Somfy recommendation
-```
+```text
 
 ## Event Flow Comparison
 
 ### PowerView (Old)
+
 1. SSE client connects to `/home/events`
 2. Events stream continuously
 3. Each line parsed as JSON
@@ -105,6 +114,7 @@ async def _poll_events(self):
 6. Separate thread processes queue
 
 ### TaHoma (New)
+
 1. Register event listener → get `listener_id`
 2. Poll `/events/{listenerId}/fetch` every 1 second
 3. Returns array of Event objects
@@ -118,7 +128,8 @@ async def _poll_events(self):
 |------|---------------|-------------|
 | `nodes/Controller.py` | ~150 | Major refactor |
 
-### Specific Changes in Controller.py:
+### Specific Changes in Controller.py
+
 - Added typing import: `Optional`
 - Added pyoverkiz exception imports
 - Updated `start()`: TaHoma client initialization
@@ -133,12 +144,14 @@ async def _poll_events(self):
 ## Testing Considerations
 
 ### Can Test Without Hardware ✅
+
 - Code compiles without errors
 - Type hints are correct
 - Exception handling is comprehensive
 - Logic flow is sound
 
 ### Requires Hardware ❌
+
 - Actual event reception
 - Event listener lifecycle
 - Listener expiration (10 min)
@@ -164,11 +177,12 @@ self.tahoma_client = TaHomaClient(
     verify_ssl=self.verify_ssl     # From checkParams()
 )
 await self.tahoma_client.connect()
-```
+```text
 
 ## Error Handling
 
 ### Connection Errors
+
 ```python
 try:
     connect_result = await self.tahoma_client.connect()
@@ -180,9 +194,10 @@ except Exception as e:
     LOGGER.error(f"Error connecting to TaHoma: {e}")
     self.setDriver("ST", 2)
     return
-```
+```text
 
 ### Event Polling Errors
+
 - **Listener Expired**: Auto re-register
 - **No Listener**: Try to register
 - **Max Retries**: Stop polling with error log
@@ -193,6 +208,7 @@ except Exception as e:
 ### Ready for Phase 3: Device Discovery ✅
 
 Now we can:
+
 1. Update `discover()` method for TaHoma
 2. Map TaHoma device types to node classes
 3. Create device nodes with `device_url`
@@ -200,11 +216,13 @@ Now we can:
 5. Implement `_device_url_to_address()` helper
 
 ### Prerequisites
+
 - Event system working (✅ Done)
 - TaHoma client connected (✅ Done)
 - Configuration validated (✅ Done)
 
 ### Still Can Do Without Hardware
+
 - ✅ Continue Phase 3 (Discovery)
 - ✅ Update device type mapping
 - ✅ Write more tests
@@ -214,6 +232,7 @@ Now we can:
 ## Validation
 
 ### Code Quality
+
 - ✅ No syntax errors
 - ✅ Type hints added
 - ✅ Exception handling comprehensive
@@ -221,6 +240,7 @@ Now we can:
 - ✅ Docstrings complete
 
 ### Architecture
+
 - ✅ Proper async/await usage
 - ✅ Clean separation of concerns
 - ✅ Error recovery mechanisms

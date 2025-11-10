@@ -1,9 +1,12 @@
-<-------------------- | ------------ | markdownlint-disable MD022 MD013 -->
 # Migration Plan: PowerView to TaHoma API
+
+<!-- markdownlint-disable MD022 MD013 MD029 -->
 
 ## Executive Summary
 
-This document outlines the migration from the current Hunter Douglas PowerView-based implementation to the Somfy TaHoma API for the Phantom Blinds nodeserver.
+This document outlines the migration from the current Hunter Douglas
+PowerView-based implementation to the Somfy TaHoma API for the Phantom Blinds
+nodeserver.
 
 **Timeline Estimate**: 3-5 days of development + testing time
 **Complexity**: Medium-High (significant architectural changes)
@@ -12,6 +15,7 @@ This document outlines the migration from the current Hunter Douglas PowerView-b
 ## Current State Analysis
 
 ### What Works (Keep)
+
 - ✅ UDI Polyglot interface integration
 - ✅ Node structure (Controller, Shade, Scene nodes)
 - ✅ Threading and async event loop pattern
@@ -21,6 +25,7 @@ This document outlines the migration from the current Hunter Douglas PowerView-b
 - ✅ Logging infrastructure
 
 ### What Needs Changing (Major)
+
 - ❌ **Event System**: SSE streaming → Event polling
 - ❌ **Authentication**: None → Bearer token
 - ❌ **URL Structure**: PowerView format → TaHoma format
@@ -32,16 +37,19 @@ This document outlines the migration from the current Hunter Douglas PowerView-b
 ## Migration Strategy
 
 ### Phase 1: Foundation (Day 1)
+
 **Goal**: Set up TaHoma integration foundation
 
 #### 1.1 Add Dependencies
+
 ```bash
 # Add to requirements.txt
 pyoverkiz>=1.13.0
 aiohttp>=3.9.0
-```
+```text
 
 #### 1.2 Create TaHoma Client Wrapper
+
 **New file**: `utils/tahoma_client.py`
 
 This will wrap `pyoverkiz` and provide interface compatible with current code structure.
@@ -83,9 +91,10 @@ class TaHomaClient:
     async def execute_command(self, device_url, command_name, parameters):
         """Execute command on device"""
         # Send control command
-```
+```text
 
 #### 1.3 Update Configuration Parameters
+
 **File**: `nodes/Controller.py`
 
 Add new configuration parameters in `parameterHandler()`:
@@ -99,24 +108,28 @@ def parameterHandler(self, params):
         # Keep existing for backward compatibility during migration
         "gatewayip": "gateway-{pin}.local",
     }
-```
+```text
 
 ### Phase 2: Event System Refactor (Day 2)
+
 **Goal**: Replace SSE streaming with event polling
 
 #### 2.1 Remove SSE Client
+
 **File**: `nodes/Controller.py` lines 774-809
 
 ❌ **Remove**:
+
 ```python
 async def _client_sse(self):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             async for val in response.content:
                 # SSE streaming code
-```
+```text
 
 ✅ **Replace with**:
+
 ```python
 async def _poll_events(self):
     """Poll TaHoma events (replaces SSE streaming)"""
@@ -153,9 +166,10 @@ async def _poll_events(self):
         LOGGER.error(f"Fatal event polling error: {e}", exc_info=True)
     finally:
         self.event_polling_in = False
-```
+```text
 
 #### 2.2 Update Event Processing
+
 **File**: `nodes/Controller.py` lines 665-773
 
 Map PowerView events to TaHoma events:
@@ -191,12 +205,14 @@ def process_tahoma_event(self, event):
         LOGGER.debug("Gateway alive event")
 
     # Add other event types as needed
-```
+```text
 
 ### Phase 3: Device Discovery (Day 2-3)
+
 **Goal**: Map TaHoma devices to Polyglot nodes
 
 #### 3.1 Update Discovery Method
+
 **File**: `nodes/Controller.py` lines 581-664
 
 ```python
@@ -259,7 +275,7 @@ async def discover(self):
         return False
     finally:
         self.discovery_in = False
-```
+```text
 
 #### 3.2 Device Type Mapping
 
@@ -293,24 +309,28 @@ def _create_device_node(self, device):
         # Generic device
         LOGGER.warning(f"Unknown device type: {controllable}")
         return ShadeOnlyPrimary(self.poly, self.address, address, device.label, device.deviceURL)
-```
+```text
 
 ### Phase 4: Control Commands (Day 3)
+
 **Goal**: Update shade control to use TaHoma exec/apply
 
 #### 4.1 Update Shade Control Methods
+
 **File**: `nodes/Shade.py`
 
 ❌ **Old PowerView format**:
+
 ```python
 def setPosition(self, command):
     val = int(command.get('value'))
     url = URL_SHADES_MOTION.format(g=self.gateway, id=self.sid)
     data = {"positions": {"primary": val}}
     self.controller.put(url, data)
-```
+```text
 
 ✅ **New TaHoma format**:
+
 ```python
 async def setPosition(self, command):
     """Set shade position (0-100)"""
@@ -331,7 +351,7 @@ async def setPosition(self, command):
 
     except Exception as e:
         LOGGER.error(f"Failed to set position: {e}")
-```
+```text
 
 #### 4.2 Command Mapping
 
@@ -345,9 +365,11 @@ async def setPosition(self, command):
 | Close | `close` | `[]` |
 
 ### Phase 5: Data Structure Updates (Day 3-4)
+
 **Goal**: Update internal data structures
 
 #### 5.1 Shade Data Storage
+
 **File**: `nodes/Controller.py`
 
 Replace integer shade IDs with deviceURL strings:
@@ -370,9 +392,10 @@ def update_shade_data(self, device_url: str, data):
             self.shades_map[device_url].update(data)
         else:
             self.shades_map[device_url] = data
-```
+```text
 
 #### 5.2 Node Addressing
+
 Convert deviceURL to valid Polyglot address (max 14 chars, alphanumeric):
 
 ```python
@@ -390,9 +413,10 @@ def _device_url_to_address(self, device_url: str) -> str:
     address = f"sh{device_id}"[:14]
 
     return address.lower()
-```
+```text
 
 ### Phase 6: State Management (Day 4)
+
 **Goal**: Map TaHoma states to ISY drivers
 
 #### 6.1 State Mapping
@@ -430,27 +454,31 @@ def update_drivers_from_states(self, states):
                 value = self._status_to_index(value)
 
             self.setDriver(driver, value, report=True, force=False, uom=uom)
-```
+```text
 
 ### Phase 7: URL Management (Day 4)
+
 **Goal**: Replace PowerView URLs with TaHoma URLs
 
 #### 7.1 Remove PowerView URLs
+
 **File**: `nodes/Controller.py` lines 46-57
 
 ❌ **Remove all PowerView URLs**:
+
 ```python
 URL_DEFAULT_GATEWAY = "powerview-g3.local"
 URL_GATEWAY = "http://{g}/gateway"
 URL_HOME = "http://{g}/home"
 # ... etc
-```
+```text
 
 ✅ **TaHoma URLs handled by pyoverkiz** - no manual URL management needed!
 
 The `pyoverkiz` library handles all URL construction internally.
 
 ### Phase 8: Error Handling (Day 4)
+
 **Goal**: Handle TaHoma-specific errors
 
 #### 8.1 Exception Mapping
@@ -485,12 +513,14 @@ async def safe_execute_command(self, device_url, command_name, parameters):
     except Exception as e:
         LOGGER.error(f"Command execution failed: {e}")
         return False
-```
+```text
 
 ### Phase 9: Testing Strategy (Day 5)
+
 **Goal**: Comprehensive testing plan
 
 #### 9.1 Unit Tests
+
 Create test file: `test/test_tahoma_client.py`
 
 ```python
@@ -513,9 +543,10 @@ async def test_get_devices():
 async def test_execute_command():
     """Test command execution"""
     # Test implementation
-```
+```text
 
 #### 9.2 Integration Tests
+
 With actual hardware (when available):
 
 1. **Connection Test**
@@ -544,15 +575,18 @@ With actual hardware (when available):
    - Check for memory leaks
 
 ### Phase 10: Documentation (Day 5)
+
 **Goal**: Update all documentation
 
 #### 10.1 User Documentation
+
 - [ ] Update README.md with TaHoma setup instructions
 - [ ] Update POLYGLOT_CONFIG.md with new parameters
 - [ ] Create setup guide for Developer Mode
 - [ ] Document token generation process
 
 #### 10.2 Developer Documentation
+
 - [ ] Update inline code comments
 - [ ] Document new data structures
 - [ ] Add architecture diagram
@@ -561,12 +595,14 @@ With actual hardware (when available):
 ## Migration Checklist
 
 ### Pre-Migration
+
 - [ ] Backup current working code
 - [ ] Create migration branch in git
 - [ ] Review all Somfy documentation
 - [ ] Set up test environment
 
 ### Code Changes
+
 - [ ] Add pyoverkiz dependency
 - [ ] Create TaHomaClient wrapper
 - [ ] Update configuration parameters
@@ -579,6 +615,7 @@ With actual hardware (when available):
 - [ ] Remove PowerView URLs
 
 ### Testing
+
 - [ ] Unit tests pass
 - [ ] Integration tests with hardware
 - [ ] Long-running stability test
@@ -586,12 +623,14 @@ With actual hardware (when available):
 - [ ] Memory leak check
 
 ### Documentation
+
 - [ ] Update user documentation
 - [ ] Update developer documentation
 - [ ] Create migration guide for users
 - [ ] Update version history
 
 ### Deployment
+
 - [ ] Code review
 - [ ] Merge to main branch
 - [ ] Tag release
@@ -603,32 +642,40 @@ With actual hardware (when available):
 ### High Risk Areas
 
 #### 1. Event System (High Risk)
+
 **Risk**: Event polling may miss events or have timing issues
 **Mitigation**:
+
 - Follow Somfy's recommended 1-second poll interval
 - Implement robust error handling
 - Add event queue for reliability
 - Test extensively with hardware
 
 #### 2. Device Mapping (Medium Risk)
+
 **Risk**: TaHoma device types may not map cleanly to existing node types
 **Mitigation**:
+
 - Create comprehensive device type mapping
 - Allow for unknown device types
 - Log unmapped device types for future support
 - Test with various Phantom Blinds models
 
 #### 3. Authentication (Medium Risk)
+
 **Risk**: Token expiration or invalid tokens causing failures
 **Mitigation**:
+
 - Clear error messages for token issues
 - Validate token on startup
 - Handle InvalidTokenException gracefully
 - Document token regeneration process
 
 #### 4. Backward Compatibility (Low Risk)
+
 **Risk**: Breaking existing PowerView users (if any)
 **Mitigation**:
+
 - This is a new plugin for Phantom Blinds
 - No backward compatibility needed
 - Can maintain PowerView plugin separately if needed
@@ -638,6 +685,7 @@ With actual hardware (when available):
 If migration fails:
 
 1. **Revert to PowerView branch**
+
    ```bash
    git checkout powerview-stable
    ```
@@ -678,6 +726,7 @@ Migration is complete when:
 | **Total** | **8-9 days** | |
 
 Add buffer for:
+
 - Hardware delivery delays
 - Unexpected API quirks
 - Testing iterations

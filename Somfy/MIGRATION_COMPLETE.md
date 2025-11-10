@@ -13,6 +13,7 @@ Successfully migrated the Phantom Blinds NodeServer from Hunter Douglas PowerVie
 ### ✅ Phase 1: Foundation (Complete)
 **Duration**: 2 hours | **Status**: ✅
 **Deliverables**:
+
 - Added `pyoverkiz>=1.13.0` dependency
 - Created `TaHomaClient` wrapper (369 lines)
 - Created unit tests (200+ lines)
@@ -22,6 +23,7 @@ Successfully migrated the Phantom Blinds NodeServer from Hunter Douglas PowerVie
 ### ✅ Phase 2: Event System Refactor (Complete)
 **Duration**: 1.5 hours | **Status**: ✅
 **Deliverables**:
+
 - Replaced SSE streaming with event polling
 - Created `_poll_events()` async method
 - Added `process_tahoma_event()` handler
@@ -31,6 +33,7 @@ Successfully migrated the Phantom Blinds NodeServer from Hunter Douglas PowerVie
 ### ✅ Phase 3: Device Discovery (Complete)
 **Duration**: 1.5 hours | **Status**: ✅
 **Deliverables**:
+
 - Replaced PowerView discovery with TaHoma
 - Created `_discover_devices()` method
 - Created `_discover_scenarios()` method
@@ -41,6 +44,7 @@ Successfully migrated the Phantom Blinds NodeServer from Hunter Douglas PowerVie
 ### ✅ Phase 4: Control Commands (Complete)
 **Duration**: 1.5 hours | **Status**: ✅
 **Deliverables**:
+
 - Updated all shade control methods
 - Created `execute_tahoma_command()` infrastructure
 - Added `set_tahoma_positions()` mapping
@@ -51,6 +55,7 @@ Successfully migrated the Phantom Blinds NodeServer from Hunter Douglas PowerVie
 ## Total Changes
 
 ### Files Modified
+
 | File | Lines Changed | Description |
 |------|---------------|-------------|
 | `requirements.txt` | 1 | Added pyoverkiz |
@@ -63,6 +68,7 @@ Successfully migrated the Phantom Blinds NodeServer from Hunter Douglas PowerVie
 | **Total** | **~1,131 lines** | 2 new files, 5 modified |
 
 ### Documentation Created
+
 - 14 Somfy API documentation files (2,700+ lines)
 - 4 Phase completion documents
 - Migration plan
@@ -72,6 +78,7 @@ Successfully migrated the Phantom Blinds NodeServer from Hunter Douglas PowerVie
 ## Key Architectural Changes
 
 ### 1. API Communication
+
 | Aspect | PowerView (Old) | TaHoma (New) |
 |--------|----------------|--------------|
 | **Protocol** | HTTP | HTTPS (port 8443) |
@@ -81,46 +88,51 @@ Successfully migrated the Phantom Blinds NodeServer from Hunter Douglas PowerVie
 | **Commands** | Direct motion API | exec/apply pattern |
 
 ### 2. Event System
-```
+
+```text
 PowerView SSE:
 Gateway → Continuous Stream → Parse JSON → Queue → Process
 
 TaHoma Polling:
 Register Listener → Poll (1/sec) → Process Events → Auto re-register
-```
+```text
 
 ### 3. Device Discovery
-```
+
+```text
 PowerView:
 HTTP GET /home → Parse shades/scenes → Create nodes by capabilities
 
 TaHoma:
 get_devices() → Parse devices → Map by controllableName → Create nodes
 get_scenarios() → Create scene nodes
-```
+```text
 
 ### 4. Control Commands
-```
+
+```text
 PowerView:
 Command → PUT /shades/{id}/motion → SSE event → Update
 
 TaHoma:
 Command → execute_command(deviceURL, command, params) → Execution ID
          → DeviceStateChangedEvent → update_drivers_from_states()
-```
+```text
 
 ## Configuration
 
 ### Required Parameters
+
 ```yaml
 customParams:
   tahoma_token: "Bearer token from TaHoma app Developer Mode"
   gateway_pin: "1234-5678-9012"  # Gateway PIN
   use_local_api: "true"           # Use local (true) vs cloud (false)
   verify_ssl: "true"              # Verify SSL certificates
-```
+```text
 
 ### Setup Requirements
+
 1. Enable Developer Mode in TaHoma app
 2. Generate Bearer token
 3. Note gateway PIN (format: ####-####-####)
@@ -153,6 +165,7 @@ customParams:
 ## Device Type Support
 
 **Supported TaHoma Devices**:
+
 - ✅ Venetian Blinds (with tilt)
 - ✅ Roller Shutters
 - ✅ Dual Roller Shutters
@@ -166,6 +179,7 @@ customParams:
 ## Testing Status
 
 ### ✅ Completed Without Hardware
+
 - [x] Code compilation
 - [x] Unit tests for TaHoma client
 - [x] Logic flow validation
@@ -174,6 +188,7 @@ customParams:
 - [x] Documentation completeness
 
 ### ⏳ Pending Hardware Testing
+
 - [ ] TaHoma connection
 - [ ] Device discovery
 - [ ] Command execution
@@ -193,7 +208,7 @@ customParams:
 
 ## Potential Issues to Watch
 
-### When Testing with Hardware:
+### When Testing with Hardware
 
 1. **SSL Certificates**: Self-signed cert handling (pyoverkiz handles this)
 2. **Event Listener Expiration**: Auto re-registers after 10 min (implemented)
@@ -205,6 +220,7 @@ customParams:
 ## Integration Testing Plan
 
 ### Phase A: Connection (Day 1)
+
 1. Enable Developer Mode in TaHoma app
 2. Generate Bearer token
 3. Configure NodeServer with token and PIN
@@ -213,6 +229,7 @@ customParams:
 6. Check for error messages
 
 ### Phase B: Discovery (Day 1)
+
 1. Trigger discovery
 2. Verify devices found
 3. Check node creation in ISY
@@ -220,6 +237,7 @@ customParams:
 5. Check scenario discovery
 
 ### Phase C: Basic Control (Day 1-2)
+
 1. Test OPEN command
 2. Test CLOSE command
 3. Test STOP command
@@ -227,18 +245,21 @@ customParams:
 5. Check ISY driver values
 
 ### Phase D: Advanced Control (Day 2)
+
 1. Test SETPOS with various values
 2. Test tilt control (if applicable)
 3. Test scenario activation
 4. Verify position feedback
 
 ### Phase E: Event Handling (Day 2-3)
+
 1. Manual control via TaHoma app
 2. Verify events received
 3. Check state synchronization
 4. Test event listener re-registration
 
 ### Phase F: Stability (Day 3+)
+
 1. Run for 24+ hours
 2. Monitor memory usage
 3. Check for errors
@@ -247,7 +268,8 @@ customParams:
 ## Troubleshooting Guide
 
 ### Connection Issues
-```
+
+```text
 Error: "Invalid TaHoma token"
 Solution: Regenerate token in TaHoma app
 
@@ -257,10 +279,11 @@ Solutions:
   - Verify Developer Mode enabled
   - Check network connectivity
   - Try verify_ssl: "false" if cert issues
-```
+```text
 
 ### Discovery Issues
-```
+
+```text
 Error: "No devices found"
 Solutions:
   - Verify devices configured in TaHoma app
@@ -269,10 +292,11 @@ Solutions:
 
 Error: "Unknown device type"
 Solution: Check logs for controllableName, add to device_type mapping
-```
+```text
 
 ### Control Issues
-```
+
+```text
 Error: "Command execution failed"
 Solutions:
   - Check device is online
@@ -281,25 +305,28 @@ Solutions:
 
 Error: "Execution queue full"
 Solution: Wait a few seconds, commands are queued on gateway
-```
+```text
 
 ### Event Issues
-```
+
+```text
 Warning: "Event listener expired"
 Solution: Auto re-registers, normal behavior
 
 Error: "No registered event listener"
 Solution: Restart NodeServer to re-register
-```
+```text
 
 ## Performance Expectations
 
 ### Resource Usage
+
 - **Memory**: ~50-100 MB (including Python runtime)
 - **CPU**: <5% (mostly idle, spikes during discovery/commands)
 - **Network**: ~1 request/sec (event polling)
 
 ### Response Times
+
 - **Command Execution**: 2-5 seconds
 - **State Update**: 1-3 seconds after movement complete
 - **Discovery**: 5-10 seconds
@@ -308,20 +335,23 @@ Solution: Restart NodeServer to re-register
 ## Backup and Rollback
 
 ### Backup Original Code
+
 ```bash
 git checkout -b powerview-backup
 git add -A
 git commit -m "Backup PowerView version before TaHoma migration"
-```
+```text
 
 ### Rollback if Needed
+
 ```bash
 git checkout powerview-backup
-```
+```text
 
 ## Success Criteria
 
 Migration is successful when:
+
 - [x] Code compiles without errors
 - [x] All phases complete
 - [x] Unit tests pass
@@ -338,6 +368,7 @@ Migration is successful when:
 ## Documentation
 
 ### Created Documents (15 files)
+
 1. `MIGRATION_PLAN.md` - Complete migration roadmap
 2. `PHASE1_COMPLETE.md` - Foundation phase results
 3. `PHASE2_COMPLETE.md` - Event system results
@@ -347,6 +378,7 @@ Migration is successful when:
 7-15. Somfy API documentation (13 files, 2,700+ lines)
 
 ### Updated Documents
+
 - `README.md` - Add TaHoma setup instructions (pending)
 - `POLYGLOT_CONFIG.md` - Document new parameters (pending)
 - `VersionHistory.md` - Add migration version (pending)
@@ -354,6 +386,7 @@ Migration is successful when:
 ## Next Steps
 
 ### Immediate (When Hardware Arrives)
+
 1. **Install TaHoma Gateway**
    - Mount hardware
    - Configure in Somfy app
@@ -376,6 +409,7 @@ Migration is successful when:
    - Verify nodes created
 
 ### Short-term (First Week)
+
 1. Test all basic commands
 2. Verify state updates
 3. Test scenario activation
@@ -383,6 +417,7 @@ Migration is successful when:
 5. Monitor for errors
 
 ### Long-term (First Month)
+
 1. Run stability tests (24+ hours)
 2. Test all device types
 3. Validate error recovery
@@ -394,6 +429,7 @@ Migration is successful when:
 The migration from PowerView to TaHoma is **architecturally complete**. All code has been written, tested for compilation, and documented. The NodeServer is ready for integration testing with actual hardware.
 
 **Key Achievements**:
+
 - ✅ Clean architecture with dual-path support
 - ✅ Comprehensive error handling
 - ✅ Extensive documentation
@@ -402,6 +438,7 @@ The migration from PowerView to TaHoma is **architecturally complete**. All code
 - ✅ Completed ahead of schedule (5.5 hours vs 4-5 days planned)
 
 **Remaining Work**:
+
 - ⏳ Hardware integration testing
 - ⏳ Real-world validation
 - ⏳ Performance optimization (if needed)

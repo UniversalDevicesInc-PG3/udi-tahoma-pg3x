@@ -1,5 +1,6 @@
-<-------------------- | ------------ | markdownlint-disable MD022 MD013 -->
 # Somfy API Documentation for Phantom Blinds
+
+<!-- markdownlint-disable MD022 MD013 -->
 
 This folder contains information about the Somfy API used by Phantom Blinds.
 
@@ -9,8 +10,8 @@ Phantom Blinds use Somfy-based controls with the **TaHoma** gateway system. The 
 
 ## Official Resources
 
-- **Official Somfy TaHoma Developer Mode**: https://github.com/Somfy-Developer/Somfy-TaHoma-Developer-Mode
-- **API Documentation**: https://somfy-developer.github.io/Somfy-TaHoma-Developer-Mode
+- **Official Somfy TaHoma Developer Mode**: <https://github.com/Somfy-Developer/Somfy-TaHoma-Developer-Mode>
+- **API Documentation**: <https://somfy-developer.github.io/Somfy-TaHoma-Developer-Mode>
 - **OpenAPI Spec**: Available in the official repository
 
 ## API Structure
@@ -33,6 +34,7 @@ Phantom Blinds use Somfy-based controls with the **TaHoma** gateway system. The 
 ## Authentication
 
 The TaHoma local API requires **Bearer token** authentication:
+
 1. Enable Developer Mode in TaHoma app (tap version 7 times)
 2. Generate token from Developer Mode menu
 3. Use `Authorization: Bearer <token>` header
@@ -61,7 +63,7 @@ The TaHoma local API requires **Bearer token** authentication:
 
 ## Important Notes
 
-⚠️ **Security**: TaHoma uses self-signed certificates. Add CA cert from https://ca.overkiz.com/overkiz-root-ca-2048.crt
+⚠️ **Security**: TaHoma uses self-signed certificates. Add CA cert from <https://ca.overkiz.com/overkiz-root-ca-2048.crt>
 
 ⚠️ **Port**: Default HTTPS port is 8443
 

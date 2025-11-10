@@ -9,6 +9,7 @@
 ### 1. Updated Shade Control Commands ✅
 
 **Modified Methods in `nodes/Shade.py`**:
+
 - `cmdOpen()` - supports TaHoma 'open' command
 - `cmdClose()` - supports TaHoma 'close' command
 - `cmdStop()` - supports TaHoma 'stop' command
@@ -24,6 +25,7 @@ All methods now detect if device is TaHoma (via `self.device_url`) and use appro
 
 #### execute_tahoma_command()
 Core method for executing TaHoma commands:
+
 ```python
 def execute_tahoma_command(self, command_name, parameters):
     """Executes a TaHoma command on this device."""
@@ -37,10 +39,11 @@ def execute_tahoma_command(self, command_name, parameters):
         self.controller.mainloop
     ).result(timeout=10)
     return exec_id
-```
+```text
 
 #### set_tahoma_positions()
 Maps position dictionary to TaHoma commands:
+
 ```python
 def set_tahoma_positions(self, pos):
     """Maps PowerView-style positions to TaHoma commands."""
@@ -50,16 +53,17 @@ def set_tahoma_positions(self, pos):
         self.execute_tahoma_command("setDeployment", [pos["secondary"]])
     if "tilt" in pos:
         self.execute_tahoma_command("setOrientation", [pos["tilt"]])
-```
+```text
 
 #### update_drivers_from_states()
 Updates ISY drivers from TaHoma device states:
+
 ```python
 def update_drivers_from_states(self, states):
     """Updates node drivers from TaHoma DeviceStateChangedEvent."""
     # Maps TaHoma state names to ISY drivers
     # Called from Controller._handle_device_state_event()
-```
+```text
 
 ### 3. Command Mapping ✅
 
@@ -91,6 +95,7 @@ def update_drivers_from_states(self, states):
 ### 5. Updated Scene Node ✅
 
 **Modified `nodes/Scene.py`**:
+
 - `cmdActivate()` - detects TaHoma and uses `execute_scenario()`
 - Maintains backward compatibility with PowerView Gen 2/3
 
@@ -103,12 +108,13 @@ def cmdActivate(self, command=None):
         # PowerView Gen 2
     elif self.controller.generation == 3:
         # PowerView Gen 3
-```
+```text
 
 ## Control Flow Comparison
 
 ### PowerView (Old)
-```
+
+```text
 ISY Command
     ↓
 cmdOpen() → setShadePosition({"primary": 100})
@@ -121,10 +127,11 @@ PowerView Gateway moves shade
 SSE Event received
     ↓
 Update drivers
-```
+```text
 
 ### TaHoma (New)
-```
+
+```text
 ISY Command
     ↓
 cmdOpen() → execute_tahoma_command("open", [])
@@ -139,12 +146,13 @@ TaHoma Gateway moves device
 Event Polling → DeviceStateChangedEvent
     ↓
 update_drivers_from_states() → Update ISY drivers
-```
+```text
 
 ## Key Design Decisions
 
 ### 1. Dual-Path Commands
 All command methods check `self.device_url` to determine API:
+
 ```python
 if self.device_url:
     # TaHoma path
@@ -152,34 +160,39 @@ if self.device_url:
 else:
     # PowerView path
     self.setShadePosition({"primary": 100})
-```
+```text
 
 **Benefits**:
+
 - Maintains PowerView compatibility
 - Clean separation of concerns
 - Easy to test each path independently
 
 ### 2. Async Command Execution
 TaHoma commands use `asyncio.run_coroutine_threadsafe()`:
+
 ```python
 exec_id = asyncio.run_coroutine_threadsafe(
     self.controller.tahoma_client.execute_command(...),
     self.controller.mainloop
 ).result(timeout=10)
-```
+```text
 
 **Benefits**:
+
 - Non-blocking execution
 - Proper timeout handling
 - Thread-safe integration with Polyglot
 
 ### 3. State-Driven Updates
 Driver updates come from TaHoma events, not command responses:
+
 - Command execution returns execution ID
 - State changes arrive via `DeviceStateChangedEvent`
 - `update_drivers_from_states()` updates ISY drivers
 
 **Benefits**:
+
 - Reflects actual device state
 - Handles manual control via TaHoma app
 - Consistent with TaHoma architecture
@@ -191,9 +204,10 @@ Driver updates come from TaHoma events, not command responses:
 | `nodes/Shade.py` | ~150 | Command methods, TaHoma support |
 | `nodes/Scene.py` | ~30 | Scenario activation |
 
-### Specific Changes:
+### Specific Changes
 
 **Shade.py**:
+
 - Updated 6 command methods (cmdOpen, cmdClose, cmdStop, etc.)
 - Added `execute_tahoma_command()` method
 - Added `set_tahoma_positions()` method
@@ -201,18 +215,21 @@ Driver updates come from TaHoma events, not command responses:
 - Updated `cmdSetpos()` to support TaHoma
 
 **Scene.py**:
+
 - Updated `cmdActivate()` to detect and use TaHoma client
 - Maintains PowerView Gen 2/3 compatibility
 
 ## Testing Considerations
 
 ### Can Test Without Hardware ✅
+
 - Code compiles without errors
 - Command routing logic sound
 - Error handling comprehensive
 - Async execution structure correct
 
 ### Requires Hardware ❌
+
 - Actual command execution
 - State update verification
 - Timing and responsiveness
@@ -228,6 +245,7 @@ Driver updates come from TaHoma events, not command responses:
 ## Command Examples
 
 ### Opening a Shade
+
 ```python
 # ISY sends OPEN command
 shade.cmdOpen(command)
@@ -249,9 +267,10 @@ DeviceStateChangedEvent
 shade.update_drivers_from_states(states)
     → GV2 = 100 (primary position)
     → ST = 0 (not moving)
-```
+```text
 
 ### Setting Position
+
 ```python
 # ISY sends SETPOS command with primary=75
 shade.cmdSetpos({"query": {"SETPRIM.uom100": "75"}})
@@ -263,9 +282,10 @@ shade.set_tahoma_positions({"primary": 75})
 
 # State update via event:
     → GV2 = 75
-```
+```text
 
 ### Activating Scene
+
 ```python
 # ISY sends ACTIVATE command
 scene.cmdActivate(command)
@@ -278,11 +298,12 @@ tahoma_client.execute_scenario(scenario_oid)
 ExecutionStateChangedEvent
     execution_id: "exec-789"
     new_state: "COMPLETED"
-```
+```text
 
 ## Error Handling
 
 ### Command Execution Errors
+
 ```python
 try:
     exec_id = execute_tahoma_command(...)
@@ -293,48 +314,54 @@ try:
 except Exception as e:
     LOGGER.error(f"Error: {e}")
     return None
-```
+```text
 
 ### Timeout Handling
+
 ```python
 .result(timeout=10)  # 10 second timeout
-```
+```text
 
 ### State Update Errors
+
 ```python
 try:
     update_drivers_from_states(states)
 except Exception as e:
     LOGGER.error(f"State update error: {e}")
-```
+```text
 
 ## Integration Points
 
 ### Phase 2 Integration (Events)
+
 - Events trigger `_handle_device_state_event()` in Controller
 - Controller finds node by `device_url`
 - Calls `node.update_drivers_from_states()`
 
 ### Phase 3 Integration (Discovery)
+
 - Nodes created with `device_url` as `sid`
 - `self.device_url` set in `Shade.__init__()`
 - Commands detect TaHoma via `device_url` check
 
-### Complete Flow:
-```
+### Complete Flow
+
+```text
 1. Phase 1: TaHoma client initialized
 2. Phase 2: Event polling started
 3. Phase 3: Devices discovered, nodes created
 4. Phase 4: Commands execute, states update
    ↓
 Full cycle: Command → Execute → Event → State Update
-```
+```text
 
 ## Next Steps
 
 ### Ready for Integration Testing ✅
 
 With Phases 1-4 complete, we now have:
+
 1. ✅ TaHoma client connection
 2. ✅ Event polling system
 3. ✅ Device discovery
@@ -342,12 +369,14 @@ With Phases 1-4 complete, we now have:
 5. ✅ State updates
 
 ### Prerequisites for Testing
+
 - TaHoma gateway hardware
 - Developer Mode enabled
 - Bearer token generated
 - At least one device configured
 
 ### Testing Checklist
+
 - [ ] Connect to TaHoma gateway
 - [ ] Discover devices
 - [ ] Execute open command
@@ -362,6 +391,7 @@ With Phases 1-4 complete, we now have:
 ## Validation
 
 ### Code Quality
+
 - ✅ No syntax errors
 - ✅ Async/await properly used
 - ✅ Error handling comprehensive
@@ -369,6 +399,7 @@ With Phases 1-4 complete, we now have:
 - ✅ Docstrings complete
 
 ### Architecture
+
 - ✅ Clean dual-path design
 - ✅ Backward compatible with PowerView
 - ✅ State-driven updates

@@ -1,5 +1,6 @@
-<-------------------- | ------------ | markdownlint-disable MD022 MD013 -->
 # Control Commands
+
+<!-- markdownlint-disable MD022 MD013 -->
 
 This document describes how to control Somfy-based Phantom Blinds.
 
@@ -10,6 +11,7 @@ This document describes how to control Somfy-based Phantom Blinds.
 **Endpoint**: `PUT /home/shades/{shade_id}/motion`
 
 **Request Body**:
+
 ```json
 {
   "positions": {
@@ -19,9 +21,10 @@ This document describes how to control Somfy-based Phantom Blinds.
     "velocity": 100
   }
 }
-```
+```text
 
 **Example**:
+
 ```bash
 curl -X PUT "http://192.168.1.100/home/shades/12345/motion" \
   -H "Content-Type: application/json" \
@@ -33,23 +36,25 @@ curl -X PUT "http://192.168.1.100/home/shades/12345/motion" \
       "velocity": 100
     }
   }'
-```
+```text
 
 ### Stop Shade
 
 **Endpoint**: `PUT /home/shades/stop?ids={shade_id}`
 
 **Example**:
+
 ```bash
 curl -X PUT "http://192.168.1.100/home/shades/stop?ids=12345" \
   -H "Accept: application/json"
-```
+```text
 
 ### Query Shade Position
 
 **Endpoint**: `GET /home/shades/positions?ids={shade_id}`
 
 **Response**:
+
 ```json
 {
   "id": 12345,
@@ -60,7 +65,7 @@ curl -X PUT "http://192.168.1.100/home/shades/stop?ids=12345" \
     "velocity": 100
   }
 }
-```
+```text
 
 ## Scene Control
 
@@ -69,10 +74,11 @@ curl -X PUT "http://192.168.1.100/home/shades/stop?ids=12345" \
 **Endpoint**: `PUT /home/scenes/{scene_id}/activate`
 
 **Example**:
+
 ```bash
 curl -X PUT "http://192.168.1.100/home/scenes/100/activate" \
   -H "Accept: application/json"
-```
+```text
 
 **Response**: Returns the activated scene object
 
@@ -81,6 +87,7 @@ curl -X PUT "http://192.168.1.100/home/scenes/100/activate" \
 **Endpoint**: `GET /home/scenes/active`
 
 **Response**:
+
 ```json
 [
   {
@@ -89,24 +96,28 @@ curl -X PUT "http://192.168.1.100/home/scenes/100/activate" \
     "activatedAt": "2025-11-07T19:55:10.531Z"
   }
 ]
-```
+```text
 
 ## Position Values
 
 ### Primary Position
+
 - `0` = Fully closed/down
 - `100` = Fully open/up
 - Intermediate values for partial positions
 
 ### Tilt Position
+
 - `0` = Fully closed (horizontal)
 - `50` = 45° angle
 - `100` = Fully open (vertical)
 
 For 90° tilt shades:
+
 - Tilt range is limited to 90°
 
 ### Velocity
+
 - `0` = Slowest
 - `100` = Fastest
 - Default is typically `100`
@@ -114,24 +125,27 @@ For 90° tilt shades:
 ## Common Patterns
 
 ### Open Shade Fully
+
 ```json
 {
   "positions": {
     "primary": 100
   }
 }
-```
+```text
 
 ### Close Shade Fully
+
 ```json
 {
   "positions": {
     "primary": 0
   }
 }
-```
+```text
 
 ### Set to 50% with Tilt
+
 ```json
 {
   "positions": {
@@ -139,9 +153,10 @@ For 90° tilt shades:
     "tilt": 50
   }
 }
-```
+```text
 
 ### Dual Shade (Top-Down/Bottom-Up)
+
 ```json
 {
   "positions": {
@@ -149,7 +164,8 @@ For 90° tilt shades:
     "secondary": 40
   }
 }
-```
+```text
+
 This creates a viewing band between 40% and 60%.
 
 ## Python Implementation Examples
@@ -195,7 +211,7 @@ def activate_scene(scene_id):
 move_shade(12345, primary=75, tilt=0)  # Open to 75%, no tilt
 stop_shade(12345)                       # Stop movement
 activate_scene(100)                     # Activate scene
-```
+```text
 
 ### Error Handling
 
@@ -213,7 +229,7 @@ try:
 except requests.exceptions.RequestException as e:
     print(f"Request failed: {e}")
     return False
-```
+```text
 
 ## Rate Limiting
 
@@ -231,16 +247,19 @@ except requests.exceptions.RequestException as e:
 ## Notes
 
 ### Position Persistence
+
 - Shade positions are not guaranteed to persist after power loss
 - Some Somfy motors may have battery backup for position memory
 - Verify specific motor capabilities
 
 ### Simultaneous Commands
+
 - Multiple shades can be controlled simultaneously via scenes
 - Individual shade commands are processed sequentially
 - Consider using scenes for coordinated multi-shade control
 
 ### Feedback
+
 - Position changes trigger SSE events
 - Subscribe to the event stream for real-time feedback
 - Query endpoints for current state without triggering events

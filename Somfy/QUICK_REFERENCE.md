@@ -1,32 +1,37 @@
-<-------------------- | ------------ | markdownlint-disable MD022 MD013 -->
 # Quick Reference Guide
+
+<!-- markdownlint-disable MD022 MD013 -->
 
 ## Quick Start
 
 ### 1. Connect to Gateway
+
 ```python
 gateway = "192.168.1.100"  # or "phantom-gateway.local"
 base_url = f"http://{gateway}"
-```
+```text
 
 ### 2. Get All Devices
+
 ```python
 response = requests.get(f"{base_url}/home")
 data = response.json()
-```
+```text
 
 ### 3. Control a Shade
+
 ```python
 requests.put(
     f"{base_url}/home/shades/{shade_id}/motion",
     json={"positions": {"primary": 75}}
 )
-```
+```text
 
 ### 4. Activate a Scene
+
 ```python
 requests.put(f"{base_url}/home/scenes/{scene_id}/activate")
-```
+```text
 
 ## Common Commands
 
@@ -80,7 +85,7 @@ requests.put(f"{base_url}/home/scenes/{scene_id}/activate")
 
 ```bash
 curl -N "http://{gateway}/home/events?sse=false&raw=true"
-```
+```text
 
 Heartbeat: `100 HELO`
 
@@ -101,6 +106,7 @@ Heartbeat: `100 HELO`
 ## Python Quick Examples
 
 ### Move shade to 50%
+
 ```python
 import requests
 requests.put(
@@ -108,25 +114,27 @@ requests.put(
     json={"positions": {"primary": 50, "velocity": 100}},
     headers={"accept": "application/json"}
 )
-```
+```text
 
 ### Get active scenes
+
 ```python
 response = requests.get(
     f"http://{gateway}/home/scenes/active",
     headers={"accept": "application/json"}
 )
 scenes = response.json()
-```
+```text
 
 ### Monitor events
+
 ```python
 import aiohttp
 async with aiohttp.ClientSession() as session:
     async with session.get(f"http://{gateway}/home/events?sse=false&raw=true") as response:
         async for line in response.content:
             print(line.decode().strip())
-```
+```text
 
 ## Troubleshooting
 
@@ -157,6 +165,7 @@ async with aiohttp.ClientSession() as session:
 ## Configuration
 
 Gateway IP set in Polyglot custom parameters:
+
 ```yaml
 gatewayip: "192.168.1.100"  # or ["192.168.1.100", "192.168.1.101"]
-```
+```text

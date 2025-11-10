@@ -1,5 +1,6 @@
-<-------------------- | ------------ | markdownlint-disable MD022 MD013 -->
 # API Examples
+
+<!-- markdownlint-disable MD022 MD013 -->
 
 This document provides practical examples of working with the Somfy API.
 
@@ -63,17 +64,18 @@ if check_gateway():
     home = get_home_data()
     if home:
         all_shades = list_shades(home)
-```
+```text
 
 **Output**:
-```
+
+```text
 ✓ Gateway is accessible
 ✓ Found 3 rooms
 ✓ Found 5 scenes
   - Living Room: Shade 12345 (cap: 7)
   - Living Room: Shade 12346 (cap: 1)
   - Bedroom: Shade 12347 (cap: 0)
-```
+```text
 
 ### 2. Control Multiple Shades
 
@@ -102,7 +104,7 @@ def control_shades_in_room(room_name, home_data, primary_position):
 
 # Example: Close all living room shades
 control_shades_in_room("Living Room", home, 0)
-```
+```text
 
 ### 3. Monitor Events in Real-Time
 
@@ -146,17 +148,18 @@ async def monitor_events():
 
 # Run event monitor
 asyncio.run(monitor_events())
-```
+```text
 
 **Output**:
-```
+
+```text
 Connected to event stream...
 ❤ Heartbeat
 📍 Shade 12345 moved to {'primary': 50, 'tilt': 0}
 🎬 Scene 100 activated
 ❤ Heartbeat
 📍 Shade 12346 moved to {'primary': 75, 'tilt': 45}
-```
+```text
 
 ### 4. Create a Morning Routine
 
@@ -197,7 +200,7 @@ def morning_routine():
         print("✓ Bedroom shade adjusted")
 
 morning_routine()
-```
+```text
 
 ### 5. Query Current State
 
@@ -234,10 +237,11 @@ def get_active_scenes():
 # Query status
 get_shade_status(12345)
 get_active_scenes()
-```
+```text
 
 **Output**:
-```
+
+```text
 Shade 12345 Status:
   Primary: 50%
   Secondary: 0%
@@ -245,7 +249,7 @@ Shade 12345 Status:
 Active Scenes:
   - Morning (ID: 100)
     Activated at: 2025-11-07T08:00:00.000Z
-```
+```text
 
 ### 6. Handle Errors Gracefully
 
@@ -290,7 +294,7 @@ def safe_move_shade(shade_id, primary=None, tilt=None):
 
 # Try to move shade with retries
 safe_move_shade(12345, primary=75, tilt=0)
-```
+```text
 
 ## Testing with curl
 
@@ -313,17 +317,17 @@ curl -X PUT "http://192.168.1.100/home/scenes/100/activate"
 
 # Monitor events
 curl -N "http://192.168.1.100/home/events?sse=false&raw=true"
-```
+```text
 
 ## Integration with ISY Programs
 
 Example of how the plugin translates API calls to ISY node states:
 
-```
+```text
 API Position 0-100% → ISY Driver Value 0-100
 Scene Activation → ISY Scene Node ST=1
 Scene Deactivation → ISY Scene Node ST=0
-```
+```text
 
 ## Performance Considerations
 
@@ -339,4 +343,4 @@ session.headers.update({"accept": "application/json"})
 # Reuse session for multiple requests
 response1 = session.get(f"{base_url}/home")
 response2 = session.put(f"{base_url}/home/shades/12345/motion", json=data)
-```
+```text

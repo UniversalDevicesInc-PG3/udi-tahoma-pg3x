@@ -1,5 +1,6 @@
-<-------------------- | ------------ | markdownlint-disable MD022 MD013 -->
 # Data Structures
+
+<!-- markdownlint-disable MD022 MD013 -->
 
 This document describes the JSON data structures used in the Somfy API.
 
@@ -13,7 +14,7 @@ The main home object contains all configuration data:
   "shades": [...],
   "scenes": [...]
 }
-```
+```text
 
 ## Room Object
 
@@ -25,9 +26,10 @@ The main home object contains all configuration data:
   "order": 0,
   "shades": [...]
 }
-```
+```text
 
 ### Fields
+
 - `_id` (int): Internal room ID
 - `id` (int): Room ID
 - `name` (string): Room name (max 15 chars recommended)
@@ -50,9 +52,10 @@ The main home object contains all configuration data:
   },
   "room_id": 1
 }
-```
+```text
 
 ### Fields
+
 - `id` (int): Unique shade identifier
 - `name` (string): Base64-encoded shade name
 - `type` (int): Shade type (1-10, varies by manufacturer)
@@ -83,6 +86,7 @@ The `capabilities` field indicates what the shade can do:
 | 10 | Primary + Tilt (180°) | ✓ | ✗ | 180° |
 
 **Note**: Capabilities determine which node type is created:
+
 - 0, 3: `ShadeOnlyPrimary`
 - 1, 2, 4: `ShadeNoSecondary` (Primary + Tilt)
 - 5: `ShadeOnlyTilt`
@@ -110,9 +114,10 @@ The `capabilities` field indicates what the shade can do:
     }
   ]
 }
-```
+```text
 
 ### Fields
+
 - `_id` (int): Internal scene ID
 - `id` (int): Scene ID
 - `name` (string): Scene name
@@ -133,10 +138,12 @@ Used in motion commands:
     "velocity": 100
   }
 }
-```
+```text
 
 ### Fields
+
 All values are percentages (0-100):
+
 - `primary`: Main shade position (0=closed, 100=open)
 - `secondary`: Secondary shade position (for dual shades)
 - `tilt`: Vane tilt angle
@@ -150,9 +157,10 @@ All values are percentages (0-100):
   "name": "Morning",
   "activatedAt": "2025-11-07T19:55:10.531Z"
 }
-```
+```text
 
 ### Fields
+
 - `id` (int): Scene ID
 - `name` (string): Scene name
 - `activatedAt` (string): ISO 8601 timestamp when activated
@@ -167,9 +175,10 @@ All values are percentages (0-100):
   "type": "G3",
   "isPrimary": true
 }
-```
+```text
 
 ### Fields
+
 - `id` (string): Gateway unique identifier
 - `name` (string): Gateway name
 - `firmware` (string): Firmware version
@@ -183,31 +192,34 @@ All values are percentages (0-100):
   "message": "Not Found",
   "errMsg": "Error fetching from gateway, check configuration"
 }
-```
+```text
 
 ## Notes
 
 ### Name Encoding
+
 Shade names in the API are Base64-encoded. The plugin decodes them:
 
 ```python
 name = base64.b64decode(sh.get("name", "shade")).decode()
-```
+```text
 
 ### Position Conversion
+
 Raw position values are converted to percentages:
 
 ```python
 newpos = math.trunc((float(pos) / divr * 100.0) + 0.5)
-```
+```text
 
 For Gen 3 gateways, `divr = 1.0` (positions already in percentage).
 
 ### Valid Names
+
 Room and shade names are combined and validated:
 
 ```python
 sh["name"] = self.poly.getValidName(f"{room_name} - {shade_name}")
-```
+```text
 
 This ensures names meet ISY naming requirements.

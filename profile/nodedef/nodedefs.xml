@@ -1,6 +1,7 @@
 <nodeDefs>
-    <!-- NODE DEF from 5.0 document http://wiki.universal-devices.com/index.php?title=V50_MAIN -->
-    <!-- controller, this must mach the id in your Controller class-->
+    <!-- NODE DEF for Somfy TaHoma / Phantom Blinds NodeServer -->
+    <!-- Polyglot v3 - ISY 5.0+ compatible -->
+    <!-- controller, this must match the id in your Controller class-->
     <nodeDef id="hdctrl" nls="ctl">
         <editors />
         <sts>
@@ -20,7 +21,7 @@
           </accepts>
         </cmds>
     </nodeDef>
-	<!-- shadeid -->
+	<!-- TaHoma Shade (with tilt) -->
     <nodeDef id="shadeid" nls="shade">
         <editors />
         <sts>
@@ -42,7 +43,6 @@
             <cmd id="STOP" />
             <cmd id="TILTOPEN" />
             <cmd id="TILTCLOSE" />
-            <cmd id="JOG" />
           </sends>
           <accepts>
             <cmd id="OPEN" />
@@ -50,7 +50,6 @@
             <cmd id="STOP" />
             <cmd id="TILTOPEN" />
             <cmd id="TILTCLOSE" />
-            <cmd id="JOG" />
             <cmd id="QUERY" />
             <cmd id="SETPOS" >
               <p id="SETPRIM" editor="POSITION" />
@@ -60,7 +59,7 @@
           </accepts>
         </cmds>
     </nodeDef>
-	<!-- shadeNoTiltid -->
+	<!-- TaHoma Shade (no tilt) -->
     <nodeDef id="shadenotiltid" nls="shade">
         <editors />
         <sts>
@@ -79,15 +78,11 @@
             <cmd id="OPEN" />
             <cmd id="CLOSE" />
             <cmd id="STOP" />
-            <cmd id="TILTOPEN" />
-            <cmd id="TILTCLOSE" />
-            <cmd id="JOG" />
           </sends>
           <accepts>
             <cmd id="OPEN" />
             <cmd id="CLOSE" />
             <cmd id="STOP" />
-            <cmd id="JOG" />
             <cmd id="QUERY" />
             <cmd id="SETPOS" >
               <p id="SETPRIM" editor="POSITION" />
@@ -96,7 +91,7 @@
           </accepts>
         </cmds>
     </nodeDef>
-	<!-- shadeOnlyPrimid -->
+	<!-- TaHoma Shade (primary position only) -->
     <nodeDef id="shadeonlyprimid" nls="shade">
         <editors />
         <sts>
@@ -114,13 +109,11 @@
             <cmd id="OPEN" />
             <cmd id="CLOSE" />
             <cmd id="STOP" />
-            <cmd id="JOG" />
           </sends>
           <accepts>
             <cmd id="OPEN" />
             <cmd id="CLOSE" />
             <cmd id="STOP" />
-            <cmd id="JOG" />
             <cmd id="QUERY" />
             <cmd id="SETPOS" >
               <p id="SETPRIM" editor="POSITION" />
@@ -128,107 +121,12 @@
           </accepts>
         </cmds>
     </nodeDef>
-	<!-- shadeOnlySecondid -->
-    <nodeDef id="shadeonlysecondid" nls="shade">
-        <editors />
-        <sts>
-            <st id="GV0" editor="ID" />
-            <st id="ST" editor="BOOL" />
-            <st id="GV1" editor="ID" />
-            <st id="GV3" editor="POSITION" uom="100" />
-            <st id="GV5" editor="SHADECAP" />
-            <st id="GV6" editor="BATTERYST" />
-        </sts>
-        <cmds>
-          <sends>
-			<cmd id="DON" />
-			<cmd id="DOF" />
-            <cmd id="JOG" />
-          </sends>
-          <accepts>
-            <cmd id="QUERY" />
-            <cmd id="SETPOS" >
-              <p id="SETPRIM" editor="POSITION" />
-              <p id="SETSECO" editor="POSITION" />
-            </cmd>
-          </accepts>
-        </cmds>
-    </nodeDef>
-	<!-- shadeNoSecondid -->
-    <nodeDef id="shadenosecondid" nls="shade">
-        <editors />
-        <sts>
-            <st id="GV0" editor="ID" />
-            <st id="ST" editor="BOOL" />
-            <st id="GV1" editor="ID" />
-            <st id="GV2" editor="POSITION" uom="100" />
-            <st id="GV4" editor="TILT" uom="100" />
-            <st id="GV5" editor="SHADECAP" />
-            <st id="GV6" editor="BATTERYST" />
-        </sts>
-        <cmds>
-          <sends>
-			<cmd id="DON" />
-			<cmd id="DOF" />
-            <cmd id="OPEN" />
-            <cmd id="CLOSE" />
-            <cmd id="STOP" />
-            <cmd id="TILTOPEN" />
-            <cmd id="TILTCLOSE" />
-            <cmd id="JOG" />
-          </sends>
-          <accepts>
-            <cmd id="OPEN" />
-            <cmd id="CLOSE" />
-            <cmd id="STOP" />
-            <cmd id="TILTOPEN" />
-            <cmd id="TILTCLOSE" />
-            <cmd id="JOG" />
-            <cmd id="QUERY" />
-            <cmd id="SETPOS" >
-              <p id="SETPRIM" editor="POSITION" />
-              <p id="SETTILT" editor="TILT" />
-            </cmd>
-          </accepts>
-        </cmds>
-    </nodeDef>
-	<!-- shadeOnlyTiltid -->
-    <nodeDef id="shadeonlytiltid" nls="shade">
-        <editors />
-        <sts>
-            <st id="GV0" editor="ID" />
-            <st id="ST" editor="BOOL" />
-            <st id="GV1" editor="ID" />
-            <st id="GV4" editor="TILT" uom="100" />
-            <st id="GV5" editor="SHADECAP" />
-            <st id="GV6" editor="BATTERYST" />
-        </sts>
-        <cmds>
-          <sends>
-			<cmd id="DON" />
-			<cmd id="DOF" />
-            <cmd id="TILTOPEN" />
-            <cmd id="TILTCLOSE" />
-            <cmd id="JOG" />
-          </sends>
-          <accepts>
-            <cmd id="TILTOPEN" />
-            <cmd id="TILTCLOSE" />
-            <cmd id="JOG" />
-            <cmd id="QUERY" />
-            <cmd id="SETPOS" >
-              <p id="SETTILT" editor="TILT" />
-            </cmd>
-          </accepts>
-        </cmds>
-    </nodeDef>
-	<!-- sceneid -->
+	<!-- TaHoma Scenario (automation) -->
     <nodeDef id="sceneid" nls="scene">
         <editors />
         <sts>
 		  <st id="ST" editor="BOOL" />
           <st id="GV0" editor="ID" />
-          <!-- <st id="GV1" editor="BOOL" /> -->
         </sts>
         <cmds>
           <sends>
