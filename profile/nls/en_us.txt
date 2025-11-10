@@ -1,227 +1,89 @@
 
 # controller
-ND-controller-NAME = Virtual Device Controller
-ND-controller-ICON = Switch
-CMD-ctl-QUERY"-NAME = Query
+ND-hdctrl-NAME = Hunter Douglas Controller
+ND-hdctrl-ICON = GenericRspCtl
+ST-GV0-NAME = NumberOfNodes
+CMD-ctl-QUERY-NAME = Query
 CMD-ctl-DISCOVER-NAME = Discover
-ST-ctl-ST-NAME = NodeServer Online
-ST-ctl-GV0-NAME = NumberOfNodes
+CMD-ctl-UPDATE_PROFILE-NAME = Update Profile
+CMD-ctl-REMOVE_NOTICES_ALL-NAME = Remove All Notices
+CMD-ctl-SET_DM-NAME = Set Logger Level
 
 # ctd
 CTD-0 = Disconnected
 CTD-1 = Connected
 CTD-2 = Failed
 
-# virtualswitch
-ND-virtualswitch-NAME = Virtual Switch
-ND-virtualswitch-ICON = Switch
-ST-vswitch-ST-NAME = Switch Status
-CMD-vswitch-DON-NAME = On
-CMD-vswitch-DOF-NAME = Off
-CMD-vswitch-TOGGLE-NAME = Toggle
+# Debug/Logger Modes
+CDM-9 = Debug + Modules
+CDM-10 = Debug
+CDM-20 = Info
+CDM-30 = Warning
+CDM-40 = Error
+CDM-50 = Critical
 
-# virtualononly
-ND-virtualononly-NAME = Virtual OnOnly
-ND-virtualononly-ICON = Switch
-ST-vononly-ST-NAME = Switch Status
-CMD-vononly-DON-NAME = On
-CMD-vononly-DOF-NAME = Off
+# shade
+ND-shadeid-NAME = Shade
+ND-shadeid-ICON = GenericRspCtl
+ND-shadeonlyprimid-NAME = Shade
+ND-shadeonlyprimid-ICON = GenericRspCtl
+ND-shadeonlysecondid-NAME = Shade
+ND-shadeonlysecondid-ICON = GenericRspCtl
+ND-shadenosecondid-NAME = Shade
+ND-shadenosecondid-ICON = GenericRspCtl
+ND-shadeonlytiltid-NAME = Shade
+ND-shadeonlytiltid-ICON = GenericRspCtl
+ND-shadenotiltid-NAME = Shade
+ND-shadenotiltid-ICON = GenericRspCtl
 
-# virtualondelay
-ND-virtualondelay-NAME = Virtual onDelay Switch
-ND-virtualondelay-ICON = Switch
-ST-vondelay-ST-NAME = Switch Status
-ST-vondelay-DUR-NAME = onDelay
-CMD-vondelay-DON-NAME = On
-CMD-vondelay-DOF-NAME = Off
-CMD-vondelay-TIMER-NAME = Timer
-CMD-vondelay-DFOF-NAME = FOff(cancel)
-CMD-vondelay-SETDELAY-NAME = Set onDelay
+ST-shade-ST-NAME = Motion
+ST-shade-GV0-NAME = Id
+ST-shade-GV1-NAME = RoomID
+ST-shade-GV2-NAME = Primary
+ST-shade-GV3-NAME = Secondary
+ST-shade-GV4-NAME = Tilt
+ST-shade-GV5-NAME = Capabilities
+ST-shade-GV6-NAME = Battery
+CMD-shade-OPEN-NAME = Open
+CMD-shade-CLOSE-NAME = Close
+CMD-shade-STOP-NAME = Stop
+CMD-shade-TILTOPEN-NAME = Tilt Open
+CMD-shade-TILTCLOSE-NAME = Tilt Close
+CMD-shade-JOG-NAME = Jog
+CMD-shade-QUERY-NAME = Query
+CMD-shade-SETPOS-NAME = Set Shade Position
 
-# virtualoffdelay
-ND-virtualoffdelay-NAME = Virtual offDelay Switch
-ND-virtualoffdelay-ICON = Switch
-ST-voffdelay-ST-NAME = Switch Status
-ST-voffdelay-DUR-NAME = offDelay
-CMD-voffdelay-DON-NAME = On
-CMD-voffdelay-DOF-NAME = Off
-CMD-voffdelay-TIMER-NAME = Timer
-CMD-voffdelay-SETDELAY-NAME = Set offDelay
+CMDP-SETPRIM-NAME = Primary
+CMDP-SETSECO-NAME = Secondary
+CMDP-SETTILT-NAME = Tilt
 
-# virtualtoggle
-ND-virtualtoggle-NAME = Virtual Toggle Switch
-ND-virtualtoggle-ICON = Switch
-ST-vtoggle-ST-NAME = Switch Status
-ST-vtoggle-DUR-NAME = onDuration
-ST-vtoggle-GV0-NAME = offDuration
-CMD-vtoggle-DON-NAME = On
-CMD-vtoggle-DOF-NAME = Off
-CMD-vtoggle-DFON-NAME = FOn(cancel)
-CMD-vtoggle-DFOF-NAME = FOff(cancel)
-CMD-vtoggle-SETONDUR-NAME = Set onDur
-CMD-vtoggle-SETOFFDUR-NAME = Set offDur
+PGM-CMD-SETPOS-FMT = /SETPRIM/${c}/->Primary to ${v} / /SETSECO//->Secondary to ${v} / /SETTILT//->Tilt to ${v} /
 
-# virtualgeneric
-ND-virtualgeneric-NAME = Virtual Generic
-ND-virtualgeneric-ICON = Switch
-ST-vgeneric-ST-NAME = Status
-ST-vgeneric-OL-NAME = On Level
-ST-vgeneric-GV0-NAME = On Level Type
-CMD-vgeneric-DON-NAME = On
-CMD-vgeneric-DOF-NAME = Off
-CMD-vgeneric-DFON-NAME = Fast On
-CMD-vgeneric-DFOF-NAME = Fast Off
-CMD-vgeneric-BRT-NAME = Brighten
-CMD-vgeneric-DIM-NAME = Dim
-CMD-vgeneric-SETST-NAME = Set Status
-CMD-vgeneric-SETOL-NAME = Set On Level
-CMD-vgeneric-OLTT-NAME = Toggle on Level Type
+SHADECAP-0 = Bottom Up
+SHADECAP-1 = Bottom Up w/ 90° Tilt
+SHADECAP-2 = Bottom Up w/ 180° Tilt
+SHADECAP-3 = Vertical (Traversing)
+SHADECAP-4 = Vertical (Traversing) w/ 180° Tilt
+SHADECAP-5 = Tilt Only 180°
+SHADECAP-6 = Top Down
+SHADECAP-7 = Top-Down/Bottom-Up
+SHADECAP-8 = Duolite
+SHADECAP-9 = Duolite with 90° Tilt
+SHADECAP-10 = Duolite with 180° Tilt
 
-ONLEVELTYPE-0 = Static
-ONLEVELTYPE-1 = Dynamic
+BATTERYST-0 = No Status
+BATTERYST-1 = Low
+BATTERYST-2 = Medium
+BATTERYST-3 = High
+BATTERYST-4 = Plugged In
 
-# virtualtemp
-ND-virtualtemp-NAME = Virtual Temperature
-ND-virtualtemp-ICON = TempSensor
-ST-vtemp-ST-NAME = Current
-ST-vtemp-GV1-NAME = Previous
-ST-vtemp-GV2-NAME = Since Last Update
-ST-vtemp-GV3-NAME = Highest
-ST-vtemp-GV4-NAME = Lowest
-ST-vtemp-GV5-NAME = Average
-ST-vtemp-GV6-NAME = Action 1
-ST-vtemp-GV7-NAME = Variable Type
-ST-vtemp-GV8-NAME = Variable ID
-ST-vtemp-GV9-NAME = Action 2
-ST-vtemp-GV10-NAME = Variable Type
-ST-vtemp-GV11-NAME = Variable ID
-ST-vtemp-GV12-NAME = Convert Raw to Prec
-ST-vtemp-GV13-NAME = Convert F to C
-CMD-vtemp-resetStats-NAME = Reset Statistics
-CMD-vtemp-setTemp-NAME = Set Current
-CMD-vtemp-setAction1-NAME = Action 1
-CMD-vtemp-setAction1id-NAME = Action 1 Var ID
-CMD-vtemp-setAction1type-NAME = Action 1 Var Type
-CMD-vtemp-setAction2-NAME = Action 2
-CMD-vtemp-setAction2id-NAME = Action 2 Var ID
-CMD-vtemp-setAction2type-NAME = Action 2 Var Type
-CMD-vtemp-setRawToPrec-NAME = Convert Raw to Prec
-CMD-vtemp-setCtoF-NAME = Convert C to F
-CMD-vtemp-setRaw-NAME = Convert Raw to Prec
+BOOL-2 = N/A
 
-# virtualtempc
-ND-virtualtempc-NAME = Virtual Temperature C
-ND-virtualtempc-ICON = TempSensor
-ST-vtempc-ST-NAME = Current
-ST-vtempc-GV1-NAME = Previous
-ST-vtempc-GV2-NAME = Since Last Update
-ST-vtempc-GV3-NAME = Highest
-ST-vtempc-GV4-NAME = Lowest
-ST-vtempc-GV5-NAME = Average
-ST-vtempc-GV6-NAME = Action 1
-ST-vtempc-GV7-NAME = Variable Type
-ST-vtempc-GV8-NAME = Variable ID
-ST-vtempc-GV9-NAME = Action 2
-ST-vtempc-GV10-NAME = Variable Type
-ST-vtempc-GV11-NAME = Variable ID
-ST-vtempc-GV12-NAME = Convert Raw to Prec
-ST-vtempc-GV13-NAME = Convert F to C
-CMD-vtempc-resetStats-NAME = Reset Statistics
-CMD-vtempc-setTemp-NAME = Set Current
-CMD-vtempc-setAction1-NAME = Action 1
-CMD-vtempc-setAction1id-NAME = Action 1 Var ID
-CMD-vtempc-setAction1type-NAME = Action 1 Var Type
-CMD-vtempc-setAction2-NAME = Action 2
-CMD-vtempc-setAction2id-NAME = Action 2 Var ID
-CMD-vtempc-setAction2type-NAME = Action 2 Var Type
-CMD-vtempc-setRawToPrec-NAME = Convert Raw to Prec
-CMD-vtempc-setFtoC-NAME = Convert F to C
-
-ON_OFF-0 = Off
-ON_OFF-1 = On
-
-ON_OFF_DELAY-0 = Off
-ON_OFF_DELAY-1 = On
-ON_OFF_DELAY-2 = Timer
-
-ON_OFF_TOGGLE-0 = Off
-ON_OFF_TOGGLE-1 = On
-ON_OFF_TOGGLE-2 = onTimer
-ON_OFF_TOGGLE-3 = offTimer
-
-ACTION-0 = None
-ACTION-1 = Push to
-ACTION-2 = Pull from
-
-TYPE-0 = None
-TYPE-1 = State Var
-TYPE-2 = State Init
-TYPE-3 = Integer Var
-TYPE-4 = Integer Init
-
-# garage
-ND-virtualgarage-NAME = MQTT Ratgdo
-ND-virtualgarage-ICON = GenericRspCtl
-
-CMD-GARAGE-LT_ON-NAME = LtOn
-CMD-GARAGE-LT_OFF-NAME = LtOff
-
-CMD-GARAGE-OPEN-NAME = Open
-CMD-GARAGE-CLOSE-NAME = Close
-CMD-GARAGE-TRIGGER-NAME = Trigger
-CMD-GARAGE-STOP-NAME = Stop
-
-CMD-GARAGE-LOCK-NAME = Lock
-CMD-GARAGE-UNLOCK-NAME = Unlock
-
-CMD-GARAGE-MOTORON-NAME = MotorON
-CMD-GARAGE-MOTOROFF-NAME = MotorOFF
-
-CMD-GARAGE-MOTION-NAME = Motion
-CMD-GARAGE-NOMOTION-NAME = NoMotion
-
-CMD-GARAGE-OBSTRUCTION-NAME = Obstructed
-CMD-GARAGE-NOOBSTRUCTION-NAME = Clear
-
-CMD-GARAGE-resetStats-NAME = ResetStats
-CMD-GARAGE-QUERY-NAME = Query
-
-ST-GARAGE-GV0-NAME = Light
-ST-GARAGE-GV1-NAME = Door
-ST-GARAGE-GV2-NAME = Command
-ST-GARAGE-GV3-NAME = Motion
-ST-GARAGE-GV4-NAME = Lock
-ST-GARAGE-GV5-NAME = Obstruction
-ST-GARAGE-GV6-NAME = UpdateTime
-ST-GARAGE-GV7-NAME = OpenTime
-ST-GARAGE-GV8-NAME = Motor
-ST-GARAGE-GV9-NAME = Position
-
-GLIGHT-0 = LtOff
-GLIGHT-1 = LtOn
-GLIGHT-100 = LtOn
-
-GDOOR-0 = Closed
-GDOOR-100 = Open
-GDOOR-101 = Unknown
-GDOOR-102 = Stopped
-GDOOR-103 = Closing
-GDOOR-104 = Opening
-
-GCOMMAND-0 = ---
-GCOMMAND-1 = Open
-GCOMMAND-2 = Close
-GCOMMAND-3 = Trigger
-GCOMMAND-4 = Stop
-
-GMOTION-0 = NoMotion
-GMOTION-1 = Motion
-
-GMOTOR-0 = MotorOff
-GMOTOR-1 = MotorOn
-
-GOBST-0 = Clear
-GOBST-1 = Obstructed
-
-GLOCK-0 = Unlocked
-GLOCK-1 = Locked
+# scene
+ND-sceneid-NAME = Scene
+ND-sceneid-ICON = Output
+ST-scene-ST-NAME = Activated
+ST-scene-GV0-NAME = Id
+# ST-scene-GV1-NAME = Calc Agrees
+CMD-scene-ACTIVATE-NAME = Activate
+CMD-scene-QUERY-NAME = Query
