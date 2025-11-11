@@ -133,7 +133,7 @@ Server-Sent Events endpoint for shade status updates.
 - `200 OK` - Request successful
 - `400 Bad Request` - Invalid request or not primary gateway
 - `404 Not Found` - Resource not found
-- `503 Service Unavailable` - PowerView setup not complete
+- `503 Service Unavailable` - Gateway setup not complete
 
 ## Authentication
 
@@ -152,4 +152,4 @@ Server-Sent Events endpoint for shade status updates.
 - Most endpoints accept and return `application/json`
 - SSE endpoints stream text/event-stream
 - Position values are typically 0-100 (percentage)
-- The gateway parameter can be an IP address or hostname (e.g., "powerview-g3.local")
+- The gateway parameter can be an IP address or hostname (e.g., "gateway-2001-1234-5678.local")

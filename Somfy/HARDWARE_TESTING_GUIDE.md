@@ -4,14 +4,16 @@
 **Status**: Ready for testing when hardware arrives
 **Prerequisites**: TaHoma gateway installed and configured
 
+📖 **See Also**: [HARDWARE_REFERENCE.md](HARDWARE_REFERENCE.md) for hardware specifications and installation requirements.
+
 ## Quick Start Checklist
 
 ### Before You Begin
 
-- [ ] TaHoma gateway physically installed
+- [ ] TaHoma gateway physically installed (see [placement requirements](HARDWARE_REFERENCE.md#rf-range-and-placement))
 - [ ] TaHoma app installed on mobile device
 - [ ] Phantom Blinds paired with TaHoma
-- [ ] Network connectivity verified
+- [ ] Network connectivity verified (WiFi 2.4GHz or Ethernet)
 - [ ] Polyglot NodeServer installed
 
 ---

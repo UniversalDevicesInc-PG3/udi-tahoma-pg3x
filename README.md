@@ -3,51 +3,67 @@
 
 ## Overview
 
-This nodeserver integrates Phantom Blinds motorized shades with the Universal Devices ISY/Polisy/EISY home automation systems through the Somfy TaHoma gateway. It provides comprehensive control and monitoring of Phantom motorized shades using the Somfy TaHoma API.
+This nodeserver integrates Phantom Blinds motorized shades with the Universal Devices ISY/Polisy/EISY home automation systems through the Somfy TaHoma gateway. It provides comprehensive control and monitoring of Phantom motorized shades using the Somfy TaHoma Developer Mode Local API.
+
+## Quick Start
+
+1. **Prerequisites**: TaHoma gateway with Developer Mode enabled (see [INSTALLATION.md](INSTALLATION.md))
+2. **Install**: Install NodeServer from Polyglot Store
+3. **Configure**: Enter Gateway PIN and Bearer Token in Polyglot UI
+4. **Discover**: Run Discover command to find all shades
+5. **Control**: Use ISY programs to control your shades
+
+📖 **Full Installation Guide**: [INSTALLATION.md](INSTALLATION.md)
 
 ## Features
 
-- **Automatic Discovery**: Automatically discovers all Somfy-compatible shades connected to your TaHoma gateway
-- **Real-time Status**: Monitors shade position, battery level, and operational status through Server-Sent Events (SSE)
-- **Full Control**: Control shade position, tilt, and presets through ISY programs and scenes
-- **Scene Support**: Create and manage shade scenes for controlling multiple shades simultaneously
-- **Robust Error Handling**: Automatic reconnection and error recovery for reliable operation
-- **Secure Authentication**: OAuth 2.0 authentication for secure API access
+- **Local API Control**: Direct connection to TaHoma on your network (no cloud required)
+- **Automatic Discovery**: Discovers all RTS and Zigbee devices from TaHoma
+- **Real-time Status**: Event-driven updates for shade position and status
+- **Full Control**: Open, Close, Stop, My Position, Tilt control
+- **Scene Support**: Execute TaHoma scenes from ISY
+- **Robust Error Handling**: Automatic reconnection and error recovery
 
 ## Requirements
 
 - Universal Devices ISY994i, Polisy, or EISY with Polyglot V3 (PG3x)
-- Somfy TaHoma gateway/hub
-- Phantom Blinds motorized shades with Somfy motors
-- Somfy TaHoma account with Developer API access
-- Internet connection for cloud API access
+- Somfy TaHoma RTS/Zigbee gateway (Item #1811731)
+- Phantom Blinds motorized shades with RTS motors
+- TaHoma Developer Mode enabled with Bearer Token
+- Network connectivity (2.4 GHz WiFi or Ethernet to TaHoma)
 
-## Supported Shade Types
+## Supported Devices
 
-- Roller shades
-- Venetian blinds (with tilt control)
-- Exterior venetian blinds
-- Awnings
-- Other Somfy RTS and io-homecontrol compatible devices
+- **RTS Motorized Shades**: Roller shades, venetian blinds, awnings, screens
+- **RTS with Tilt**: Blinds with slat tilt control
+- **Dual Shades**: Top-down/bottom-up configurations
+- **TaHoma Scenes**: Multi-shade coordinated actions
+- **Zigbee Devices**: Zigbee 3.0 compatible devices (untested)
 
 ## Installation
 
-1. **Install Nodeserver**
-   - Navigate to PG3x (Polyglot) interface
-   - Go to Nodeserver Store
-   - Search for "Phantom Blinds"
-   - Click Install
+**See**: [INSTALLATION.md](INSTALLATION.md) for complete installation instructions.
 
-2. **Configure API Access**
-   - Obtain Somfy Developer API credentials at <https://developer.somfy.com>
-   - Enter your Client ID and Client Secret in the nodeserver configuration
-   - Complete OAuth authentication flow when prompted
-   - See [POLYGLOT_CONFIG.md][config] for detailed configuration instructions
+### Quick Installation
 
-3. **Discover Devices**
-   - After authentication, the nodeserver will automatically discover your shades
-   - Shades will appear as nodes in the ISY Admin Console
-   - Configure shade names and settings as needed
+1. **Install NodeServer** in Polyglot UI from NodeServer Store
+2. **Configure Settings**:
+   - Gateway PIN: `1234-5678-9012` (from TaHoma device)
+   - Bearer Token: Generate in TaHoma app Developer Mode
+   - Use Local API: `true` (recommended)
+3. **Start NodeServer** and verify connection in logs
+4. **Discover Devices**: Right-click Controller → Discover
+
+### Configuration Parameters
+
+| Parameter | Required | Example | Description |
+|-----------|----------|---------|-------------|
+| Gateway PIN | Yes | `1234-5678-9012` | TaHoma gateway identifier |
+| Bearer Token | Yes | `abc123...` | Authentication token from app |
+| Use Local API | No | `true` | Local vs cloud (default: true) |
+| Verify SSL | No | `false` | Certificate verification (default: false) |
+
+📖 **Troubleshooting**: See [INSTALLATION.md](INSTALLATION.md#troubleshooting)
 
 ## Usage
 

@@ -41,25 +41,18 @@ The TaHoma local API requires **Bearer token** authentication:
 
 ## Documentation Files
 
+- `README.md` - This overview document
+- `HARDWARE_REFERENCE.md` - Hardware specifications and installation requirements
+- `FUTURE_ENHANCEMENTS.md` - Optional features and future improvements
 - `API_ENDPOINTS.md` - Complete TaHoma API endpoint reference
 - `EVENTS.md` - Event listener system and event types
 - `DATA_STRUCTURES.md` - JSON schemas from OpenAPI spec
 - `CONTROL_COMMANDS.md` - Device control examples
 - `EXAMPLES.md` - Complete workflow examples
 - `MOTOR_INFO.md` - Somfy motor types and protocols
-- `RESEARCH_NOTES.md` - Implementation notes and TODOs
 - `QUICK_REFERENCE.md` - Quick reference guide
-- `TAHOMA_VS_POWERVIEW.md` - Differences from Hunter Douglas
-
-## Key Differences from PowerView
-
-| Feature | TaHoma (Somfy) | PowerView (Hunter Douglas) |
-|---------|----------------|----------------------------|
-| Base URL | `https://gateway-{pin}.local:8443` | `http://{ip}` |
-| Authentication | Bearer token required | None |
-| Events | Event listeners (polling) | SSE streaming |
-| Protocol | HTTPS (self-signed cert) | HTTP |
-| Discovery | mDNS `_kizboxdev._tcp` | IP-based |
+- `HARDWARE_TESTING_GUIDE.md` - Hardware testing procedures
+- `TABLE_OF_CONTENTS.md` - Complete documentation index
 
 ## Important Notes
 

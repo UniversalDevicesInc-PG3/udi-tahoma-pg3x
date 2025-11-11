@@ -1,43 +1,66 @@
-devices:
+# Phantom Blinds TaHoma NodeServer Configuration Example
+# This file shows the configuration parameters for the TaHoma integration
 
-- id: 10
-  type:  "switch"
-  name: "TestSwitch"
-- id: 20
-  type:  "temperature"
-  name: "TestTemp"
-- id: 30
-  type:  "dimmer"
-  name: "TestDimmer"
-- id: 40
-  type:  "garage"
-  name:  "Ratgdo"
-  ratgdo: "True"
-  # below are optional & only individually used if defined
-  # each name refers to feature
-  # type {1: state var, 2:state init, 3:integer var, 4:integer init}
-  # Id number of variable
-  lightT: 1
-  lightId: 3
-  doorT: 1
-  doorId: 61
-  commandT: 1
-  commandId: 129
-  motionT: 1
-  motionId: 130
-  lockT: 1
-  lockId: 133
-  obstructT: 1
-  obstructId: 131
-- id: 50
-  type:  "ondelay"
-  name: "Test onDelay"
-  delay: 600
-- id: 60
-  type:  "offdelay"
-  name: "Test offDelay"
-  delay: 60
-- id: 70
-  type: "toggle"
-  ondelay: 600
-  offdelay: 700
+# TaHoma Gateway Configuration
+# Required: These settings connect to your TaHoma gateway
+
+gateway:
+  # Gateway PIN from TaHoma device (format: 1234-5678-9012)
+  # Found on bottom of TaHoma unit or in TaHoma app under Settings > Developer Mode
+  pin: "1234-5678-9012"
+
+  # Bearer token from TaHoma app
+  # Generate in TaHoma app: Settings > Developer Mode > Generate Token
+  # Note: Token is only visible when first created - save it securely!
+  token: "your-bearer-token-here"
+
+  # Use local API (recommended) or cloud API
+  # Local API: Direct connection to TaHoma on your network (port 8443)
+  # Cloud API: Connection through Somfy cloud servers
+  use_local_api: true
+
+  # Verify SSL certificate
+  # Set to false if you get certificate errors (TaHoma uses self-signed cert)
+  # Recommended: Add Somfy root CA instead - see HARDWARE_TESTING_GUIDE.md
+  verify_ssl: false
+
+# Optional: Discovery Settings
+discovery:
+  # Auto-discover devices on startup
+  auto_discover: true
+
+  # Discovery timeout in seconds
+  timeout: 30
+
+# Optional: Event Polling Settings
+events:
+  # Poll interval for events (seconds)
+  # TaHoma recommends 1 second maximum
+  poll_interval: 1.0
+
+  # Event listener timeout (seconds)
+  # TaHoma listeners expire after 10 minutes of inactivity
+  listener_timeout: 600
+
+# Optional: Logging Settings
+logging:
+  # Log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: INFO
+
+  # Enable detailed TaHoma API logging
+  debug_api: false
+
+# Optional: Node Naming
+naming:
+  # Include room name in shade nodes
+  # Example: "Living Room - Left Shade" vs "Left Shade"
+  include_room: true
+
+  # Maximum room name length (ISY has 30 char total limit)
+  room_limit: 15
+
+# Notes:
+# - All configuration is done in Polyglot UI, not this file
+# - This file is for reference only
+# - Actual configuration stored in Polyglot database
+# - See INSTALLATION.md for setup instructions

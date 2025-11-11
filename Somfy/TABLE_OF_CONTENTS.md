@@ -6,6 +6,7 @@
 - [**README.md**](README.md) - Main overview of Somfy TaHoma integration
 - [**QUICK_REFERENCE.md**](QUICK_REFERENCE.md) - Quick reference guide for common tasks
 - [**PROJECT_STATUS.md**](PROJECT_STATUS.md) - Current project status and progress
+- [**FUTURE_ENHANCEMENTS.md**](FUTURE_ENHANCEMENTS.md) - Optional features and future improvements
 
 ## Research & Analysis
 
@@ -13,6 +14,11 @@
 - [**FINDINGS_SUMMARY.md**](FINDINGS_SUMMARY.md) - Summary of key research findings
 - [**FINAL_SUMMARY.md**](FINAL_SUMMARY.md) - Comprehensive summary of integration approach
 - [**INTEGRATION_SUMMARY.md**](INTEGRATION_SUMMARY.md) - Integration strategy and architecture
+
+## Hardware Documentation
+
+- [**HARDWARE_REFERENCE.md**](HARDWARE_REFERENCE.md) - Hardware specifications and installation requirements
+- [**HARDWARE_TESTING_GUIDE.md**](HARDWARE_TESTING_GUIDE.md) - Guide for testing with actual hardware
 
 ## API Documentation
 
@@ -25,26 +31,10 @@
 ## Clarifications
 
 - [**CLARIFICATION_OAUTH_SSE.md**](CLARIFICATION_OAUTH_SSE.md) - OAuth and SSE implementation details
-- [**TAHOMA_VS_POWERVIEW.md**](TAHOMA_VS_POWERVIEW.md) - Comparison between TaHoma and PowerView
 
-## Migration Documentation
+## Project History (Archived)
 
-- [**MIGRATION_PLAN.md**](MIGRATION_PLAN.md) - Detailed migration plan from PowerView to TaHoma
-- [**MIGRATION_COMPLETE.md**](MIGRATION_COMPLETE.md) - Migration completion summary
-- [**POWERVIEW_REMOVAL_PLAN.md**](POWERVIEW_REMOVAL_PLAN.md) - PowerView code removal strategy
-- [**POWERVIEW_REMOVAL_COMPLETE.md**](POWERVIEW_REMOVAL_COMPLETE.md) - PowerView removal completion
-
-## Phase Documentation
-
-- [**PHASE1_COMPLETE.md**](PHASE1_COMPLETE.md) - Phase 1: Planning & Research
-- [**PHASE2_COMPLETE.md**](PHASE2_COMPLETE.md) - Phase 2: Core API Integration
-- [**PHASE3_COMPLETE.md**](PHASE3_COMPLETE.md) - Phase 3: Node Implementation
-- [**PHASE4_COMPLETE.md**](PHASE4_COMPLETE.md) - Phase 4: Documentation & Cleanup
-
-## Profile & Configuration
-
-- [**PROFILE_UPDATE_PLAN.md**](PROFILE_UPDATE_PLAN.md) - ISY profile update strategy
-- [**PROFILE_UPDATE_COMPLETE.md**](PROFILE_UPDATE_COMPLETE.md) - Profile update completion
+Migration and phase documentation has been moved to the `archive/` directory to reduce clutter while preserving project history.
 
 ## Code Quality & Testing
 
@@ -54,6 +44,7 @@
 
 - [**EXAMPLES.md**](EXAMPLES.md) - Code examples and usage patterns
 - [**HARDWARE_TESTING_GUIDE.md**](HARDWARE_TESTING_GUIDE.md) - Guide for testing with actual hardware
+- [**HARDWARE_REFERENCE.md**](HARDWARE_REFERENCE.md) - Hardware specifications and installation requirements
 
 ---
 
@@ -61,23 +52,15 @@
 
 ### By Topic
 **Getting Started**: README.md → QUICK_REFERENCE.md → PROJECT_STATUS.md
+**Hardware Setup**: HARDWARE_REFERENCE.md → HARDWARE_TESTING_GUIDE.md
 **API Reference**: API_ENDPOINTS.md → CONTROL_COMMANDS.md → DATA_STRUCTURES.md → SSE_EVENTS.md
-**Migration**: MIGRATION_PLAN.md → PHASE[1-4]_COMPLETE.md → MIGRATION_COMPLETE.md
-**PowerView Removal**: POWERVIEW_REMOVAL_PLAN.md → POWERVIEW_REMOVAL_COMPLETE.md
-**Profile Updates**: PROFILE_UPDATE_PLAN.md → PROFILE_UPDATE_COMPLETE.md
-
-### By Phase
-**Phase 1**: PHASE1_COMPLETE.md (Planning & Research)
-**Phase 2**: PHASE2_COMPLETE.md (Core API Integration)
-**Phase 3**: PHASE3_COMPLETE.md (Node Implementation)
-**Phase 4**: PHASE4_COMPLETE.md (Documentation & Cleanup)
+**Project History**: See `archive/` directory for migration and phase documentation
 
 ### Technical References
 
 - API Details: API_ENDPOINTS.md, CONTROL_COMMANDS.md, DATA_STRUCTURES.md
-- Events: SSE_EVENTS.md
-- Hardware: MOTOR_INFO.md, HARDWARE_TESTING_GUIDE.md
-- Examples: EXAMPLES.md
+- Hardware: HARDWARE_REFERENCE.md, MOTOR_INFO.md
+- Testing: HARDWARE_TESTING_GUIDE.md, EXAMPLES.md
 
 ---
 

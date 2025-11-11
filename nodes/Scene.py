@@ -36,7 +36,7 @@ class Scene(udi_interface.Node):
             primary: The address of the primary controller node.
             address: The address of this scene node.
             name: The name of this scene node.
-            sid (str): The unique ID of the Hunter Douglas PowerView scene.
+            sid (str): The TaHoma scene OID (unique identifier).
         """
         super().__init__(poly, primary, address, name)
 
@@ -114,7 +114,7 @@ class Scene(udi_interface.Node):
         """The main loop for processing events from the gateway event queue.
 
         This method runs in a dedicated thread and continuously processes events
-        relevant to this scene, such as 'home' updates and Gen 3 specific events.
+        relevant to this scene, such as 'home' updates and TaHoma events.
         """
         self.event_polling_in = True
 
@@ -167,24 +167,14 @@ class Scene(udi_interface.Node):
                         f"scene event error sid = {self.sid}: {ex}", exc_info=True
                     )
 
-            # process G3 events
-            if self.controller.generation == 3:
-                try:
-                    self._poll_events_for_g3(gateway_events)
-                except Exception as ex:
-                    LOGGER.error(
-                        f"scene:{self.sid}, g3 event error {ex}", exc_info=True
-                    )
-
         self.event_polling_in = False
         LOGGER.info(f"shade:{self.sid} exiting poll events due to controller shutdown")
 
-    def _poll_events_for_g3(self, gateway_events):
-        """Processes Gen 3 specific gateway events for the scene.
+    def _poll_events_for_tahoma(self, gateway_events):
+        """Processes TaHoma gateway events for the scene.
 
         This method handles events like 'scene-calc', 'scene-activated',
-        'scene-deactivated', and 'scene-add' that are specific to Gen 3
-        gateways.
+        and 'scene-deactivated' from TaHoma.
 
         Args:
             gateway_events (list[dict]): A list of gateway events to process.
@@ -422,26 +412,21 @@ class Scene(udi_interface.Node):
     def check_if_calc_active_match_gateway(self):
         """Compares the calculated active state with the gateway's reported active state.
 
-        This method is primarily for Gen 3 gateways to verify consistency
-        between the NodeServer's internal calculation and the gateway's
-        understanding of scene activity.
+        This method verifies consistency between the NodeServer's internal
+        calculation and TaHoma's understanding of scene activity.
 
         Returns:
             bool: True if the calculated active state matches the gateway's
                   reported state, False otherwise.
         """
-        if self.controller.gateway == 2:
-            LOGGER.info("check = GEN2, no action")
-            do_they_agree = False
-        else:
-            is_in_set = self.sid in self.controller.sceneIdsActive_calc
-            is_in_list = self.sid in self.controller.sceneIdsActive
+        is_in_set = self.sid in self.controller.sceneIdsActive_calc
+        is_in_list = self.sid in self.controller.sceneIdsActive
 
-            # The collections agree if they both contain the element or both do not.
-            do_they_agree = is_in_set == is_in_list
+        # The collections agree if they both contain the element or both do not.
+        do_they_agree = is_in_set == is_in_list
 
-            if not do_they_agree:
-                LOGGER.warning(f"scene:{self.sid} calc != gateway")
+        if not do_they_agree:
+            LOGGER.warning(f"scene:{self.sid} calc != gateway")
 
         return do_they_agree
 

@@ -42,6 +42,7 @@ ST-shade-GV6-NAME = Battery
 CMD-shade-OPEN-NAME = Open
 CMD-shade-CLOSE-NAME = Close
 CMD-shade-STOP-NAME = Stop
+CMD-shade-MY-NAME = My Position
 CMD-shade-TILTOPEN-NAME = Tilt Open
 CMD-shade-TILTCLOSE-NAME = Tilt Close
 CMD-shade-QUERY-NAME = Query

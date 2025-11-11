@@ -41,6 +41,7 @@
             <cmd id="OPEN" />
             <cmd id="CLOSE" />
             <cmd id="STOP" />
+            <cmd id="MY" />
             <cmd id="TILTOPEN" />
             <cmd id="TILTCLOSE" />
           </sends>
@@ -48,6 +49,7 @@
             <cmd id="OPEN" />
             <cmd id="CLOSE" />
             <cmd id="STOP" />
+            <cmd id="MY" />
             <cmd id="TILTOPEN" />
             <cmd id="TILTCLOSE" />
             <cmd id="QUERY" />
@@ -78,11 +80,13 @@
             <cmd id="OPEN" />
             <cmd id="CLOSE" />
             <cmd id="STOP" />
+            <cmd id="MY" />
           </sends>
           <accepts>
             <cmd id="OPEN" />
             <cmd id="CLOSE" />
             <cmd id="STOP" />
+            <cmd id="MY" />
             <cmd id="QUERY" />
             <cmd id="SETPOS" >
               <p id="SETPRIM" editor="POSITION" />
@@ -109,11 +113,13 @@
             <cmd id="OPEN" />
             <cmd id="CLOSE" />
             <cmd id="STOP" />
+            <cmd id="MY" />
           </sends>
           <accepts>
             <cmd id="OPEN" />
             <cmd id="CLOSE" />
             <cmd id="STOP" />
+            <cmd id="MY" />
             <cmd id="QUERY" />
             <cmd id="SETPOS" >
               <p id="SETPRIM" editor="POSITION" />

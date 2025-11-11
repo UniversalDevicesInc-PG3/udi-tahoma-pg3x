@@ -18,6 +18,10 @@ from udi_interface import Node, LOGGER, Custom, LOG_HANDLER
 
 # personal libraries
 from utils.tahoma_client import TaHomaClient
+from utils.config_validation import (
+    validate_gateway_pin,
+    validate_bearer_token,
+)
 from pyoverkiz.exceptions import (
     InvalidEventListenerIdException,
     NoRegisteredEventListenerException,
@@ -473,27 +477,18 @@ class Controller(Node):
 
         # Check for required TaHoma token
         token = self.Parameters.get("tahoma_token", "")
-        if not token:
-            LOGGER.warning("TaHoma token not configured")
-            self.Notices["config"] = (
-                "TaHoma token required - enable Developer Mode in TaHoma app and generate token"
-            )
+        is_valid, error_msg = validate_bearer_token(token)
+        if not is_valid:
+            LOGGER.error(f"Bearer token validation failed: {error_msg}")
+            self.Notices["config"] = error_msg
             return False
 
         # Check for gateway PIN
         gateway_pin = self.Parameters.get("gateway_pin", "")
-        if not gateway_pin:
-            LOGGER.warning("Gateway PIN not configured")
-            self.Notices["config"] = "Gateway PIN required - format: 1234-5678-9012"
-            return False
-
-        # Validate PIN format (basic check)
-        pin_parts = gateway_pin.split("-")
-        if len(pin_parts) != 3 or not all(part.isdigit() for part in pin_parts):
-            LOGGER.error(f"Invalid gateway PIN format: {gateway_pin}")
-            self.Notices["config"] = (
-                "Invalid gateway PIN format - should be: 1234-5678-9012"
-            )
+        is_valid, error_msg = validate_gateway_pin(gateway_pin)
+        if not is_valid:
+            LOGGER.error(f"Gateway PIN validation failed: {error_msg}")
+            self.Notices["config"] = error_msg
             return False
 
         # Store validated parameters
@@ -639,7 +634,7 @@ class Controller(Node):
             LOGGER.info("Event polling stopped")
 
     def process_tahoma_event(self, event):
-        """Process event from TaHoma (replaces PowerView event processing).
+        """Process event from TaHoma gateway.
 
         Maps TaHoma event types to internal actions and updates nodes accordingly.
 

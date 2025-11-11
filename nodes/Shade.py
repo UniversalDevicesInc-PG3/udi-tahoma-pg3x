@@ -1,14 +1,13 @@
-"""Module for the Hunter Douglas PowerView Shade nodes in a Polyglot v3 NodeServer.
+"""Module for Somfy TaHoma/Phantom Blinds Shade nodes in a Polyglot v3 NodeServer.
 
 This module defines the base Shade class and several subclasses, each representing
-a different type of Hunter Douglas PowerView shade with varying capabilities
-(e.g., primary, secondary, and tilt controls).
+different types of motorized shades with varying capabilities (e.g., primary,
+secondary, and tilt controls) controlled via Somfy TaHoma.
 
 (C) 2025 Stephen Jenkins
 """
 
 # std libraries
-from datetime import datetime, timezone
 from threading import Thread
 
 # external libraries
@@ -17,74 +16,20 @@ import udi_interface
 LOGGER = udi_interface.LOGGER
 
 
-"""
-HunterDouglas PowerView G3 url's
-"""
-URL_DEFAULT_GATEWAY = "powerview-g3.local"
-URL_GATEWAY = "http://{g}/gateway"
-URL_HOME = "http://{g}/home"
-URL_ROOMS = "http://{g}/home/rooms"
-URL_ROOM = "http://{g}/home/rooms/{id}"
-URL_SHADES = "http://{g}/home/shades/{id}"
-URL_SHADES_MOTION = "http://{g}/home/shades/{id}/motion"
-URL_SHADES_POSITIONS = "http://{g}/home/shades/positions?ids={id}"
-URL_SHADES_STOP = "http://{g}/home/shades/stop?ids={id}"
-URL_SCENES = "http://{g}/home/scenes/{id}"
-URL_SCENES_ACTIVATE = "http://{g}/home/scenes/{id}/activate"
-URL_EVENTS = "http://{g}/home/events"
-URL_EVENTS_SCENES = "http://{g}/home/scenes/events"
-URL_EVENTS_SHADES = "http://{g}/home/shades/events"
-
-
-"""
-HunterDouglas PowerView G2 url's
-from api file: [[https://github.com/sejgit/indigo-powerview/blob/master/PowerView%20API.md]]
-"""
-URL_G2_HUB = "http://{g}/api/userdata/"
-URL_G2_ROOMS = "http://{g}/api/rooms"
-URL_G2_ROOM = "http://{g}/api/rooms/{id}"
-URL_G2_SHADES = "http://{g}/api/shades"
-URL_G2_SHADE = "http://{g}/api/shades/{id}"
-URL_G2_SHADE_BATTERY = "http://{g}/api/shades/{id}?updateBatteryLevel=true"
-URL_G2_SCENES = "http://{g}/api/scenes"
-URL_G2_SCENE = "http://{g}/api/scenes?sceneid={id}"
-URL_G2_SCENES_ACTIVATE = "http://{g}/api/scenes?sceneId={id}"
-G2_DIVR = 65535
-
-
 class Shade(udi_interface.Node):
-    """Polyglot v3 NodeServer node for a generic Hunter Douglas PowerView Shade.
+    """Polyglot v3 NodeServer node for a Somfy TaHoma motorized shade.
 
-    This is the base class for all Hunter Douglas PowerView shades. It handles
-    positioning, status updates, and commands for a shade. Subclasses are used
-    to represent shades with different physical capabilities.
+    This is the base class for all TaHoma shades. It handles positioning,
+    status updates, and commands for a shade. Subclasses are used to represent
+    shades with different physical capabilities.
 
     Attributes:
         id (str): The Polyglot node ID for this shade type.
 
-    Shade Capabilities:
-        Type 0 - Bottom Up: Standard roller/screen shades, Duette bottom up.
-            Uses the “primary” control type.
-        Type 1 - Bottom Up w/ 90° Tilt: Silhouette, Pirouette.
-            Uses the “primary” and “tilt” control types.
-        Type 2 - Bottom Up w/ 180° Tilt: Silhouette Halo.
-            Uses the “primary” and “tilt” control types.
-        Type 3 - Vertical (Traversing): Skyline, Duette Vertiglide, Design
-            Studio Drapery. Uses the “primary” control type.
-        Type 4 - Vertical (Traversing) w/ 180° Tilt: Luminette.
-            Uses the “primary” and “tilt” control types.
-        Type 5 - Tilt Only 180°: Palm Beach Shutters, Parkland Wood Blinds.
-            Uses the “tilt” control type.
-        Type 6 - Top Down: Duette Top Down.
-            Uses the “primary” control type.
-        Type 7 - Top-Down/Bottom-Up: Duette TDBU, Vignette TDBU.
-            Uses the “primary” and “secondary” control types.
-        Type 8 - Duolite (front and rear shades): Roller Duolite, Vignette
-            Duolite, Dual Roller. Uses the “primary” and “secondary” control types.
-        Type 9 - Duolite with 90° Tilt: Silhouette Duolite, Silhouette Adeux.
-            Uses the “primary,” “secondary,” and “tilt” control types.
-        Type 10 - Duolite with 180° Tilt: Silhouette Halo Duolite.
-            Uses the “primary,” “secondary,” and “tilt” control types.
+    Control Types:
+        - Primary: Main shade position (0-100%, where 0=closed, 100=open)
+        - Secondary: For dual shades (top-down/bottom-up or duolite)
+        - Tilt: For shades with tilting slats (0-100%, where 0=closed, 100=open)
     """
 
     id = "shadeid"
@@ -97,8 +42,7 @@ class Shade(udi_interface.Node):
             primary: The address of the primary controller node.
             address: The address of this shade node.
             name: The name of this shade node.
-            sid (str): For TaHoma: deviceURL (e.g., "io://1234-5678-9012/12345678")
-                      For PowerView: shade ID (integer)
+            sid (str): TaHoma deviceURL (e.g., "io://1234-5678-9012/12345678")
         """
         super().__init__(poly, primary, address, name)
         self.poly = poly
@@ -108,7 +52,6 @@ class Shade(udi_interface.Node):
         self.name = name
 
         # For TaHoma, sid is the deviceURL string
-        # For PowerView, it's an integer shade ID
         self.sid = sid
         self.device_url = (
             sid if isinstance(sid, str) and sid.startswith("io://") else None
@@ -138,7 +81,7 @@ class Shade(udi_interface.Node):
             device_id_hash = abs(hash(self.device_url)) % 9999999
             self.setDriver("GV0", device_id_hash, report=True, force=True)
         else:
-            # PowerView device - use integer sid
+            # Legacy: use integer sid if not TaHoma deviceURL
             self.setDriver("GV0", self.sid, report=True, force=True)
 
         # wait for controller start ready
@@ -192,7 +135,7 @@ class Shade(udi_interface.Node):
         """The main loop for processing events from the gateway event queue.
 
         This method runs in a dedicated thread and continuously processes events
-        relevant to this shade, such as 'home' updates and Gen 3 specific events.
+        relevant to this shade, such as 'home' updates and TaHoma events.
         """
         self.event_polling_in = True
 
@@ -222,93 +165,15 @@ class Shade(udi_interface.Node):
                         f"shade event error sid = {self.sid}: {ex}", exc_info=True
                     )
 
-            # process G3 events
-            if self.controller.generation == 3:
-                try:
-                    self._poll_events_for_g3(gateway_events)
-                except Exception as ex:
-                    LOGGER.error(
-                        f"shade:{self.sid}, g3 event error {ex}", exc_info=True
-                    )
-
         self.event_polling_in = False
         LOGGER.info(f"shade:{self.sid} exiting poll events due to controller shutdown")
-
-    def _poll_events_for_g3(self, gateway_events):
-        """Processes Gen 3 specific gateway events for the shade.
-
-        This method handles events like 'motion-started', 'motion-stopped',
-        'shade-online', 'shade-offline', and 'battery-alert' that are specific
-        to Gen 3 gateways.
-
-        Args:
-            gateway_events (list[dict]): A list of gateway events to process.
-        """
-        # handle the G3 events in isoDate order
-        try:
-            # filter events without isoDate like home
-            event_nohome = (e for e in gateway_events if e.get("isoDate") is not None)
-            # get most recent isoDate
-            event = min(event_nohome, key=lambda x: x["isoDate"], default={})
-
-        except (ValueError, TypeError) as ex:  # Catch specific exceptions
-            LOGGER.error(
-                f"Error filtering or finding minimum event: {ex}", exc_info=True
-            )
-            event = {}
-
-        # only process the rest for this particular shade
-        if event.get("id") == self.sid:
-            # motion-started event
-            if event.get("evt") == "motion-started":
-                LOGGER.info(f"shade {self.sid} motion-started event")
-                self.updatePositions(self.posToPercent(event["targetPositions"]))
-                self.setDriver("ST", 1, report=True, force=True)
-                self.reportCmd("DON", 2)
-                self.controller.remove_gateway_event(event)
-
-            # motion-stopped event
-            if event.get("evt") == "motion-stopped":
-                LOGGER.info(f"shade {self.sid} motion-stopped event")
-                self.updatePositions(self.posToPercent(event["currentPositions"]))
-                self.setDriver("ST", 0, report=True, force=True)
-                self.reportCmd("DOF", 2)
-                # add event for scene active calc
-                d = datetime.now(timezone.utc).isoformat().rstrip("+00:00") + "Z"
-                e = {"evt": "scene-calc", "isoDate": d, "shadeId": self.sid}
-                e["scenes"] = list(self.controller.scenes_map.keys())
-                self.controller.append_gateway_event(e)
-                self.controller.remove_gateway_event(event)
-
-            # shade-online event
-            if event.get("evt") == "shade-online":
-                LOGGER.info(f"shade {self.sid} shade-online event")
-                self.updatePositions(self.posToPercent(event["currentPositions"]))
-                self.controller.remove_gateway_event(event)
-
-            # # shade-offline event
-            if event.get("evt") == "shade-offline":
-                LOGGER.error(f"shade {self.sid} shade-offline event")
-                self.updatePositions(self.posToPercent(event["currentPositions"]))
-                self.controller.remove_gateway_event(event)
-
-            # # battery-alert event
-            if event.get("evt") == "battery-alert":
-                LOGGER.error(f"shade {self.sid} battery-event")
-                # the shade/event labels the battery different Status/level
-                self.controller.shades_map[self.sid]["batteryStatus"] = event[
-                    "batteryLevel"
-                ]
-                self.setDriver("GV6", event["batterylevel"], report=True, force=True)
-                self.updatePositions(self.posToPercent(event["currentPositions"]))
-                self.controller.remove_gateway_event(event)
 
     def updateData(self):
         """Updates the node's drivers and name from the controller's data map.
 
         This method retrieves the latest shade data from the controller, updates
         all relevant drivers on the ISY, and renames the node if the name has
-        changed on the PowerView gateway.
+        changed on TaHoma.
 
         Returns:
             bool: True if the update was successful, False otherwise.
@@ -442,7 +307,7 @@ class Shade(udi_interface.Node):
     def posToPercent(self, pos):
         """Converts a dictionary of raw position values to percentages.
 
-        This is used to process position data from Gen 3 gateway events.
+        This is used to process position data from TaHoma gateway events.
 
         Args:
             pos (dict): A dictionary of raw position values.
@@ -498,17 +363,10 @@ class Shade(udi_interface.Node):
         """
         LOGGER.info(f"cmd Shade Stop {self.lpfx}, {command}")
 
-        if self.device_url:
-            # TaHoma: use 'stop' command
-            self.execute_tahoma_command("stop", [])
-            self.reportCmd("STOP", 2)
-        elif self.controller.generation == 3:
-            # PowerView Gen 3
-            shadeUrl = URL_SHADES_STOP.format(g=self.controller.gateway, id=self.sid)
-            self.controller.put(shadeUrl)
-            self.reportCmd("STOP", 2)
-        elif self.controller.generation == 2:
-            LOGGER.error(f"cmd Shade Stop error (none in gen2) {self.lpfx}, {command}")
+        # TaHoma: use 'stop' command
+        self.execute_tahoma_command("stop", [])
+        self.reportCmd("STOP", 2)
+        LOGGER.debug(f"Exit {self.lpfx}")
 
     def cmdTiltOpen(self, command):
         """Handles the 'Tilt Open' command from the ISY.
@@ -536,6 +394,24 @@ class Shade(udi_interface.Node):
         self.execute_tahoma_command("setOrientation", [0])
 
         self.reportCmd("TILTCLOSE", 2)
+        LOGGER.debug(f"Exit {self.lpfx}")
+
+    def cmdMy(self, command):
+        """Handles the 'MY' preset command from the ISY.
+
+        This command moves the shade to its pre-programmed "My" position,
+        which is stored in the motor's memory (not in TaHoma). The MY
+        position is typically set using an RTS remote control.
+
+        Args:
+            command (dict): The command payload from Polyglot.
+        """
+        LOGGER.info(f"cmd Shade MY {self.lpfx}, {command}")
+
+        # TaHoma: use 'my' command (no parameters, uses motor's stored position)
+        self.execute_tahoma_command("my", [])
+
+        self.reportCmd("MY", 2)
         LOGGER.debug(f"Exit {self.lpfx}")
 
     def query(self, command=None):
@@ -596,7 +472,7 @@ class Shade(udi_interface.Node):
     def set_tahoma_positions(self, pos):
         """Sets TaHoma device positions from position dictionary.
 
-        Maps PowerView-style position dict to TaHoma commands.
+        Maps position dictionary to TaHoma commands.
 
         Args:
             pos (dict): Position dictionary with keys: primary, secondary, tilt
@@ -690,6 +566,7 @@ class Shade(udi_interface.Node):
         "OPEN": cmdOpen,
         "CLOSE": cmdClose,
         "STOP": cmdStop,
+        "MY": cmdMy,
         "TILTOPEN": cmdTiltOpen,
         "TILTCLOSE": cmdTiltClose,
         "QUERY": query,
