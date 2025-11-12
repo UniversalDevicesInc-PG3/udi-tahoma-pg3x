@@ -476,7 +476,7 @@ class Controller(Node):
         self.Notices.delete("config")
 
         # Check for required TaHoma token
-        token = self.Parameters.get("tahoma_token", "")
+        token = str(self.Parameters.get("tahoma_token", ""))
         is_valid, error_msg = validate_bearer_token(token)
         if not is_valid:
             LOGGER.error(f"Bearer token validation failed: {error_msg}")
@@ -484,7 +484,7 @@ class Controller(Node):
             return False
 
         # Check for gateway PIN
-        gateway_pin = self.Parameters.get("gateway_pin", "")
+        gateway_pin = str(self.Parameters.get("gateway_pin", ""))
         is_valid, error_msg = validate_gateway_pin(gateway_pin)
         if not is_valid:
             LOGGER.error(f"Gateway PIN validation failed: {error_msg}")

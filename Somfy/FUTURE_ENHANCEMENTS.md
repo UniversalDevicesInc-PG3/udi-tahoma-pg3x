@@ -6,6 +6,84 @@ This document tracks potential improvements and optional features for the Phanto
 
 ## Priority: Medium
 
+### YAML Configuration File Support
+
+**Status**: Not implemented
+**Date Added**: 2025-11-11
+**Source**: User request for enhanced configuration management
+
+**Description**:
+Add support for reading configuration from a YAML file in addition to Polyglot
+UI parameters. This would allow bulk configuration and easier management of
+complex setups.
+
+**Implementation Plan**:
+
+1. Add `config_file` parameter to Polyglot configuration
+   - User provides path to YAML file (e.g., `/path/to/config.yaml`)
+   - Optional parameter - if not provided, use Polyglot params only
+
+2. Load and merge configurations:
+
+   ```python
+   # In nodes/Controller.py parameterHandler()
+   config_file = self.Parameters.get("config_file", "")
+   if config_file and os.path.exists(config_file):
+       yaml_params = load_yaml_config(config_file)
+       # Merge: Polyglot params take precedence over YAML
+       merged_params = {**yaml_params, **polyglot_params}
+   ```
+
+3. Configuration precedence (highest to lowest):
+   - Polyglot UI parameters (always win)
+   - YAML file parameters
+   - Default values
+
+4. YAML structure follows `exampleConfigFile.yaml`:
+   - `gateway.pin` → `gateway_pin`
+   - `gateway.token` → `tahoma_token`
+   - `gateway.use_local_api` → `use_local_api`
+   - `gateway.verify_ssl` → `verify_ssl`
+   - Additional optional parameters as nested structure
+
+**Benefits**:
+
+- Easier bulk configuration management
+- Version control for configuration
+- Simpler multi-gateway setup (future)
+- Template-based deployment
+- Better documentation of configuration options
+
+**Code Locations**:
+
+- `nodes/Controller.py` - Add YAML loading in `parameterHandler()`
+- `utils/config_validation.py` - Add YAML validation function
+- `exampleConfigFile.yaml` - Update with clearer mapping to Polyglot params
+- `INSTALLATION.md` - Document YAML config usage
+
+**Considerations**:
+
+- Requires `pyyaml` dependency
+- Need error handling for invalid YAML
+- Security: Validate file path to prevent directory traversal
+- Clear documentation on parameter name mapping
+- Polyglot UI should always override YAML (for safety)
+
+**Example Usage**:
+
+```yaml
+# myconfig.yaml
+gateway:
+  pin: "1234-5678-9012"
+  token: "abc123xyz..."
+  use_local_api: true
+  verify_ssl: false
+```
+
+Then in Polyglot UI, set: `config_file = /home/polyglot/myconfig.yaml`
+
+---
+
 ### Mock Testing with Real API Responses
 
 **Status**: Deferred until post-hardware testing
@@ -108,6 +186,120 @@ Add validation and warnings when approaching TaHoma hardware capacity limits.
 ---
 
 ## Priority: Low
+
+### Persistent State Storage for Shades and Scenes
+
+**Status**: Not implemented
+**Date Added**: 2025-11-11
+**Source**: User request for improved state persistence
+
+**Description**:
+Store shade and scene state data in Polyglot's Data storage using the
+udi_interface library. This would preserve state across NodeServer restarts
+and allow faster startup without querying TaHoma.
+
+**Current State**:
+
+- Shade and scene states stored in memory only (Controller.devices_map,
+  scenarios_map)
+- State lost on NodeServer restart
+- Must query TaHoma on every startup
+- No historical state data
+
+**Implementation Plan**:
+
+1. Use existing `utils/node_funcs.py` helper functions:
+   - `load_persistent_data()` - Load state on node startup
+   - `store_values()` - Save state to Polyglot Data
+   - `_apply_state()` - Apply values with defaults
+   - `_push_drivers()` - Update ISY drivers
+
+2. Define FieldSpec for shade state:
+
+   ```python
+   # In nodes/Shade.py
+   FIELDS: dict[str, FieldSpec] = {
+       # State variables (pushed to drivers)
+       "primary_position": FieldSpec(driver="GV2", default=0, data_type="state"),
+       "secondary_position": FieldSpec(driver="GV3", default=0, data_type="state"),
+       "tilt_position": FieldSpec(driver="GV4", default=0, data_type="state"),
+       "battery_status": FieldSpec(driver="GV6", default=0, data_type="state"),
+       # Config data (not pushed to drivers)
+       "device_url": FieldSpec(driver=None, default="", data_type="config"),
+       "last_updated": FieldSpec(driver=None, default="", data_type="config"),
+   }
+   ```
+
+3. Define FieldSpec for scene state:
+
+   ```python
+   # In nodes/Scene.py
+   FIELDS: dict[str, FieldSpec] = {
+       "active": FieldSpec(driver="ST", default=0, data_type="state"),
+       "scene_oid": FieldSpec(driver=None, default="", data_type="config"),
+       "last_activated": FieldSpec(driver=None, default="", data_type="config"),
+   }
+   ```
+
+4. Modify node start() methods:
+
+   ```python
+   def start(self):
+       self.data = {}  # Initialize data dict
+       load_persistent_data(self, FIELDS)
+       # Continue with existing startup...
+   ```
+
+5. Store state on updates:
+
+   ```python
+   def updatePositions(self, positions):
+       # Update positions
+       self.data["primary_position"] = positions.get("primary")
+       # ... update other fields
+       store_values(self)  # Persist to Polyglot
+   ```
+
+**Benefits**:
+
+- Faster startup (don't wait for TaHoma queries)
+- State preserved across restarts
+- Last known good state available offline
+- Historical state tracking possible
+- Reduced TaHoma API calls
+
+**Code Locations**:
+
+- `nodes/Shade.py` - Add FIELDS definition and use helper functions
+- `nodes/Scene.py` - Add FIELDS definition and use helper functions
+- `utils/node_funcs.py` - Already has required helper functions
+- `test/test_node_funcs.py` - Already has tests for helper functions
+
+**Considerations**:
+
+- State may become stale if TaHoma controlled externally
+- Need periodic refresh from TaHoma to stay synced
+- Initial startup still needs TaHoma query for discovery
+- Polyglot Data size limits (unlikely to be an issue)
+- Backward compatibility with existing installations
+
+**Implementation Steps**:
+
+1. Add FieldSpec definitions to Shade and Scene nodes
+2. Initialize `self.data = {}` in `__init__` methods
+3. Call `load_persistent_data()` in `start()` methods
+4. Call `store_values()` after state updates
+5. Test state persistence across restarts
+6. Add periodic refresh from TaHoma (every 5-10 minutes)
+
+**Testing**:
+
+- Verify state loads correctly on startup
+- Verify state persists across NodeServer restart
+- Verify state updates when positions change
+- Verify state doesn't interfere with TaHoma updates
+
+---
 
 ### Multi-Gateway Discovery
 

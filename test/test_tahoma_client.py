@@ -56,7 +56,7 @@ async def test_tahoma_client_get_devices(mock_overkiz_client):
 
     # Setup mock devices
     mock_device = Mock()
-    mock_device.deviceURL = "io://1234-5678-9012/12345678"
+    mock_device.device_url = "io://1234-5678-9012/12345678"
     mock_device.label = "Test Shade"
     mock_instance.get_devices.return_value = [mock_device]
 
@@ -66,7 +66,7 @@ async def test_tahoma_client_get_devices(mock_overkiz_client):
     devices = await client.get_devices()
 
     assert len(devices) == 1
-    assert devices[0].deviceURL == "io://1234-5678-9012/12345678"
+    assert devices[0].device_url == "io://1234-5678-9012/12345678"
 
 
 @pytest.mark.asyncio
@@ -160,21 +160,21 @@ async def test_create_tahoma_client_convenience(mock_overkiz_client):
 
 @pytest.mark.asyncio
 async def test_get_device_url_from_address():
-    """Test helper to get deviceURL from node address."""
+    """Test helper to get device_url from node address."""
     client = TaHomaClient(token="test-token", gateway_pin="1234-5678-9012")
 
     # Mock devices
     mock_device1 = Mock()
-    mock_device1.deviceURL = "io://1234-5678-9012/12345678"
+    mock_device1.device_url = "io://1234-5678-9012/12345678"
     mock_device2 = Mock()
-    mock_device2.deviceURL = "io://1234-5678-9012/87654321"
+    mock_device2.device_url = "io://1234-5678-9012/87654321"
 
     devices = [mock_device1, mock_device2]
 
     # Test finding device
-    device_url = client.get_device_url_from_address("sh12345678", devices)
+    device_url = client.get_device_url_from_address("sh12345678", devices)  # type: ignore[arg-type]
     assert device_url == "io://1234-5678-9012/12345678"
 
     # Test not found
-    device_url = client.get_device_url_from_address("sh99999999", devices)
+    device_url = client.get_device_url_from_address("sh99999999", devices)  # type: ignore[arg-type]
     assert device_url is None

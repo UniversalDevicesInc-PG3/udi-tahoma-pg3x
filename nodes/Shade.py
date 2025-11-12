@@ -304,29 +304,6 @@ class Shade(udi_interface.Node):
                         f"Updated {driver_key}={driver_value} from state {state_name}"
                     )
 
-    def posToPercent(self, pos):
-        """Converts a dictionary of raw position values to percentages.
-
-        This is used to process position data from TaHoma gateway events.
-
-        Args:
-            pos (dict): A dictionary of raw position values.
-
-        Returns:
-            dict: A new dictionary with the position values converted to percentages.
-        """
-        new_pos = {}
-        for key, value in pos.items():
-            try:
-                if key == "etaInSeconds":
-                    continue
-                new_pos[key] = self.controller.toPercent(value)
-            except (TypeError, ValueError) as ex:
-                LOGGER.error(f"Failed to convert pos[{key}]='{value}' to percent: {ex}")
-                new_pos[key] = 0
-
-        return new_pos
-
     def cmdOpen(self, command):
         """Handles the 'Open' command from the ISY.
 

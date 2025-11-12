@@ -11,7 +11,7 @@ import ssl
 from typing import Optional, List, Any
 
 from pyoverkiz.client import OverkizClient
-from pyoverkiz.const import OverkizServer
+from pyoverkiz.const import OverkizServer  # type: ignore[attr-defined]
 from pyoverkiz.models import Command, Device, Event, Scenario
 from pyoverkiz.exceptions import (
     NotAuthenticatedException,
@@ -154,7 +154,7 @@ class TaHomaClient:
             raise RuntimeError("Not connected to TaHoma")
 
         try:
-            device = await self.client.get_device(device_url)
+            device = await self.client.get_device(device_url)  # type: ignore[attr-defined]
             return device
         except Exception as e:
             LOGGER.error(f"Failed to get device {device_url}: {e}")
@@ -311,7 +311,7 @@ class TaHomaClient:
             return
 
         try:
-            await self.client.unregister_event_listener(self.event_listener_id)
+            await self.client.unregister_event_listener(self.event_listener_id)  # type: ignore[arg-type]
             LOGGER.info(f"Unregistered event listener: {self.event_listener_id}")
             self.event_listener_id = None
         except Exception as e:
@@ -325,21 +325,21 @@ class TaHomaClient:
     def get_device_url_from_address(
         self, address: str, devices: List[Device]
     ) -> Optional[str]:
-        """Helper to find deviceURL from node address.
+        """Helper to find device_url from node address.
 
         Args:
             address: Node address (e.g., "sh12345678")
             devices: List of devices from get_devices()
 
         Returns:
-            deviceURL or None if not found
+            device_url or None if not found
         """
         # Extract device ID from address (remove 'sh' prefix)
         device_id = address.replace("sh", "")
 
         for device in devices:
-            if device.deviceURL.endswith(device_id):
-                return device.deviceURL
+            if device.device_url.endswith(device_id):
+                return device.device_url
 
         return None
 

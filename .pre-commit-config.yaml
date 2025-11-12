@@ -45,6 +45,12 @@ repos:
       - id: markdownlint
         args: ['--fix']
 
+  # Type checking with pyright
+  - repo: https://github.com/RobertCraigie/pyright-python
+    rev: v1.1.390
+    hooks:
+      - id: pyright
+
   # Local hook to run your test suite
   - repo: local
     hooks:
