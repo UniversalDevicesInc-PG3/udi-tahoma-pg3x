@@ -1,7 +1,5 @@
 {
 	"pythonVersion": "3.11",
-	"venvPath": "/Users/nz891r/.local/share/virtualenvs",
-	"venv": "udi-phantomblinds-pg3x-A_sA5IHP",
 	"extraPaths": ["./", "./src"],
 	"reportImportCycles": false,
 	"reportMissingTypeStubs": false,

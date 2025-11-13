@@ -46,10 +46,15 @@ repos:
         args: ['--fix']
 
   # Type checking with pyright
-  - repo: https://github.com/RobertCraigie/pyright-python
-    rev: v1.1.390
+  - repo: local
     hooks:
       - id: pyright
+        name: pyright
+        entry: pipenv run pyright
+        language: system
+        types: [python]
+        pass_filenames: false
+
 
   # Local hook to run your test suite
   - repo: local
