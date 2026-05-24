@@ -11,15 +11,16 @@ import ssl
 from typing import Optional, List, Any
 
 from pyoverkiz.client import OverkizClient
-from pyoverkiz.const import OverkizServer  # type: ignore[attr-defined]
-from pyoverkiz.models import Command, Device, Event, Scenario
+from pyoverkiz.auth.credentials import LocalTokenCredentials
+from pyoverkiz.utils import create_local_server_config
+from pyoverkiz.models import Action, Command, Device, Event, PersistedActionGroup
 from pyoverkiz.exceptions import (
-    NotAuthenticatedException,
-    InvalidTokenException,
-    TooManyRequestsException,
-    InvalidEventListenerIdException,
-    NoRegisteredEventListenerException,
-    ExecutionQueueFullException,
+    NotAuthenticatedError,
+    InvalidTokenError,
+    TooManyRequestsError,
+    InvalidEventListenerIdError,
+    NoRegisteredEventListenerError,
+    ExecutionQueueFullError,
 )
 from udi_interface import LOGGER
 import aiohttp
@@ -61,18 +62,9 @@ class TaHomaClient:
         self.event_listener_id: Optional[str] = None
         self._connected = False
 
-        # Build server config for local API
-        # Use IP address if provided, otherwise use hostname
-        if gateway_ip:
-            endpoint = f"https://{gateway_ip}:8443/enduser-mobile-web/1/enduserAPI/"
-        else:
-            endpoint = f"https://gateway-{gateway_pin}.local:8443/enduser-mobile-web/1/enduserAPI/"
-
-        self.server = OverkizServer(
-            name="Somfy TaHoma (local)",
-            endpoint=endpoint,
-            manufacturer="Somfy",
-            configuration_url=None,
+        # Build server config for local API using v2 API
+        self.server = create_local_server_config(
+            host=f"{gateway_ip}:8443" if gateway_ip else f"gateway-{gateway_pin}.local:8443"
         )
 
     async def connect(self) -> bool:
@@ -89,30 +81,45 @@ class TaHomaClient:
                     ssl_context.check_hostname = False
                     ssl_context.verify_mode = ssl.CERT_NONE
 
+                # Set reasonable timeouts for local API connections
+                timeout = aiohttp.ClientTimeout(total=60, connect=10, sock_read=30)
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
-                self._session = aiohttp.ClientSession(connector=connector)
+                self._session = aiohttp.ClientSession(
+                    connector=connector,
+                    timeout=timeout
+                )
 
-            # Create OverkizClient
+            # Create OverkizClient with v2 API using LocalTokenCredentials
             self.client = OverkizClient(
-                username="",  # Not needed for local API
-                password="",  # Not needed for local API
-                token=self.token,
-                session=self._session,
-                verify_ssl=self.verify_ssl,
                 server=self.server,
+                credentials=LocalTokenCredentials(self.token),
+                verify_ssl=self.verify_ssl,
+                session=self._session,
             )
 
-            # Login (validates token)
-            await self.client.login()
+            # Login (validates token) - don't register event listener yet
+            # to avoid timeout issues during initial connection
+            await self.client.login(register_event_listener=False)
 
             LOGGER.info(f"Connected to TaHoma gateway: {self.gateway_pin}")
             self._connected = True
+            
+            # Register event listener separately with better error handling
+            # This allows connection to succeed even if event listener fails
+            try:
+                listener_id = await self.client.register_event_listener()
+                self.event_listener_id = listener_id
+                LOGGER.info(f"Event listener registered successfully: {listener_id}")
+            except Exception as e:
+                LOGGER.warning(f"Failed to register event listener during connect: {e}")
+                LOGGER.info("Connection successful - event listener can be retried later")
+            
             return True
 
-        except InvalidTokenException:
+        except InvalidTokenError:
             LOGGER.error("Invalid TaHoma token - regenerate in app")
             raise
-        except NotAuthenticatedException:
+        except NotAuthenticatedError:
             LOGGER.error("Authentication failed - check token")
             raise
         except Exception as e:
@@ -169,23 +176,27 @@ class TaHomaClient:
             LOGGER.error(f"Failed to get device {device_url}: {e}")
             return None
 
-    async def get_scenarios(self) -> List[Scenario]:
+    async def get_scenarios(self) -> List[PersistedActionGroup]:
         """Get all scenarios (scenes) from TaHoma.
 
         Returns:
-            List of Scenario objects
+            List of PersistedActionGroup objects (formerly Scenario)
+            
+        Note:
+            In pyoverkiz v2, scenarios are called action groups.
+            This method provides backward compatibility.
         """
         if not self._connected or not self.client:
             raise RuntimeError("Not connected to TaHoma")
 
         try:
-            scenarios = await self.client.get_scenarios()
-            LOGGER.info(f"Retrieved {len(scenarios)} scenarios from TaHoma")
-            return scenarios
+            action_groups = await self.client.get_action_groups()
+            LOGGER.info(f"Retrieved {len(action_groups)} scenarios from TaHoma")
+            return action_groups
         except TypeError as e:
-            # Handle case where API response doesn't match Scenario model
+            # Handle case where API response doesn't match model
             if "missing" in str(e) and "required positional argument" in str(e):
-                LOGGER.warning(f"Scenario response format doesn't match model: {e}")
+                LOGGER.warning(f"Action group response format doesn't match model: {e}")
                 LOGGER.info("Returning empty scenario list - will retry on next poll")
                 return []
             else:
@@ -208,10 +219,10 @@ class TaHomaClient:
             raise RuntimeError("Not connected to TaHoma")
 
         try:
-            exec_id = await self.client.execute_scenario(scenario_oid)
+            exec_id = await self.client.execute_persisted_action_group(scenario_oid)
             LOGGER.info(f"Executed scenario {scenario_oid} (exec: {exec_id})")
             return exec_id
-        except ExecutionQueueFullException:
+        except ExecutionQueueFullError:
             LOGGER.warning("Execution queue full - try again later")
             return None
         except Exception as e:
@@ -241,8 +252,9 @@ class TaHomaClient:
 
         try:
             command = Command(name=command_name, parameters=parameters)
-            exec_id = await self.client.execute_command(
-                device_url=device_url, command=command, label=label
+            action = Action(device_url=device_url, commands=[command])
+            exec_id = await self.client.execute_action_group(
+                actions=[action], label=label
             )
             LOGGER.debug(
                 f"Executed {command_name} on {device_url} "
@@ -250,14 +262,14 @@ class TaHomaClient:
             )
             return exec_id
 
-        except InvalidTokenException:
+        except InvalidTokenError:
             LOGGER.error("Invalid token - regenerate in TaHoma app")
             raise
-        except TooManyRequestsException:
+        except TooManyRequestsError:
             LOGGER.warning("Rate limited - backing off")
             await asyncio.sleep(5)
             return None
-        except ExecutionQueueFullException:
+        except ExecutionQueueFullError:
             LOGGER.warning("Execution queue full - try again later")
             return None
         except Exception as e:
@@ -311,11 +323,11 @@ class TaHomaClient:
                 LOGGER.debug(f"Fetched {len(events)} events")
             return events
 
-        except InvalidEventListenerIdException:
+        except InvalidEventListenerIdError:
             LOGGER.warning("Event listener expired - re-registration needed")
             self.event_listener_id = None
             raise
-        except NoRegisteredEventListenerException:
+        except NoRegisteredEventListenerError:
             LOGGER.warning("No registered event listener")
             self.event_listener_id = None
             raise

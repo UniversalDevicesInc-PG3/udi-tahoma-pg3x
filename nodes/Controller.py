@@ -23,8 +23,8 @@ from utils.config_validation import (
     validate_bearer_token,
 )
 from pyoverkiz.exceptions import (
-    InvalidEventListenerIdException,
-    NoRegisteredEventListenerException,
+    InvalidEventListenerIdError,
+    NoRegisteredEventListenerError,
 )
 
 # Nodes
@@ -594,7 +594,7 @@ class Controller(Node):
                             self.process_tahoma_event(event)
                         retries = 0  # Reset on successful fetch
 
-                except InvalidEventListenerIdException:
+                except InvalidEventListenerIdError:
                     # Listener expired (after 10 min inactivity), re-register
                     LOGGER.warning("Event listener expired, re-registering...")
                     try:
@@ -611,7 +611,7 @@ class Controller(Node):
                         retries += 1
                         continue
 
-                except NoRegisteredEventListenerException:
+                except NoRegisteredEventListenerError:
                     LOGGER.error("No registered event listener")
                     # Try to register new listener
                     try:
