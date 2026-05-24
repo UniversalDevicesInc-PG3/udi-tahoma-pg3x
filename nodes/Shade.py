@@ -94,6 +94,29 @@ class Shade(udi_interface.Node):
             device_url_key = f"device_url_{self.address}"
             self.controller.Data[device_url_key] = self.device_url
         
+        # Determine protocol type from device_url
+        protocol = "unknown"
+        if self.device_url:
+            if self.device_url.startswith("rts://"):
+                protocol = "rts"
+            elif self.device_url.startswith("io://"):
+                protocol = "io"
+            elif self.device_url.startswith("zigbee://"):
+                protocol = "zigbee"
+            elif self.device_url.startswith("internal://"):
+                protocol = "internal"
+        
+        # Set capabilities based on protocol
+        # GV5 values: 0=Unknown, 1=RTS (one-way), 2=io-homecontrol (two-way)
+        if protocol == "rts":
+            self.setDriver("GV5", 1, report=True, force=True)  # RTS
+            # RTS devices are hardwired, set battery to N/A (255)
+            self.setDriver("GV6", 255, report=True, force=True)
+        elif protocol == "io":
+            self.setDriver("GV5", 2, report=True, force=True)  # io-homecontrol
+        else:
+            self.setDriver("GV5", 0, report=True, force=True)  # Unknown
+        
         # For TaHoma, we can't use deviceURL as a driver value (must be numeric)
         # So we'll use a hash or just set to 1 to indicate it's initialized
         if self.device_url:
