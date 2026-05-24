@@ -53,11 +53,9 @@ class Shade(udi_interface.Node):
 
         # For TaHoma, sid is the deviceURL string
         self.sid = sid
-        LOGGER.info(f"Shade.__init__: address={address}, sid={sid}, type={type(sid)}")
         # TaHoma device URLs can be in various formats:
         # io://, rts://, zigbee://, internal://, etc.
         self.device_url = sid if isinstance(sid, str) and "://" in sid else None
-        LOGGER.info(f"Shade.__init__: device_url={self.device_url}")
 
         self.tiltCapable = [1, 2, 4, 5, 9, 10]
         self.tiltOnly90Capable = [1, 9]
