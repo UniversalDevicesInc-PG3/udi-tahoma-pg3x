@@ -60,7 +60,7 @@ if __name__ == "__main__":
           to automatically update node server status
         """
         control = Controller(
-            polyglot, "controller", "controller", "Virtual Device Controller"
+            polyglot, "controller", "controller", "Phantom Blinds TaHoma Controller"
         )
 
         """
