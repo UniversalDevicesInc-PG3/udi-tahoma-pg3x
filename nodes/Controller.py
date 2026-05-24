@@ -954,7 +954,7 @@ class Controller(Node):
         LOGGER.debug(f"db nodes = {nodes_db}")
 
         nodes_current = self.poly.getNodes()
-        nodes_get = {key: nodes_current[key] for key in nodes_current if key != self.id}
+        nodes_get = {key: nodes_current[key] for key in nodes_current if key != self.id and key != 'controller'}
 
         LOGGER.debug(f"old nodes = {nodes_old}")
         LOGGER.debug(f"new nodes = {nodes_new}")
