@@ -175,19 +175,34 @@ class Shade(udi_interface.Node):
             bool: True if the update was successful, False otherwise.
         """
         try:
-            shade = self.controller.get_shade_data(self.sid)
-            self.capabilities = shade.get("capabilities")
-            LOGGER.debug(f"shade {self.sid} is {shade}")
-            if self.name != shade["name"]:
-                LOGGER.warning(f"Name error current:{self.name}  new:{shade['name']}")
-                self.rename(shade["name"])
-                LOGGER.warning(f"Renamed {self.name}")
+            shade_data = self.controller.get_shade_data(self.sid)
+            if not shade_data:
+                LOGGER.warning(f"shade {self.sid} no data found in devices_map")
+                return False
+            
+            device = shade_data.get("device")
+            if not device:
+                LOGGER.warning(f"shade {self.sid} no device object in shade_data")
+                return False
+                
+            LOGGER.debug(f"shade {self.sid} updating from device: {device.label}")
+            
+            # Update name if changed
+            if self.name != device.label:
+                LOGGER.warning(f"Name changed current:{self.name} new:{device.label}")
+                self.rename(device.label)
+                LOGGER.warning(f"Renamed to {self.name}")
+            
+            # Set basic status drivers
             self.setDriver("ST", 0, report=True, force=True)
             self.reportCmd("DOF", 2)
-            self.setDriver("GV1", shade["roomId"], report=True, force=True)
-            self.setDriver("GV6", shade["batteryStatus"], report=True, force=True)
-            self.setDriver("GV5", self.capabilities, report=True, force=True)
-            self.updatePositions(shade["positions"])
+            
+            # Update device states if available
+            if hasattr(device, 'states') and device.states:
+                for state in device.states:
+                    # Handle different state types as needed
+                    LOGGER.debug(f"Device state: {state.name} = {state.value}")
+            
             return True
         except Exception as ex:
             LOGGER.error(f"shade {self.sid} updateData error: {ex}", exc_info=True)
