@@ -38,6 +38,7 @@ class TaHomaClient:
         token: str,
         gateway_pin: str,
         verify_ssl: bool = True,
+        gateway_ip: Optional[str] = None,
         session: Optional[aiohttp.ClientSession] = None,
     ):
         """Initialize TaHoma client.
@@ -46,11 +47,13 @@ class TaHomaClient:
             token: Bearer token from TaHoma app Developer Mode
             gateway_pin: Gateway PIN (e.g., "2001-0001-1891")
             verify_ssl: Whether to verify SSL certificates
+            gateway_ip: Optional IP address of gateway (e.g., "192.168.1.100")
             session: Optional aiohttp session (created if None)
         """
         self.token = token
         self.gateway_pin = gateway_pin
         self.verify_ssl = verify_ssl
+        self.gateway_ip = gateway_ip
         self._session = session
         self._own_session = session is None
 
@@ -59,9 +62,15 @@ class TaHomaClient:
         self._connected = False
 
         # Build server config for local API
+        # Use IP address if provided, otherwise use hostname
+        if gateway_ip:
+            endpoint = f"https://{gateway_ip}:8443/enduser-mobile-web/1/enduserAPI/"
+        else:
+            endpoint = f"https://gateway-{gateway_pin}.local:8443/enduser-mobile-web/1/enduserAPI/"
+
         self.server = OverkizServer(
             name="Somfy TaHoma (local)",
-            endpoint=f"https://gateway-{gateway_pin}.local:8443/enduser-mobile-web/1/enduserAPI/",
+            endpoint=endpoint,
             manufacturer="Somfy",
             configuration_url=None,
         )

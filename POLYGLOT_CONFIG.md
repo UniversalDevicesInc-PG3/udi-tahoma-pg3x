@@ -1,6 +1,5 @@
 # Phantom Blinds Device Controller (TaHoma Integration)
 <!-- markdownlint-disable-file MD036 MD007 MD022 MD013 -->
-See [README for manual][readme]
 
 **NEED TO SELECT ISY ACCESS AND SAVE IN CONFIGURATION**
 Required for variable write access
@@ -9,135 +8,157 @@ Required for variable write access
 
 ## Initial Setup
 
-### Step 1: Somfy/TaHoma Account
+### Step 1: Prerequisites
 
 Before configuring this NodeServer, ensure you have:
 
-1. A Somfy TaHoma box installed and connected to your network
-2. Your Phantom Blinds configured in the Somfy/TaHoma app
-3. Your Somfy account credentials (email and password)
+1. ✅ Somfy TaHoma RTS/Zigbee gateway (Item #1811731) installed and connected to network
+2. ✅ Your Phantom Blinds configured in the TaHoma mobile app
+3. ✅ TaHoma Developer Mode enabled (see [INSTALLATION.md](INSTALLATION.md) for detailed steps)
+4. ✅ Bearer token generated in TaHoma app (save securely - only shown once)
+5. ✅ Gateway PIN (found on bottom of TaHoma device or in app)
 
-### Step 2: Configuration Parameters
-The following configuration parameters are **REQUIRED**:
+### Step 2: Required Configuration Parameters
 
-#### **username** (Required)
+The following configuration parameters are **REQUIRED** to connect to your TaHoma gateway:
 
-Your Somfy account email address.
+#### **gateway_pin** (Required)
 
-- Example: `user@example.com`
+Your TaHoma gateway PIN in format: `XXXX-XXXX-XXXX` (e.g., `2001-0001-1891`)
 
-#### **password** (Required)
+- **Format**: 4 digits, dash, 4 digits, dash, 4 digits (12 total digits with dashes)
+- **Where to find**:
+  - On a label on the bottom of your TaHoma device
+  - In TaHoma app: Menu → Help & Advanced Features → My Setup → TaHoma PIN
+- **Example**: `2001-0001-1891`
 
-Your Somfy account password.
+#### **bearer_token** (Required)
 
-- Note: Password is stored securely and used only for authentication with Somfy servers
+Authentication token from TaHoma app Developer Mode.
 
-#### **server** (Optional)
+- **How to generate**:
+  1. Open TaHoma app on mobile device
+  2. Tap Menu (bottom right) → Help & Advanced Features → Advanced Features
+  3. Tap on version number 7 times to enable Developer Mode
+  4. Go back to Menu → Developer Mode
+  5. Tap "Generate Token"
+  6. Copy token immediately (only shown once!)
+- **Format**: Long alphanumeric string (typically 50+ characters)
+- **Security**: Token is stored securely and never transmitted to cloud
 
-Somfy server region. Default is `somfy_europe`.
+### Step 3: Optional Configuration Parameters
 
-- Options:
-  - `somfy_europe` - European servers (default)
-  - `somfy_australia` - Australian servers
-  - `somfy_north_america` - North American servers
-  - `hi_kuwait` - Kuwait servers
-  - `rexel_france` - Rexel France servers
+#### **gateway_ip** (Optional)
 
-#### **polling_interval** (Optional)
+IP address of TaHoma gateway on your network (for cases where DNS/mDNS doesn't work)
 
-How often (in seconds) to poll for device state updates.
+- **Example**: `192.168.1.100`
+- **When to use**: If automatic hostname resolution (`gateway-XXXX-XXXX-XXXX.local`) fails
+- **Default**: Uses hostname when not specified
 
-- Default: `300` (5 minutes)
-- Range: `60` to `3600` seconds (1 minute to 1 hour)
-- Note: More frequent polling provides faster updates but increases API usage
+#### **use_local_api** (Optional)
 
-#### **short_poll** (Optional)
+Use local API (direct connection) vs cloud API
 
-Short polling interval in seconds.
+- **Default**: `true` (recommended)
+- **Recommended**: `true` for better performance and privacy
+- **Note**: Local API requires TaHoma to be on same network
 
-- Default: `60`
-- Range: `10` to `300` seconds
+#### **verify_ssl** (Optional)
 
-#### **long_poll** (Optional)
+Whether to verify SSL certificates
 
-Long polling interval in seconds.
+- **Default**: `false` (TaHoma uses self-signed certificate)
+- **Recommended**: `false` for local network
+- **Note**: Can install Somfy root CA for strict verification if desired
 
-- Default: `300`
-- Range: `60` to `3600` seconds
+### Step 4: Save Configuration
 
-### Step 3: Save Configuration
-
-1. Enter your credentials in the Configuration page
-2. Click **Save**
-3. The NodeServer will automatically:
-   - Connect to your TaHoma box
+1. Enter your Gateway PIN in the format `XXXX-XXXX-XXXX`
+2. Enter your Bearer Token (generated from TaHoma app)
+3. Optionally enter Gateway IP if needed
+4. Click **Save**
+5. The NodeServer will automatically:
+   - Validate your configuration
+   - Connect to your TaHoma gateway
    - Discover your Phantom Blinds devices
    - Create nodes for each device in the ISY
 
-### Step 4: Verify Connection
+### Step 5: Verify Connection
 
 After saving the configuration:
 
 1. Check the NodeServer logs for connection success
 2. Wait 30-60 seconds for device discovery
-3. Verify your blinds appear in the ISY Admin Console
+3. Verify your shades appear in the ISY Admin Console
 4. Test basic commands (Open, Close, Stop)
 
 ## Supported Device Types
 
-### Phantom Blinds
+### Phantom Blinds and RTS Devices
 
 - **Open/Close**: Full range motion control
 - **Position**: Set to specific percentage (0-100%)
 - **Stop**: Halt motion at current position
-- **Orientation**: Adjust slat angle (if supported)
-- **Status Monitoring**: Battery level, position, connectivity
+- **Tilt** (if supported): Adjust slat angle for blinds
+- **Status Monitoring**: Position, connectivity
+- **Scenes**: Execute TaHoma scenes from ISY
 
 ## Troubleshooting
 
-### No Devices Discovered
+### Configuration Errors
 
-- Verify your TaHoma box is online and accessible
-- Check that devices are properly configured in the Somfy/TaHoma app
-- Ensure correct server region is selected
-- Review NodeServer logs for authentication errors
+**Invalid Gateway PIN format**
 
-### Authentication Failures
+- PIN must be in format: `XXXX-XXXX-XXXX` (12 digits with dashes)
+- Example: `2001-0001-1891`
+- Found on bottom of TaHoma device or in app
 
-- Verify username and password are correct
-- Check that your Somfy account is active
-- Ensure you're using the correct server region
-- Try logging into the Somfy/TaHoma app to verify credentials
+**Bearer Token not valid**
 
-### Commands Not Working
+- Token appears to be placeholder text - replace with actual token from TaHoma app
+- Token must be 50+ characters
+- Generate new token if needed - old tokens may have expired
+- Only shown once when created, save securely
 
-- Check device battery levels
-- Verify TaHoma box connectivity
-- Ensure devices respond in the Somfy/TaHoma app
-- Review execution logs in the NodeServer
+### Connection Issues
 
-### State Updates Delayed
+**Cannot connect to TaHoma gateway**
 
-- Adjust `polling_interval` to a lower value (minimum 60 seconds)
-- Note: The TaHoma system may have inherent delays in status reporting
-- Event subscriptions should provide near real-time updates for most changes
+- Verify TaHoma is connected to your network (check LED is green)
+- If using hostname resolution fails, try entering Gateway IP address manually
+- Check that your firewall allows port 8443 (HTTPS) to TaHoma
+- Try pinging: `gateway-XXXX-XXXX-XXXX.local` or your Gateway IP
+- Restart TaHoma device
 
-## Advanced Configuration
+**No Devices Discovered**
 
-### Multiple TaHoma Boxes
+- Verify devices are properly configured in TaHoma app
+- Check that devices are online in TaHoma app
+- Try initiating discovery again: Right-click Controller → Discover
+- Review NodeServer logs for specific error messages
 
-This NodeServer supports one TaHoma account. If you have multiple locations:
+**Devices Don't Respond to Commands**
 
-- Use separate NodeServer instances for each account
-- Or ensure all devices are registered to the same Somfy account
+- Test commands in TaHoma app first to verify devices work
+- Check device batteries if battery-powered
+- Verify TaHoma RF range (RTS requires 25-35 feet line of sight)
+- Check NodeServer logs for command execution errors
 
-### API Rate Limiting
+### Network Troubleshooting
 
-Somfy may implement rate limiting on API requests:
+**Use Gateway IP instead of hostname**
 
-- Avoid setting `polling_interval` below 60 seconds
-- The NodeServer uses efficient batching to minimize API calls
-- Event subscriptions reduce the need for frequent polling
+If automatic hostname resolution doesn't work:
+
+1. Find your TaHoma IP address (check router or TaHoma app)
+2. Enter IP address in `gateway_ip` configuration parameter (optional)
+3. Save configuration and restart NodeServer
+
+**SSL Certificate Errors**
+
+- Set `verify_ssl` to `false` (safe for local network)
+- Alternatively, install Somfy root CA certificate
 
 ## Support
 
@@ -145,13 +166,10 @@ For issues, feature requests, or questions:
 
 - GitHub Issues: [udi-phantomblinds-pg3x](https://github.com/sejgit/udi-phantomblinds-pg3x/issues)
 - UDI Forum: [Phantom Blinds NodeServer Discussion](https://forum.universal-devices.com)
+- See [INSTALLATION.md](INSTALLATION.md) for detailed setup guide
 
 ## References
 
-- [Somfy TaHoma Documentation][somfy-docs]
-- [PyOverkiz Library][pyoverkiz]
-- [README][readme]
-
-[readme]: https://github.com/sejgit/udi-phantomblinds-pg3x/blob/main/README.md
-[somfy-docs]: https://www.somfy.com/support
-[pyoverkiz]: https://github.com/iMicknl/python-overkiz-api
+- [Complete Installation Guide](INSTALLATION.md)
+- [README](README.md)
+- [TaHoma Developer Mode Setup](INSTALLATION.md#step-2-configure-nodeserver)

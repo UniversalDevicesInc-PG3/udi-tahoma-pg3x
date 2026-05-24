@@ -7,13 +7,13 @@ This nodeserver integrates Phantom Blinds motorized shades with the Universal De
 
 ## Quick Start
 
-1. **Prerequisites**: TaHoma gateway with Developer Mode enabled (see [INSTALLATION.md](INSTALLATION.md))
-2. **Install**: Install NodeServer from Polyglot Store
-3. **Configure**: Enter Gateway PIN and Bearer Token in Polyglot UI
+1. **Prerequisites**: TaHoma gateway with Developer Mode enabled
+2. **Configure**: Enter Gateway PIN (XXXX-XXXX-XXXX format) and Bearer Token in Polyglot UI
+3. **Connect**: NodeServer will validate configuration and connect to TaHoma
 4. **Discover**: Run Discover command to find all shades
 5. **Control**: Use ISY programs to control your shades
 
-📖 **Full Installation Guide**: [INSTALLATION.md](INSTALLATION.md)
+📖 **See**: [POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md) for configuration details and [INSTALLATION.md](INSTALLATION.md) for complete setup guide
 
 ## Features
 
@@ -47,21 +47,24 @@ This nodeserver integrates Phantom Blinds motorized shades with the Universal De
 ### Quick Installation
 
 1. **Install NodeServer** in Polyglot UI from NodeServer Store
-2. **Configure Settings**:
-   - Gateway PIN: `1234-5678-9012` (from TaHoma device)
-   - Bearer Token: Generate in TaHoma app Developer Mode
-   - Use Local API: `true` (recommended)
+2. **Configure Settings** in Polyglot UI:
+   - `gateway_pin`: `2001-0001-1891` (from TaHoma device)
+   - `tahoma_token`: Generate in TaHoma app Developer Mode
+   - `use_local_api`: `true` (recommended)
 3. **Start NodeServer** and verify connection in logs
 4. **Discover Devices**: Right-click Controller → Discover
 
 ### Configuration Parameters
 
-| Parameter | Required | Example | Description |
-|-----------|----------|---------|-------------|
-| Gateway PIN | Yes | `1234-5678-9012` | TaHoma gateway identifier |
-| Bearer Token | Yes | `abc123...` | Authentication token from app |
-| Use Local API | No | `true` | Local vs cloud (default: true) |
-| Verify SSL | No | `false` | Certificate verification (default: false) |
+Enter these parameters in the Polyglot UI Configuration page:
+
+| Parameter Name | Required | Example/Format | Description |
+|---|---|---|---|
+| `gateway_pin` | Yes | `2001-0001-1891` | TaHoma gateway PIN (XXXX-XXXX-XXXX format with dashes) |
+| `tahoma_token` | Yes | `abc123def456...` | Bearer token from TaHoma app Developer Mode |
+| `gateway_ip` | No | `192.168.1.100` | Optional: IP address if hostname resolution fails |
+| `use_local_api` | No | `true` | Use local API (true) or cloud API (false). Default: true |
+| `verify_ssl` | No | `false` | Verify SSL certificate. Default: false (TaHoma uses self-signed) |
 
 📖 **Troubleshooting**: See [INSTALLATION.md](INSTALLATION.md#troubleshooting)
 

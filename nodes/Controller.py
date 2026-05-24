@@ -62,7 +62,7 @@ class Controller(Node):
             address: The address of this node.
             name: The name of this node.
         """
-        super(Controller, self).__init__(poly, primary, address, name)
+        super().__init__(poly, primary, address, name)
         # important flags, timers, vars
         self.poly = poly
         self.address = address
@@ -77,6 +77,7 @@ class Controller(Node):
         self.tahoma_client: Optional[TaHomaClient] = None
         self.token = ""
         self.gateway_pin = ""
+        self.gateway_ip = None
         self.use_local_api = True
         self.verify_ssl = True
 
@@ -188,6 +189,7 @@ class Controller(Node):
             self.tahoma_client = TaHomaClient(
                 token=self.token,
                 gateway_pin=self.gateway_pin,
+                gateway_ip=self.gateway_ip,
                 verify_ssl=self.verify_ssl,
             )
 
@@ -389,10 +391,9 @@ class Controller(Node):
             # TaHoma/Phantom Blinds parameters
             "tahoma_token": "",  # Bearer token from TaHoma app Developer Mode
             "gateway_pin": "",  # Gateway PIN (e.g., 2001-0001-1891)
+            "gateway_ip": "",  # Optional: IP address of gateway (e.g., 192.168.1.100)
             "use_local_api": "true",  # Use local API (true) or cloud API (false)
             "verify_ssl": "true",  # Verify SSL certificates
-            # Legacy parameter (kept for migration reference, not used)
-            "gatewayip": "",
         }
         for param, default_value in defaults.items():
             if param not in self.Parameters:
@@ -494,12 +495,18 @@ class Controller(Node):
         # Store validated parameters
         self.token = token
         self.gateway_pin = gateway_pin
+        self.gateway_ip = str(self.Parameters.get("gateway_ip", "")).strip() or None
         use_local = self.Parameters.get("use_local_api")
         verify = self.Parameters.get("verify_ssl")
         self.use_local_api = use_local.lower() == "true" if use_local else True
         self.verify_ssl = verify.lower() == "true" if verify else True
 
-        LOGGER.info(f"TaHoma configuration valid - Gateway PIN: {gateway_pin}")
+        if self.gateway_ip:
+            LOGGER.info(
+                f"TaHoma configuration valid - Gateway PIN: {gateway_pin}, IP: {self.gateway_ip}"
+            )
+        else:
+            LOGGER.info(f"TaHoma configuration valid - Gateway PIN: {gateway_pin}")
         self.Notices.delete("config")
         return True
 

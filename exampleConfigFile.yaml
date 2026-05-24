@@ -5,14 +5,21 @@
 # Required: These settings connect to your TaHoma gateway
 
 gateway:
-  # Gateway PIN from TaHoma device (format: 1234-5678-9012)
+  # Gateway PIN in format XXXX-XXXX-XXXX (12 digits with dashes)
+  # Example: 2001-0001-1891
   # Found on bottom of TaHoma unit or in TaHoma app under Settings > Developer Mode
-  pin: "1234-5678-9012"
+  pin: "2001-0001-1891"
 
   # Bearer token from TaHoma app
   # Generate in TaHoma app: Settings > Developer Mode > Generate Token
   # Note: Token is only visible when first created - save it securely!
   token: "your-bearer-token-here"
+
+  # Optional: IP address of TaHoma gateway on your network
+  # Use this if hostname resolution (gateway-XXXX-XXXX-XXXX.local) doesn't work
+  # Example: "192.168.1.100"
+  # If not specified, uses hostname resolution
+  # gateway_ip: "192.168.1.100"
 
   # Use local API (recommended) or cloud API
   # Local API: Direct connection to TaHoma on your network (port 8443)

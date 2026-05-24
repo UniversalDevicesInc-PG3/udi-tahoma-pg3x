@@ -65,25 +65,28 @@ Once installed, configure the TaHoma connection:
 
 | Parameter | Value | Notes |
 |-----------|-------|-------|
-| **Gateway PIN** | `1234-5678-9012` | Found on bottom of TaHoma or in app |
+| **Gateway PIN** | `1234-5678-9012` | Format: XXXX-XXXX-XXXX (12 digits with dashes). Found on bottom of TaHoma or in app |
 | **Bearer Token** | `abc123...` | Generated in Developer Mode |
+| **Gateway IP** | `192.168.1.100` | Optional - use if hostname resolution fails |
 | **Use Local API** | `true` | Recommended for better performance |
 | **Verify SSL** | `false` | TaHoma uses self-signed certificate |
 
 #### Finding Your Gateway PIN
 
-The Gateway PIN is in format `1234-5678-9012` and can be found:
+The Gateway PIN is in format `XXXX-XXXX-XXXX` (12 digits with dashes, e.g., `2001-0001-1891`) and can be found:
 
 - On a label on the bottom of TaHoma device
-- In TaHoma app: Menu → My Setup → TaHoma PIN
+- In TaHoma app: Menu → Help & Advanced Features → My Setup → TaHoma PIN
+
+**Important**: Format must include dashes (e.g., `2001-0001-1891`, NOT `2001000118 91`)
 
 #### Generating Bearer Token
 
 1. Open TaHoma app on mobile device
-2. Tap **Menu** (bottom right)
-3. Tap **Help & Advanced Features** → **Advanced Features**
-4. Tap on the version number **7 times** (e.g., "2025.1.4-11")
-5. Developer Mode is now enabled
+2. Tap **Menu …** (bottom right)
+3. Tap **Configuration of the installation** → **Access the parameters**
+4. Tap on the PIN number **7 times** (e.g., "1234-4321-7890")
+5. Developer Mode is now enabled after you accept the disclaimer
 6. Go to Menu → **Developer Mode**
 7. Tap **Generate Token**
 8. Copy the token immediately (it's only shown once!)
