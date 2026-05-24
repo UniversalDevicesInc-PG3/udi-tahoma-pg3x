@@ -864,7 +864,7 @@ class Controller(Node):
         """
         for device in devices:
             try:
-                device_url = device.deviceURL
+                device_url = device.device_url
 
                 # Convert deviceURL to node address
                 node_address = self._device_url_to_address(device_url)
@@ -980,7 +980,7 @@ class Controller(Node):
         """
         controllable = device.controllable_name
         label = device.label
-        device_url = device.deviceURL
+        device_url = device.device_url
 
         LOGGER.debug(f"Creating node for device type: {controllable}")
 
