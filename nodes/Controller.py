@@ -23,8 +23,8 @@ from utils.config_validation import (
     validate_bearer_token,
 )
 from pyoverkiz.exceptions import (
-    InvalidEventListenerIdError,
-    NoRegisteredEventListenerError,
+    InvalidEventListenerIdException,
+    NoRegisteredEventListenerException,
 )
 
 # Nodes
@@ -151,6 +151,12 @@ class Controller(Node):
         LOGGER.info(
             f"Started Phantom Blinds/TaHoma PG3 NodeServer {self.poly.serverdata['version']}"
         )
+        
+        # Log Python version for debugging/compatibility checking
+        import sys
+        LOGGER.info(f"Python version: {sys.version}")
+        LOGGER.info(f"Python version info: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
+        
         self.Notices.clear()
         self.Notices["hello"] = "Plugin Start-up"
         self.setDriver("ST", 1, report=True, force=True)
@@ -594,7 +600,7 @@ class Controller(Node):
                             self.process_tahoma_event(event)
                         retries = 0  # Reset on successful fetch
 
-                except InvalidEventListenerIdError:
+                except InvalidEventListenerIdException:
                     # Listener expired (after 10 min inactivity), re-register
                     LOGGER.warning("Event listener expired, re-registering...")
                     try:
@@ -611,7 +617,7 @@ class Controller(Node):
                         retries += 1
                         continue
 
-                except NoRegisteredEventListenerError:
+                except NoRegisteredEventListenerException:
                     LOGGER.error("No registered event listener")
                     # Try to register new listener
                     try:

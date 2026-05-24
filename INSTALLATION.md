@@ -16,7 +16,7 @@ This guide walks through installing and configuring the Phantom Blinds TaHoma No
 ### Software Requirements
 
 - Polyglot v3 installed and running
-- Python 3.9 or higher
+- Python 3.11 or higher
 - Network access to TaHoma gateway
 
 ### TaHoma Setup Requirements
