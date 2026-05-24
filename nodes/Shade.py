@@ -88,9 +88,8 @@ class Shade(udi_interface.Node):
         self.controller.ready_event.wait()
         self.updateData()
 
-        # start event polling loop
-        if not self.event_polling_in:
-            self.start_event_polling()
+        # Event polling is now handled centrally by the Controller
+        # Individual node polling is no longer needed
 
     def poll(self, flag):
         """Handles polling requests from Polyglot.
@@ -107,10 +106,7 @@ class Shade(udi_interface.Node):
 
         if "shortPoll" in flag:
             LOGGER.debug(f"shortPoll shade {self.lpfx}")
-
-            # start event polling loop
-            if not self.event_polling_in:
-                self.start_event_polling()
+            # Event polling is now handled centrally by the Controller
 
     def start_event_polling(self):
         """Starts the background thread for polling and processing gateway events.

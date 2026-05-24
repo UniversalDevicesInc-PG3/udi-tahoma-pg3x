@@ -66,9 +66,7 @@ class Scene(udi_interface.Node):
         # wait for controller start ready
         self.controller.ready_event.wait()
 
-        # start event polling loop
-        if not self.event_polling_in:
-            self.start_event_polling()
+        # Event polling is now handled centrally by the Controller
 
     def poll(self, flag):
         """Handles polling requests from Polyglot.
@@ -86,10 +84,7 @@ class Scene(udi_interface.Node):
 
         if "shortPoll" in flag:
             LOGGER.debug(f"shortPoll scene {self.lpfx}")
-
-            # start event polling loop
-            if not self.event_polling_in:
-                self.start_event_polling()
+            # Event polling is now handled centrally by the Controller
 
     def start_event_polling(self):
         """Starts the background thread for polling and processing gateway events.
