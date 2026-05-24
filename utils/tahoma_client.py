@@ -182,6 +182,15 @@ class TaHomaClient:
             scenarios = await self.client.get_scenarios()
             LOGGER.info(f"Retrieved {len(scenarios)} scenarios from TaHoma")
             return scenarios
+        except TypeError as e:
+            # Handle case where API response doesn't match Scenario model
+            if "missing" in str(e) and "required positional argument" in str(e):
+                LOGGER.warning(f"Scenario response format doesn't match model: {e}")
+                LOGGER.info("Returning empty scenario list - will retry on next poll")
+                return []
+            else:
+                LOGGER.error(f"Failed to get scenarios: {e}", exc_info=True)
+                raise
         except Exception as e:
             LOGGER.error(f"Failed to get scenarios: {e}", exc_info=True)
             raise
@@ -311,7 +320,11 @@ class TaHomaClient:
             self.event_listener_id = None
             raise
         except Exception as e:
-            LOGGER.error(f"Failed to fetch events: {e}", exc_info=True)
+            # Log connection timeouts at debug level (expected with slow gateways)
+            if "timeout" in str(e).lower() or "connection" in str(e).lower():
+                LOGGER.debug(f"Connection timeout fetching events (will retry): {e}")
+            else:
+                LOGGER.error(f"Failed to fetch events: {e}", exc_info=True)
             raise
 
     async def unregister_event_listener(self):
@@ -320,7 +333,8 @@ class TaHomaClient:
             return
 
         try:
-            await self.client.unregister_event_listener(self.event_listener_id)  # type: ignore[arg-type]
+            # The pyoverkiz method doesn't take parameters, it uses the internal listener ID
+            await self.client.unregister_event_listener()
             LOGGER.info(f"Unregistered event listener: {self.event_listener_id}")
             self.event_listener_id = None
         except Exception as e:

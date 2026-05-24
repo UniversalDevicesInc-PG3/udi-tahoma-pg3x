@@ -819,11 +819,15 @@ class Controller(Node):
             self._discover_devices(devices, nodes_existing, nodes_new)
 
             # Get all scenarios (scenes) from TaHoma
-            scenarios = await self.tahoma_client.get_scenarios()
-            LOGGER.info(f"Retrieved {len(scenarios)} scenarios from TaHoma")
+            try:
+                scenarios = await self.tahoma_client.get_scenarios()
+                LOGGER.info(f"Retrieved {len(scenarios)} scenarios from TaHoma")
 
-            # Discover and create scenario nodes
-            self._discover_scenarios(scenarios, nodes_existing, nodes_new)
+                # Discover and create scenario nodes
+                self._discover_scenarios(scenarios, nodes_existing, nodes_new)
+            except Exception as e:
+                LOGGER.warning(f"Failed to retrieve scenarios (will retry later): {e}")
+                # Continue with devices discovery even if scenarios fail
 
             # Cleanup removed nodes
             self._cleanup_nodes(nodes_new, nodes_old)
