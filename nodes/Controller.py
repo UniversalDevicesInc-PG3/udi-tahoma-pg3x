@@ -865,6 +865,70 @@ class Controller(Node):
         for device in devices:
             try:
                 device_url = device.device_url
+                
+                # Log detailed device capabilities for analysis
+                LOGGER.info(f"\n{'='*60}")
+                LOGGER.info(f"Device: {device.label}")
+                LOGGER.info(f"  Device URL: {device_url}")
+                LOGGER.info(f"  Controllable Name: {device.controllable_name}")
+                
+                # Protocol and type information
+                try:
+                    LOGGER.info(f"  Protocol: {device.protocol}")
+                except AttributeError:
+                    LOGGER.info(f"  Protocol: (not available)")
+                
+                try:
+                    LOGGER.info(f"  Product Type: {device.type}")
+                except AttributeError:
+                    LOGGER.info(f"  Product Type: (not available)")
+                
+                # UI information
+                try:
+                    LOGGER.info(f"  Widget: {device.widget}")
+                except AttributeError:
+                    LOGGER.info(f"  Widget: (not available)")
+                    
+                try:
+                    LOGGER.info(f"  UI Class: {device.ui_class}")
+                except AttributeError:
+                    LOGGER.info(f"  UI Class: (not available)")
+                
+                # Capabilities from definition
+                try:
+                    if hasattr(device, 'definition') and device.definition:
+                        if hasattr(device.definition, 'ui_profiles'):
+                            LOGGER.info(f"  UI Profiles: {device.definition.ui_profiles}")
+                        if hasattr(device.definition, 'ui_classifiers'):
+                            LOGGER.info(f"  UI Classifiers: {device.definition.ui_classifiers}")
+                        if hasattr(device.definition, 'commands'):
+                            cmd_names = list(device.definition.commands.keys()) if hasattr(device.definition.commands, 'keys') else []
+                            LOGGER.info(f"  Available Commands: {cmd_names}")
+                except AttributeError as e:
+                    LOGGER.info(f"  Definition: (error accessing: {e})")
+                
+                # Current states
+                try:
+                    if hasattr(device, 'states') and device.states:
+                        state_names = list(device.states.keys()) if hasattr(device.states, 'keys') else []
+                        LOGGER.info(f"  States: {state_names}")
+                        # Log some key state values
+                        for state_name in ['core:ClosureState', 'core:BatteryState', 'core:MovingState', 'core:OpenClosedState']:
+                            if state_name in device.states:
+                                state = device.states[state_name]
+                                LOGGER.info(f"    {state_name} = {state.value}")
+                except AttributeError as e:
+                    LOGGER.info(f"  States: (error accessing: {e})")
+                
+                # Attributes
+                try:
+                    if hasattr(device, 'attributes') and device.attributes:
+                        attr_names = list(device.attributes.keys()) if hasattr(device.attributes, 'keys') else []
+                        LOGGER.info(f"  Attributes: {attr_names}")
+                except AttributeError as e:
+                    LOGGER.info(f"  Attributes: (error accessing: {e})")
+                
+                LOGGER.info(f"{'='*60}\n")
 
                 # Convert deviceURL to node address
                 node_address = self._device_url_to_address(device_url)
