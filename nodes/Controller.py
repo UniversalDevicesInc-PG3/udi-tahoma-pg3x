@@ -1054,6 +1054,29 @@ class Controller(Node):
         # Convert to lowercase (Polyglot convention)
         return address.lower()
 
+    def get_device_url_from_address(self, address: str) -> Optional[str]:
+        """Get TaHoma device URL from a node address.
+        
+        Args:
+            address: Node address (e.g., 'sh12345678')
+            
+        Returns:
+            Device URL if found, None otherwise
+        """
+        if not self.tahoma or not hasattr(self.tahoma, 'devices'):
+            return None
+            
+        # Extract device ID from address (remove 'sh' prefix)
+        if address.startswith('sh'):
+            device_id = address[2:]
+            
+            # Search through cached devices
+            for device in self.tahoma.devices.values():
+                if device.device_url.endswith(f"/{device_id}"):
+                    return device.device_url
+        
+        return None
+
     def delete(self):
         """Handles node deletion from Polyglot.
 

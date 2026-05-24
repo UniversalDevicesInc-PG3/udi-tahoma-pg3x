@@ -74,6 +74,20 @@ class Shade(udi_interface.Node):
         shade ID driver, waits for the controller to be ready, updates its
         initial data, and starts the event polling loop.
         """
+        # wait for controller start ready
+        self.controller.ready_event.wait()
+        
+        # If device_url is None, try to recover it from the controller
+        if not self.device_url:
+            LOGGER.info(f"{self.lpfx}: device_url is None, attempting to recover from controller")
+            recovered_url = self.controller.get_device_url_from_address(self.address)
+            if recovered_url:
+                self.device_url = recovered_url
+                self.sid = recovered_url
+                LOGGER.info(f"{self.lpfx}: Recovered device_url: {self.device_url}")
+            else:
+                LOGGER.error(f"{self.lpfx}: Could not recover device_url for address {self.address}")
+        
         # For TaHoma, we can't use deviceURL as a driver value (must be numeric)
         # So we'll use a hash or just set to 1 to indicate it's initialized
         if self.device_url:
@@ -84,8 +98,6 @@ class Shade(udi_interface.Node):
             # Legacy: use integer sid if not TaHoma deviceURL
             self.setDriver("GV0", self.sid, report=True, force=True)
 
-        # wait for controller start ready
-        self.controller.ready_event.wait()
         self.updateData()
 
         # Event polling is now handled centrally by the Controller
