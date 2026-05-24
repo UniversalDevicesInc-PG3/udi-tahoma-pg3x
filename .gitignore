@@ -4,8 +4,9 @@ __pycache__/
 *$py.class
 
 # Project Specific
-logs/*
-!logs/.gitkeep
+!logs/
+!logs/**
+logs/*.gz
 polyglot.py
 build.txt
 
