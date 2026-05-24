@@ -81,9 +81,9 @@ class Shade(udi_interface.Node):
         # (happens when nodes are restored from Polyglot database after restart)
         if not self.device_url:
             LOGGER.info(f"{self.lpfx}: device_url is None, checking custom data")
-            custom_data = self.controller.poly.getCustomData(self.address)
-            if custom_data and 'device_url' in custom_data:
-                self.device_url = custom_data['device_url']
+            device_url_key = f"device_url_{self.address}"
+            if device_url_key in self.controller.Data:
+                self.device_url = self.controller.Data[device_url_key]
                 self.sid = self.device_url
                 LOGGER.info(f"{self.lpfx}: Restored device_url: {self.device_url}")
             else:
@@ -91,7 +91,8 @@ class Shade(udi_interface.Node):
         
         # Save device_url to custom data for future restarts
         if self.device_url:
-            self.controller.poly.saveCustomData({self.address: {'device_url': self.device_url}})
+            device_url_key = f"device_url_{self.address}"
+            self.controller.Data[device_url_key] = self.device_url
         
         # For TaHoma, we can't use deviceURL as a driver value (must be numeric)
         # So we'll use a hash or just set to 1 to indicate it's initialized
