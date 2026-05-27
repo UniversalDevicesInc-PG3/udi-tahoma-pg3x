@@ -24,13 +24,22 @@ from nodes import Controller
 
 LOGGER = udi_interface.LOGGER
 
-VERSION = "0.0.1"
+VERSION = "0.0.2"
 """
+0.0.2
+- Generic full-UI shade nodes for all discovered blinds (field feedback refines behavior)
+- DeviceProfile from TaHoma discovery (protocol, commands, states); INFO summary per device
+- RTS: battery N/A (hardwired), position axes N/A when no feedback; SETPOS warns if unsupported
+- Skip gateway devices (Pod, WiFi, Zigbee transceiver) during discovery
+- Fix battery profile editor (255 = N/A Hardwired); GV5 labeled Protocol in NLS
+- Shade updateData/state sync fixes; discovery cleanup no longer drops controller node
+- Scene: guard missing controller attrs; replace removed updateAllFromServer call
+
 0.0.1
 NOTE set-up of repo
 
 previous updates:
-see versionHistory.md
+see VersionHistory.md
 
 """
 

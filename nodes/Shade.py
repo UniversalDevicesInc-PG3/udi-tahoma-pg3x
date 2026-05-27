@@ -1,64 +1,69 @@
 """Module for Somfy TaHoma/Phantom Blinds Shade nodes in a Polyglot v3 NodeServer.
 
-This module defines the base Shade class and several subclasses, each representing
-different types of motorized shades with varying capabilities (e.g., primary,
-secondary, and tilt controls) controlled via Somfy TaHoma.
-
 (C) 2025 Stephen Jenkins
 """
 
-# std libraries
 from threading import Thread
 
-# external libraries
 import udi_interface
+
+from utils.device_capabilities import (
+    CMD_CLOSURE,
+    CMD_DEPLOYMENT,
+    CMD_ORIENTATION,
+    GV6_UNKNOWN,
+    POSITION_NA,
+    STATE_BATTERY,
+    STATE_CLOSURE,
+    STATE_DEPLOYMENT,
+    STATE_RSSI,
+    STATE_STATUS,
+    STATE_TILT,
+    battery_value_to_gv6,
+    build_device_profile,
+    normalize_states,
+    profile_from_map,
+)
 
 LOGGER = udi_interface.LOGGER
 
+# Shared driver definitions (full generic UI)
+SHADE_DRIVERS_FULL = [
+    {"driver": "GV0", "value": 0, "uom": 107, "name": "Shade Id"},
+    {"driver": "ST", "value": 0, "uom": 2, "name": "In Motion"},
+    {"driver": "GV1", "value": 0, "uom": 107, "name": "Room Id"},
+    {"driver": "GV2", "value": POSITION_NA, "uom": 2, "name": "Primary"},
+    {"driver": "GV3", "value": POSITION_NA, "uom": 2, "name": "Secondary"},
+    {"driver": "GV4", "value": POSITION_NA, "uom": 2, "name": "Tilt"},
+    {"driver": "GV5", "value": 0, "uom": 25, "name": "Protocol"},
+    {"driver": "GV6", "value": GV6_UNKNOWN, "uom": 25, "name": "Battery Status"},
+]
+
+# TaHoma state name -> (driver, uom when value present)
+_STATE_DRIVER_MAP = {
+    STATE_CLOSURE: ("GV2", 100),
+    STATE_DEPLOYMENT: ("GV3", 100),
+    STATE_TILT: ("GV4", 100),
+    STATE_STATUS: ("ST", 2),
+    STATE_RSSI: ("GV11", 25),
+}
+
 
 class Shade(udi_interface.Node):
-    """Polyglot v3 NodeServer node for a Somfy TaHoma motorized shade.
-
-    This is the base class for all TaHoma shades. It handles positioning,
-    status updates, and commands for a shade. Subclasses are used to represent
-    shades with different physical capabilities.
-
-    Attributes:
-        id (str): The Polyglot node ID for this shade type.
-
-    Control Types:
-        - Primary: Main shade position (0-100%, where 0=closed, 100=open)
-        - Secondary: For dual shades (top-down/bottom-up or duolite)
-        - Tilt: For shades with tilting slats (0-100%, where 0=closed, 100=open)
-    """
+    """TaHoma shade node using a generic full-UI profile unless narrowed by discovery."""
 
     id = "shadeid"
 
     def __init__(self, poly, primary, address, name, sid):
-        """Initializes the Shade node.
-
-        Args:
-            poly: The Polyglot interface object.
-            primary: The address of the primary controller node.
-            address: The address of this shade node.
-            name: The name of this shade node.
-            sid (str): TaHoma deviceURL (e.g., "io://1234-5678-9012/12345678")
-        """
         super().__init__(poly, primary, address, name)
         self.poly = poly
         self.primary = primary
         self.controller = poly.getNode(self.primary)
         self.address = address
         self.name = name
-
-        # For TaHoma, sid is the deviceURL string
         self.sid = sid
-        # TaHoma device URLs can be in various formats:
-        # io://, rts://, zigbee://, internal://, etc.
         self.device_url = sid if isinstance(sid, str) and "://" in sid else None
-
-        self.tiltCapable = [1, 2, 4, 5, 9, 10]
-        self.tiltOnly90Capable = [1, 9]
+        self.profile = None
 
         self.lpfx = f"{address}:{name}"
         self.event_polling_in = False
@@ -67,471 +72,298 @@ class Shade(udi_interface.Node):
         self.poly.subscribe(self.poly.START, self.start, address)
         self.poly.subscribe(self.poly.POLL, self.poll)
 
-    def start(self):
-        """Handles the startup sequence for the shade node.
+    def _load_profile(self):
+        """Load or rebuild DeviceProfile from controller devices_map."""
+        shade_data = self.controller.get_shade_data(self.sid)
+        if shade_data and shade_data.get("profile"):
+            self.profile = profile_from_map(shade_data["profile"])
+            return
+        device = shade_data.get("device") if shade_data else None
+        if device:
+            self.profile = build_device_profile(device)
+            self.controller.update_shade_data(
+                self.sid, {"profile": self._profile_map()}
+            )
+        else:
+            from utils.device_capabilities import DeviceProfile
 
-        This method is called after Polyglot has added the node. It sets the
-        shade ID driver, waits for the controller to be ready, updates its
-        initial data, and starts the event polling loop.
-        """
-        # wait for controller start ready
+            self.profile = DeviceProfile(
+                protocol="unknown",
+                controllable_name="",
+                ui_class="",
+                widget="",
+            )
+
+    def _profile_map(self):
+        from utils.device_capabilities import profile_to_map
+
+        return profile_to_map(self.profile)
+
+    def start(self):
         self.controller.ready_event.wait()
-        
-        # If device_url is None, try to recover it from custom data
-        # (happens when nodes are restored from Polyglot database after restart)
+
         if not self.device_url:
-            LOGGER.info(f"{self.lpfx}: device_url is None, checking custom data")
             device_url_key = f"device_url_{self.address}"
             if device_url_key in self.controller.Data:
                 self.device_url = self.controller.Data[device_url_key]
                 self.sid = self.device_url
                 LOGGER.info(f"{self.lpfx}: Restored device_url: {self.device_url}")
             else:
-                LOGGER.error(f"{self.lpfx}: Could not recover device_url - not in custom data")
-        
-        # Save device_url to custom data for future restarts
+                LOGGER.error(
+                    f"{self.lpfx}: Could not recover device_url - not in custom data"
+                )
+
         if self.device_url:
             device_url_key = f"device_url_{self.address}"
             self.controller.Data[device_url_key] = self.device_url
-        
-        # Determine protocol type from device_url
-        protocol = "unknown"
+
+        self._load_profile()
+        self._apply_profile_drivers()
+
         if self.device_url:
-            if self.device_url.startswith("rts://"):
-                protocol = "rts"
-            elif self.device_url.startswith("io://"):
-                protocol = "io"
-            elif self.device_url.startswith("zigbee://"):
-                protocol = "zigbee"
-            elif self.device_url.startswith("internal://"):
-                protocol = "internal"
-        
-        # Set capabilities based on protocol
-        # GV5 values: 0=Unknown, 1=RTS (one-way), 2=io-homecontrol (two-way)
-        if protocol == "rts":
-            self.setDriver("GV5", 1, report=True, force=True)  # RTS
-            # RTS devices are hardwired, set battery to N/A (255)
-            self.setDriver("GV6", 255, report=True, force=True)
-        elif protocol == "io":
-            self.setDriver("GV5", 2, report=True, force=True)  # io-homecontrol
-        else:
-            self.setDriver("GV5", 0, report=True, force=True)  # Unknown
-        
-        # For TaHoma, we can't use deviceURL as a driver value (must be numeric)
-        # So we'll use a hash or just set to 1 to indicate it's initialized
-        if self.device_url:
-            # TaHoma device - use hash of deviceURL as numeric ID
             device_id_hash = abs(hash(self.device_url)) % 9999999
             self.setDriver("GV0", device_id_hash, report=True, force=True)
         else:
-            # Legacy: use integer sid if not TaHoma deviceURL
             self.setDriver("GV0", self.sid, report=True, force=True)
 
         self.updateData()
-
-        # Event polling is now handled centrally by the Controller
-        # Individual node polling is no longer needed
+        LOGGER.info(
+            f"{self.lpfx}: profile proto={self.profile.protocol} "
+            f"pos_fb={self.profile.has_position_feedback} "
+            f"controllable={self.profile.controllable_name}"
+        )
 
     def poll(self, flag):
-        """Handles polling requests from Polyglot.
-
-        This method is called by Polyglot for short polls. It ensures the
-        controller is ready and starts the event polling loop if not already running.
-
-        Args:
-            flag (str): A string indicating the type of poll ('shortPoll').
-        """
         if not self.controller.ready_event:
             LOGGER.error(f"Node not ready yet, exiting {self.lpfx}")
             return
-
         if "shortPoll" in flag:
             LOGGER.debug(f"shortPoll shade {self.lpfx}")
-            # Event polling is now handled centrally by the Controller
 
-    def start_event_polling(self):
-        """Starts the background thread for polling and processing gateway events.
+    def _apply_profile_drivers(self):
+        """Set protocol/battery and N/A placeholders for axes without feedback."""
+        if not self.profile:
+            return
 
-        This ensures that the event processing loop is running in its own thread,
-        consuming events that are queued by the SSE client.
-        """
-        LOGGER.info(f"start: {self.lpfx}")
-        if self._event_polling_thread and self._event_polling_thread.is_alive():
-            return  # Already running
+        self.setDriver("GV5", self.profile.protocol_gv5, report=True, force=True)
+        self.setDriver("GV6", self.profile.battery_gv6, report=True, force=True)
 
-        self.controller.stop_sse_client_event.clear()
-        self._event_polling_thread = Thread(
-            target=self._poll_events,
-            name=f"ShadeEventPollingThread{self.sid}",
-            daemon=True,
-        )
-        self._event_polling_thread.start()
-        LOGGER.info(f"exit: {self.lpfx}")
+        if not self.profile.has_position_feedback:
+            if self.profile.show_primary:
+                self.setDriver("GV2", POSITION_NA, report=True, force=True, uom=2)
+            if self.profile.show_secondary:
+                self.setDriver("GV3", POSITION_NA, report=True, force=True, uom=2)
+            if self.profile.show_tilt:
+                self.setDriver("GV4", POSITION_NA, report=True, force=True, uom=2)
 
-    def _poll_events(self):
-        """The main loop for processing events from the gateway event queue.
-
-        This method runs in a dedicated thread and continuously processes events
-        relevant to this shade, such as 'home' updates and TaHoma events.
-        """
-        self.event_polling_in = True
-
-        while not self.controller.stop_sse_client_event.is_set():
-            # wait for events to process
-            gateway_events = self.controller.get_gateway_event()
-
-            # home update event
-            # Use next() with a generator expression for efficient lookup
-            try:
-                home_event = next(
-                    (e for e in gateway_events if e.get("evt") == "home"), None
-                )
-            except Exception as ex:
-                LOGGER.error(f"shade {self.sid} home event error: {ex}", exc_info=True)
-                home_event = None
-
-            if home_event:
-                try:
-                    if self.sid in home_event.get("shades", []):
-                        LOGGER.debug(f"shade {self.sid} update")
-                        if self.updateData():
-                            # Directly modify the object reference
-                            home_event["shades"].remove(self.sid)
-                except (KeyError, ValueError) as ex:
-                    LOGGER.error(
-                        f"shade event error sid = {self.sid}: {ex}", exc_info=True
-                    )
-
-        self.event_polling_in = False
-        LOGGER.info(f"shade:{self.sid} exiting poll events due to controller shutdown")
+    def _set_position_na(self, driver_key: str):
+        self.setDriver(driver_key, POSITION_NA, report=True, force=False, uom=2)
 
     def updateData(self):
-        """Updates the node's drivers and name from the controller's data map.
-
-        This method retrieves the latest shade data from the controller, updates
-        all relevant drivers on the ISY, and renames the node if the name has
-        changed on TaHoma.
-
-        Returns:
-            bool: True if the update was successful, False otherwise.
-        """
         try:
             shade_data = self.controller.get_shade_data(self.sid)
             if not shade_data:
                 LOGGER.warning(f"shade {self.sid} no data found in devices_map")
                 return False
-            
+
             device = shade_data.get("device")
             if not device:
                 LOGGER.warning(f"shade {self.sid} no device object in shade_data")
                 return False
-                
-            LOGGER.debug(f"shade {self.sid} updating from device: {device.label}")
-            
-            # Update name if changed
-            if self.name != device.label:
-                LOGGER.warning(f"Name changed current:{self.name} new:{device.label}")
-                self.rename(device.label)
-                LOGGER.warning(f"Renamed to {self.name}")
-            
-            # Set basic status drivers
-            self.setDriver("ST", 0, report=True, force=True)
+
+            label = getattr(device, "label", None) or shade_data.get("label")
+            if label and self.name != label:
+                LOGGER.info(f"Name changed current:{self.name} new:{label}")
+                self.rename(label)
+
+            self._load_profile()
+            self._apply_profile_drivers()
+            self.sync_states_from_device(device)
             self.reportCmd("DOF", 2)
-            
-            # Update device states if available
-            if hasattr(device, 'states') and device.states:
-                for state in device.states:
-                    # Handle different state types as needed
-                    LOGGER.debug(f"Device state: {state.name} = {state.value}")
-            
             return True
         except Exception as ex:
             LOGGER.error(f"shade {self.sid} updateData error: {ex}", exc_info=True)
             return False
 
-    # A dictionary mapping capabilities to the drivers that should be set.
-    # This is a class-level variable for efficiency.
-    _DRIVER_MAP = {
-        7: [("GV2", "primary"), ("GV3", "secondary")],
-        8: [("GV2", "primary"), ("GV3", "secondary")],
-        0: [("GV2", "primary")],
-        3: [("GV2", "primary")],
-        6: [("GV3", "secondary")],
-        1: [("GV2", "primary"), ("GV4", "tilt")],
-        2: [("GV2", "primary"), ("GV4", "tilt")],
-        4: [("GV2", "primary"), ("GV4", "tilt")],
-        5: [("GV4", "tilt")],
-        # The `else` case can be handled with a default lookup.
-    }
-
-    def updatePositions(self, positions):
-        """Updates the shade's position drivers.
-
-        This method updates the local shade data in the controller and sets the
-        appropriate position drivers (primary, secondary, tilt) on the ISY
-        based on the shade's capabilities.
-
-        Args:
-            positions (dict): A dictionary containing the shade's position data.
-
-        Returns:
-            bool: Always returns True.
-        """
-        LOGGER.info(f"shade:{self.sid}, positions:{positions}")
-
-        self.controller.update_shade_data(self.sid, {"positions": positions})
-
-        positions.setdefault("primary", None)
-        positions.setdefault("secondary", None)
-        positions.setdefault(
-            "tilt", 0 if self.capabilities in self.tiltCapable else None
-        )
-
-        # Dispatch logic as above
-        drivers_to_set = self._DRIVER_MAP.get(
-            self.capabilities,
-            [("GV2", "primary"), ("GV3", "secondary"), ("GV4", "tilt")],
-        )
-
-        for driver_key, position_key in drivers_to_set:
-            pos_value = positions.get(position_key)
-            self.setDriver(driver_key, pos_value)  # , report=True, force=True)
-
-        return True
+    def sync_states_from_device(self, device=None):
+        """Push drivers from cached TaHoma device.states."""
+        if device is None:
+            shade_data = self.controller.get_shade_data(self.sid)
+            device = shade_data.get("device") if shade_data else None
+        if not device or not getattr(device, "states", None):
+            return
+        self.update_drivers_from_states(device.states)
 
     def update_drivers_from_states(self, states):
-        """Updates node drivers from TaHoma device states.
+        """Update node drivers from TaHoma states (device.states or SSE event)."""
+        if not self.profile:
+            self._load_profile()
 
-        Called when DeviceStateChangedEvent is received from TaHoma.
-        Maps TaHoma state names to ISY drivers.
+        state_map = normalize_states(states)
+        if not state_map:
+            return
 
-        Args:
-            states (list): List of State objects from TaHoma device
-        """
-        LOGGER.debug(f"Updating drivers for {self.name} from TaHoma states")
+        LOGGER.debug(f"Updating drivers for {self.name} from {len(state_map)} states")
 
-        # Map TaHoma state names to driver keys
-        state_driver_map = {
-            "core:ClosureState": ("GV2", 100),  # Primary position (0-100)
-            "core:DeploymentState": ("GV3", 100),  # Secondary position (0-100)
-            "core:SlateOrientationState": ("GV4", 100),  # Tilt angle (0-100)
-            "core:StatusState": ("ST", 2),  # Motion status (boolean)
-            "core:DiscreteRSSILevelState": ("GV11", 25),  # Signal strength (index)
-        }
-
-        for state in states:
-            state_name = state.name if hasattr(state, "name") else None
-            if not state_name:
+        for state_name, value in state_map.items():
+            if state_name == STATE_BATTERY:
+                gv6 = battery_value_to_gv6(value)
+                self.setDriver("GV6", gv6, report=True, force=False)
+                if self.profile:
+                    self.profile.battery_gv6 = gv6
                 continue
 
-            if state_name in state_driver_map:
-                driver_key, uom = state_driver_map[state_name]
-                value = state.value if hasattr(state, "value") else None
+            if state_name not in _STATE_DRIVER_MAP:
+                continue
 
-                if value is not None:
-                    # Convert value based on state type
-                    if state_name == "core:StatusState":
-                        # Status: "available" = 0 (not moving), other = 1 (moving)
-                        driver_value = 0 if value == "available" else 1
-                    elif state_name == "core:DiscreteRSSILevelState":
-                        # RSSI: map string to index (0-5)
-                        rssi_map = {
-                            "verylow": 0,
-                            "low": 1,
-                            "normal": 2,
-                            "good": 3,
-                            "verygood": 4,
-                            "excellent": 5,
-                        }
-                        driver_value = rssi_map.get(str(value).lower(), 2)
-                    else:
-                        # Position values: use as-is (already 0-100)
-                        driver_value = int(value)
+            driver_key, uom = _STATE_DRIVER_MAP[state_name]
+            if value is None:
+                continue
 
-                    # Update driver
-                    self.setDriver(
-                        driver_key, driver_value, report=True, force=False, uom=uom
-                    )
-                    LOGGER.debug(
-                        f"Updated {driver_key}={driver_value} from state {state_name}"
-                    )
+            if state_name == STATE_STATUS:
+                driver_value = 0 if value == "available" else 1
+            elif state_name == STATE_RSSI:
+                rssi_map = {
+                    "verylow": 0,
+                    "low": 1,
+                    "normal": 2,
+                    "good": 3,
+                    "verygood": 4,
+                    "excellent": 5,
+                }
+                driver_value = rssi_map.get(str(value).lower(), 2)
+            else:
+                try:
+                    driver_value = int(value)
+                except (TypeError, ValueError):
+                    continue
+                if not self.profile.has_position_feedback:
+                    continue
+
+            self.setDriver(
+                driver_key, driver_value, report=True, force=False, uom=uom
+            )
+
+        if not self.profile.has_position_feedback:
+            self._apply_profile_drivers()
+
+    def updatePositions(self, positions):
+        """Legacy path: update controller cache and position drivers when values exist."""
+        LOGGER.info(f"shade:{self.sid}, positions:{positions}")
+        self.controller.update_shade_data(self.sid, {"positions": positions})
+
+        if not self.profile:
+            self._load_profile()
+
+        axis_map = [
+            ("primary", "GV2", self.profile.show_primary),
+            ("secondary", "GV3", self.profile.show_secondary),
+            ("tilt", "GV4", self.profile.show_tilt),
+        ]
+        for key, driver_key, show in axis_map:
+            if not show:
+                continue
+            pos_value = positions.get(key)
+            if pos_value is None:
+                if not self.profile.has_position_feedback:
+                    self._set_position_na(driver_key)
+            else:
+                self.setDriver(driver_key, int(pos_value), report=True, force=False, uom=100)
+        return True
 
     def cmdOpen(self, command):
-        """Handles the 'Open' command from the ISY.
-
-        Args:
-            command (dict): The command payload from Polyglot.
-        """
         LOGGER.info(f"cmd Shade Open {self.lpfx}, {command}")
-
-        # TaHoma: use 'open' command
         self.execute_tahoma_command("open", [])
-
         self.reportCmd("OPEN", 2)
-        LOGGER.debug(f"Exit {self.lpfx}")
 
     def cmdClose(self, command):
-        """Handles the 'Close' command from the ISY.
-
-        Args:
-            command (dict): The command payload from Polyglot.
-        """
         LOGGER.info(f"cmd Shade Close {self.lpfx}, {command}")
-
-        # TaHoma: use 'close' command
         self.execute_tahoma_command("close", [])
-
         self.reportCmd("CLOSE", 2)
-        LOGGER.debug(f"Exit {self.lpfx}")
 
     def cmdStop(self, command):
-        """Handles the 'Stop' command from the ISY.
-
-        Args:
-            command (dict): The command payload from Polyglot.
-        """
         LOGGER.info(f"cmd Shade Stop {self.lpfx}, {command}")
-
-        # TaHoma: use 'stop' command
         self.execute_tahoma_command("stop", [])
         self.reportCmd("STOP", 2)
-        LOGGER.debug(f"Exit {self.lpfx}")
 
     def cmdTiltOpen(self, command):
-        """Handles the 'Tilt Open' command from the ISY.
-
-        Args:
-            command (dict): The command payload from Polyglot.
-        """
         LOGGER.info(f"cmd Shade TiltOpen {self.lpfx}, {command}")
-
-        # TaHoma: set orientation to 50 (mid-point, open slats)
+        if self.profile and not self.profile.supports_set_orientation:
+            LOGGER.warning(f"{self.lpfx}: tilt open not reported by gateway")
         self.execute_tahoma_command("setOrientation", [50])
-
         self.reportCmd("TILTOPEN", 2)
-        LOGGER.debug(f"Exit {self.lpfx}")
 
     def cmdTiltClose(self, command):
-        """Handles the 'Tilt Close' command from the ISY.
-
-        Args:
-            command (dict): The command payload from Polyglot.
-        """
         LOGGER.info(f"cmd Shade TiltClose {self.lpfx}, {command}")
-
-        # TaHoma: set orientation to 0 (closed slats)
+        if self.profile and not self.profile.supports_set_orientation:
+            LOGGER.warning(f"{self.lpfx}: tilt close not reported by gateway")
         self.execute_tahoma_command("setOrientation", [0])
-
         self.reportCmd("TILTCLOSE", 2)
-        LOGGER.debug(f"Exit {self.lpfx}")
 
     def cmdMy(self, command):
-        """Handles the 'MY' preset command from the ISY.
-
-        This command moves the shade to its pre-programmed "My" position,
-        which is stored in the motor's memory (not in TaHoma). The MY
-        position is typically set using an RTS remote control.
-
-        Args:
-            command (dict): The command payload from Polyglot.
-        """
         LOGGER.info(f"cmd Shade MY {self.lpfx}, {command}")
-
-        # TaHoma: use 'my' command (no parameters, uses motor's stored position)
         self.execute_tahoma_command("my", [])
-
         self.reportCmd("MY", 2)
-        LOGGER.debug(f"Exit {self.lpfx}")
 
     def query(self, command=None):
-        """Queries the node and reports all drivers to the ISY.
-
-        Args:
-            command (dict, optional): The command payload from Polyglot.
-                                      Defaults to None.
-        """
         LOGGER.info(f"cmd Query {self.lpfx}, {command}")
         self.updateData()
         self.reportDrivers()
-        LOGGER.debug(f"Exit {self.lpfx}")
 
     def cmdSetpos(self, command=None):
-        """Sets the position of the shade based on a command from the ISY.
-
-        This method parses a command containing primary, secondary, or tilt
-        positions and sends the corresponding request to the gateway.
-
-        Args:
-            command (dict, optional): The command payload from Polyglot,
-                                      containing position query parameters.
-                                      Defaults to None.
-        """
         LOGGER.info(f"cmdSetpos {self.lpfx}, {command}")
-
         if not command:
             LOGGER.error("No positions given")
             return
 
+        if not self.profile:
+            self._load_profile()
+
         try:
             query = command.get("query", {})
-            LOGGER.debug(f"Shade Setpos query {query}")
-
             key_map = {
                 "SETPRIM.uom100": "primary",
                 "SETSECO.uom100": "secondary",
                 "SETTILT.uom100": "tilt",
             }
-
             pos = {
                 name: int(query[key]) for key, name in key_map.items() if key in query
             }
-
             if pos:
-                LOGGER.info(f"Shade Setpos {pos}")
-                # TaHoma: convert to appropriate commands
                 self.set_tahoma_positions(pos)
             else:
                 LOGGER.error("Shade Setpos --nothing to set--")
-
         except (ValueError, TypeError, KeyError) as ex:
             LOGGER.error(f"Shade Setpos failed {self.lpfx}: {ex}", exc_info=True)
 
-        LOGGER.debug(f"Exit {self.lpfx}")
-
     def set_tahoma_positions(self, pos):
-        """Sets TaHoma device positions from position dictionary.
+        if not self.profile:
+            self._load_profile()
 
-        Maps position dictionary to TaHoma commands.
-
-        Args:
-            pos (dict): Position dictionary with keys: primary, secondary, tilt
-        """
         if "primary" in pos:
-            # Primary position -> setClosure command (0=closed, 100=open)
-            self.execute_tahoma_command("setClosure", [pos["primary"]])
+            if self.profile.supports_set_closure:
+                self.execute_tahoma_command(CMD_CLOSURE, [pos["primary"]])
+            else:
+                LOGGER.warning(
+                    f"{self.lpfx}: setClosure not available; use Open/Close/Stop/MY"
+                )
 
         if "secondary" in pos:
-            # Secondary position -> setDeployment command (for dual shades)
-            self.execute_tahoma_command("setDeployment", [pos["secondary"]])
+            if self.profile.supports_set_deployment:
+                self.execute_tahoma_command(CMD_DEPLOYMENT, [pos["secondary"]])
+            else:
+                LOGGER.warning(f"{self.lpfx}: setDeployment not available on device")
 
         if "tilt" in pos:
-            # Tilt position -> setOrientation command (0=closed, 100=open)
-            self.execute_tahoma_command("setOrientation", [pos["tilt"]])
+            if self.profile.supports_set_orientation:
+                self.execute_tahoma_command(CMD_ORIENTATION, [pos["tilt"]])
+            else:
+                LOGGER.warning(f"{self.lpfx}: setOrientation not available on device")
 
     def execute_tahoma_command(self, command_name, parameters):
-        """Executes a TaHoma command on this device.
-
-        Args:
-            command_name (str): TaHoma command name (e.g., 'setClosure', 'open', 'stop')
-            parameters (list): Command parameters (e.g., [50] for 50% position)
-
-        Returns:
-            str: Execution ID or None on failure
-        """
         import asyncio
 
         try:
-            # Execute command via controller's TaHoma client
             exec_id = asyncio.run_coroutine_threadsafe(
                 self.controller.tahoma_client.execute_command(
                     device_url=self.device_url,
@@ -548,10 +380,10 @@ class Shade(udi_interface.Node):
                     f"(exec: {exec_id})"
                 )
             else:
-                LOGGER.warning(f"TaHoma command '{command_name}' failed on {self.name}")
-
+                LOGGER.warning(
+                    f"TaHoma command '{command_name}' failed on {self.name}"
+                )
             return exec_id
-
         except Exception as e:
             LOGGER.error(
                 f"Error executing TaHoma command '{command_name}' on {self.name}: {e}",
@@ -559,38 +391,8 @@ class Shade(udi_interface.Node):
             )
             return None
 
-    """
-    UOMs:
-    2: boolean
-    25: index
-    100: A Level from 0-255 e.g. brightness of a dimmable lamp
-    107: Raw 1-byte unsigned value
+    drivers = SHADE_DRIVERS_FULL
 
-    Driver controls:
-    GV0: Custom Control 0 (Shade Id)
-    ST: Status (In Motion)
-    GV1: Custom Control 1 (Room Id)
-    GV2: Custom Control 2 (Primary)
-    GV3: Custom Control 3 (Secondary)
-    GV4: Custom Control 4 (Tilt)
-    GV5: Custom Control 5 (Capabilities)
-    GV6: Custom Control 6 (Battery Status)
-    """
-    drivers = [
-        {"driver": "GV0", "value": 0, "uom": 107, "name": "Shade Id"},
-        {"driver": "ST", "value": 0, "uom": 2, "name": "In Motion"},
-        {"driver": "GV1", "value": 0, "uom": 107, "name": "Room Id"},
-        {"driver": "GV2", "value": None, "uom": 100, "name": "Primary"},
-        {"driver": "GV3", "value": None, "uom": 100, "name": "Secondary"},
-        {"driver": "GV4", "value": None, "uom": 100, "name": "Tilt"},
-        {"driver": "GV5", "value": 0, "uom": 25, "name": "Capabilities"},
-        {"driver": "GV6", "value": 0, "uom": 25, "name": "Battery Status"},
-    ]
-
-    """
-    Commands that this node can handle.
-    Should match the 'accepts' section of the nodedef file.
-    """
     commands = {
         "OPEN": cmdOpen,
         "CLOSE": cmdClose,
@@ -603,37 +405,15 @@ class Shade(udi_interface.Node):
     }
 
 
-###################
-# Shade sub-classes
-###################
-
-
 class ShadeNoTilt(Shade):
-    """Shade node for shades with primary and secondary controls, but no tilt."""
+    """Backward-compatible nodedef; discovery uses generic Shade."""
 
     id = "shadenotiltid"
-
-    drivers = [
-        {"driver": "GV0", "value": 0, "uom": 107, "name": "Shade Id"},
-        {"driver": "ST", "value": 0, "uom": 2, "name": "In Motion"},
-        {"driver": "GV1", "value": 0, "uom": 107, "name": "Room Id"},
-        {"driver": "GV2", "value": None, "uom": 100, "name": "Primary"},
-        {"driver": "GV3", "value": None, "uom": 100, "name": "Secondary"},
-        {"driver": "GV5", "value": 0, "uom": 25, "name": "Capabilities"},
-        {"driver": "GV6", "value": 0, "uom": 25, "name": "Battery Status"},
-    ]
+    drivers = SHADE_DRIVERS_FULL
 
 
 class ShadeOnlyPrimary(Shade):
-    """Shade node for shades with only a primary position control."""
+    """Backward-compatible nodedef; discovery uses generic Shade."""
 
     id = "shadeonlyprimid"
-
-    drivers = [
-        {"driver": "GV0", "value": 0, "uom": 107, "name": "Shade Id"},
-        {"driver": "ST", "value": 0, "uom": 2, "name": "In Motion"},
-        {"driver": "GV1", "value": 0, "uom": 107, "name": "Room Id"},
-        {"driver": "GV2", "value": None, "uom": 100, "name": "Primary"},
-        {"driver": "GV5", "value": 0, "uom": 25, "name": "Capabilities"},
-        {"driver": "GV6", "value": 0, "uom": 25, "name": "Battery Status"},
-    ]
+    drivers = SHADE_DRIVERS_FULL

@@ -22,6 +22,12 @@ from utils.config_validation import (
     validate_gateway_pin,
     validate_bearer_token,
 )
+from utils.device_capabilities import (
+    build_device_profile,
+    log_device_discovery,
+    profile_to_map,
+    should_create_shade_node,
+)
 from pyoverkiz.exceptions import (
     InvalidEventListenerIdException,
     NoRegisteredEventListenerException,
@@ -31,8 +37,6 @@ from pyoverkiz.exceptions import (
 from nodes import (
     Scene,
     Shade,
-    ShadeNoTilt,
-    ShadeOnlyPrimary,
 )
 
 # limit the room label length as room - shade/scene must be < 30
@@ -98,6 +102,8 @@ class Controller(Node):
         self.devices_map_lock = Lock()
 
         self.scenarios_map = {}  # Key: scenario OID, Value: scenario data
+        self.sceneIdsActive: list = []
+        self.sceneIdsActive_calc: set = set()
 
         # Events
         self.ready_event = Event()
@@ -865,81 +871,26 @@ class Controller(Node):
         for device in devices:
             try:
                 device_url = device.device_url
-                
-                # Log detailed device capabilities for analysis
-                LOGGER.info(f"\n{'='*60}")
-                LOGGER.info(f"Device: {device.label}")
-                LOGGER.info(f"  Device URL: {device_url}")
-                LOGGER.info(f"  Controllable Name: {device.controllable_name}")
-                
-                # Protocol and type information
-                try:
-                    LOGGER.info(f"  Protocol: {device.protocol}")
-                except AttributeError:
-                    LOGGER.info(f"  Protocol: (not available)")
-                
-                try:
-                    LOGGER.info(f"  Product Type: {device.type}")
-                except AttributeError:
-                    LOGGER.info(f"  Product Type: (not available)")
-                
-                # UI information
-                try:
-                    LOGGER.info(f"  Widget: {device.widget}")
-                except AttributeError:
-                    LOGGER.info(f"  Widget: (not available)")
-                    
-                try:
-                    LOGGER.info(f"  UI Class: {device.ui_class}")
-                except AttributeError:
-                    LOGGER.info(f"  UI Class: (not available)")
-                
-                # Capabilities from definition
-                try:
-                    if hasattr(device, 'definition') and device.definition:
-                        if hasattr(device.definition, 'ui_profiles'):
-                            LOGGER.info(f"  UI Profiles: {device.definition.ui_profiles}")
-                        if hasattr(device.definition, 'ui_classifiers'):
-                            LOGGER.info(f"  UI Classifiers: {device.definition.ui_classifiers}")
-                        if hasattr(device.definition, 'commands'):
-                            cmd_names = list(device.definition.commands.keys()) if hasattr(device.definition.commands, 'keys') else []
-                            LOGGER.info(f"  Available Commands: {cmd_names}")
-                except AttributeError as e:
-                    LOGGER.info(f"  Definition: (error accessing: {e})")
-                
-                # Current states
-                try:
-                    if hasattr(device, 'states') and device.states:
-                        state_names = list(device.states.keys()) if hasattr(device.states, 'keys') else []
-                        LOGGER.info(f"  States: {state_names}")
-                        # Log some key state values
-                        for state_name in ['core:ClosureState', 'core:BatteryState', 'core:MovingState', 'core:OpenClosedState']:
-                            if state_name in device.states:
-                                state = device.states[state_name]
-                                LOGGER.info(f"    {state_name} = {state.value}")
-                except AttributeError as e:
-                    LOGGER.info(f"  States: (error accessing: {e})")
-                
-                # Attributes
-                try:
-                    if hasattr(device, 'attributes') and device.attributes:
-                        attr_names = list(device.attributes.keys()) if hasattr(device.attributes, 'keys') else []
-                        LOGGER.info(f"  Attributes: {attr_names}")
-                except AttributeError as e:
-                    LOGGER.info(f"  Attributes: (error accessing: {e})")
-                
-                LOGGER.info(f"{'='*60}\n")
 
-                # Convert deviceURL to node address
+                if not should_create_shade_node(device):
+                    LOGGER.info(
+                        f"Skipping non-shade device: {device.label} "
+                        f"({device.controllable_name})"
+                    )
+                    continue
+
+                profile = build_device_profile(device)
+                log_device_discovery(device, profile, LOGGER)
+
                 node_address = self._device_url_to_address(device_url)
 
-                # Store device in map
                 with self.devices_map_lock:
                     self.devices_map[device_url] = {
                         "device": device,
                         "address": node_address,
                         "label": device.label,
                         "controllableName": device.controllable_name,
+                        "profile": profile_to_map(profile),
                     }
 
                 nodes_new.append(node_address)
@@ -1018,7 +969,10 @@ class Controller(Node):
         LOGGER.debug(f"db nodes = {nodes_db}")
 
         nodes_current = self.poly.getNodes()
-        nodes_get = {key: nodes_current[key] for key in nodes_current if key != self.id and key != 'controller'}
+        skip = {self.address, self.id, "controller", "hdctrl"}
+        nodes_get = {
+            key: nodes_current[key] for key in nodes_current if key not in skip
+        }
 
         LOGGER.debug(f"old nodes = {nodes_old}")
         LOGGER.debug(f"new nodes = {nodes_new}")
@@ -1033,68 +987,13 @@ class Controller(Node):
             LOGGER.info("Discovery NO NEW activity")
 
     def _create_device_node(self, device, node_address):
-        """Creates the appropriate device node based on TaHoma device type.
-
-        Args:
-            device: Device object from TaHoma
-            node_address (str): The node address for the new device
-
-        Returns:
-            Node: An instance of the appropriate Shade node class, or None
-        """
-        controllable = device.controllable_name
+        """Create a generic Shade node (full ISY UI) for field-discovered devices."""
         label = device.label
         device_url = device.device_url
-
-        LOGGER.debug(f"Creating node for device type: {controllable}")
-
-        # Map TaHoma controllableNames to node classes
-        # Based on Somfy device capabilities
-
-        if "VenetianBlind" in controllable:
-            # Venetian blinds have tilt capability
-            LOGGER.info(f"Creating Shade node (with tilt) for {label}")
-            return Shade(self.poly, self.address, node_address, label, device_url)
-
-        elif "DualRollerShutter" in controllable:
-            # Dual roller shutters have primary + secondary
-            LOGGER.info(f"Creating ShadeNoTilt node (dual) for {label}")
-            return ShadeNoTilt(self.poly, self.address, node_address, label, device_url)
-
-        elif "ExteriorScreen" in controllable or "Screen" in controllable:
-            # Screens typically only primary position
-            LOGGER.info(f"Creating ShadeOnlyPrimary node (screen) for {label}")
-            return ShadeOnlyPrimary(
-                self.poly, self.address, node_address, label, device_url
-            )
-
-        elif "RollerShutter" in controllable:
-            # Standard roller shutters - primary position only
-            LOGGER.info(f"Creating ShadeOnlyPrimary node (roller) for {label}")
-            return ShadeOnlyPrimary(
-                self.poly, self.address, node_address, label, device_url
-            )
-
-        elif "Awning" in controllable:
-            # Awnings - primary position only
-            LOGGER.info(f"Creating ShadeOnlyPrimary node (awning) for {label}")
-            return ShadeOnlyPrimary(
-                self.poly, self.address, node_address, label, device_url
-            )
-
-        elif "Curtain" in controllable:
-            # Curtains - primary position only
-            LOGGER.info(f"Creating ShadeOnlyPrimary node (curtain) for {label}")
-            return ShadeOnlyPrimary(
-                self.poly, self.address, node_address, label, device_url
-            )
-
-        else:
-            # Unknown device type - use generic shade with full capabilities
-            LOGGER.warning(
-                f"Unknown device type '{controllable}' - creating generic Shade node for {label}"
-            )
-            return Shade(self.poly, self.address, node_address, label, device_url)
+        LOGGER.info(
+            f"Creating generic Shade node for {label} ({device.controllable_name})"
+        )
+        return Shade(self.poly, self.address, node_address, label, device_url)
 
     def _device_url_to_address(self, device_url: str) -> str:
         """Convert TaHoma deviceURL to valid Polyglot node address.

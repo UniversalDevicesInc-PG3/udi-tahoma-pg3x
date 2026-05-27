@@ -247,7 +247,8 @@ class Scene(udi_interface.Node):
                 LOGGER.info(
                     f"event {event.get('evt')} for existing scene: {self.lpfx}, updating info from gateway."
                 )
-                self.controller.updateAllFromServer()
+                if hasattr(self.controller, "discover_cmd"):
+                    self.controller.discover_cmd()
                 self.calcActive()
                 self.controller.remove_gateway_event(event)
 
