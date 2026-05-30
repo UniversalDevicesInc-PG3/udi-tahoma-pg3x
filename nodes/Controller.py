@@ -41,7 +41,6 @@ from utils.exec_status import (
     LAST_CMD_PENDING,
     execution_state_to_last_cmd,
     last_cmd_label,
-    scenario_parent_exec_to_last_cmd,
 )
 from utils.scenario import scenario_oid_to_address
 from utils.device_capabilities import (
@@ -136,10 +135,8 @@ class Controller(Node):
 
         self._exec_lock = Lock()
         self._exec_to_node: dict[str, str] = {}
-        self._exec_kind: dict[str, str] = {}
         self._exec_resolved: set[str] = set()
         self._exec_watch_seconds = 15
-        self._exec_watch_seconds_scenario = 5
 
         self.scenarios_map = {}  # Key: scenario OID, Value: scenario data
 
@@ -1010,31 +1007,16 @@ class Controller(Node):
         exec_id: str,
         node_address: str,
         device_url: Optional[str] = None,
-        execution_kind: str = "device",
     ):
         """Track a TaHoma exec ID and poll until it completes or fails."""
         if not exec_id:
             return
         with self._exec_lock:
             self._exec_to_node[exec_id] = node_address
-            self._exec_kind[exec_id] = execution_kind
             self._exec_resolved.discard(exec_id)
         asyncio.run_coroutine_threadsafe(
             self._watch_execution(exec_id, node_address), self.mainloop
         )
-
-    def _execution_kind(self, exec_id: Optional[str]) -> str:
-        if not exec_id:
-            return "device"
-        with self._exec_lock:
-            return self._exec_kind.get(exec_id, "device")
-
-    def _exec_state_to_last_cmd(
-        self, exec_id: Optional[str], state
-    ) -> Optional[int]:
-        if self._execution_kind(exec_id) == "scenario":
-            return scenario_parent_exec_to_last_cmd(state)
-        return execution_state_to_last_cmd(state)
 
     def _resolve_node_address(
         self, exec_id: Optional[str], device_url: Optional[str]
@@ -1065,7 +1047,6 @@ class Controller(Node):
                     return
                 if status in (LAST_CMD_COMPLETED, LAST_CMD_FAILED):
                     self._exec_resolved.add(exec_id)
-                    self._exec_kind.pop(exec_id, None)
                     self._exec_to_node.pop(exec_id, None)
 
         node = self.poly.getNode(node_address)
@@ -1080,7 +1061,7 @@ class Controller(Node):
         exec_id = getattr(event, "exec_id", None)
         device_url = getattr(event, "device_url", None)
         new_state = getattr(event, "new_state", None)
-        status = self._exec_state_to_last_cmd(exec_id, new_state)
+        status = execution_state_to_last_cmd(new_state)
         if status is None or status == LAST_CMD_PENDING:
             return
         node_address = self._resolve_node_address(exec_id, device_url)
@@ -1092,14 +1073,7 @@ class Controller(Node):
         if not self.tahoma_client:
             return
 
-        kind = self._execution_kind(exec_id)
-        watch_seconds = (
-            self._exec_watch_seconds_scenario
-            if kind == "scenario"
-            else self._exec_watch_seconds
-        )
-
-        for _ in range(watch_seconds):
+        for _ in range(self._exec_watch_seconds):
             with self._exec_lock:
                 if exec_id in self._exec_resolved:
                     return
@@ -1109,23 +1083,14 @@ class Controller(Node):
             except Exception:
                 continue
 
-            status = self._exec_state_to_last_cmd(
-                exec_id, getattr(execution, "state", None)
+            status = execution_state_to_last_cmd(
+                getattr(execution, "state", None)
             )
             if status in (LAST_CMD_COMPLETED, LAST_CMD_FAILED):
                 self._apply_last_command(node_address, status, exec_id)
                 return
             if status == LAST_CMD_PENDING:
                 self._apply_last_command(node_address, LAST_CMD_PENDING, exec_id)
-
-        if kind == "scenario":
-            LOGGER.info(
-                "Scenario exec %s accepted by gateway; marking Completed "
-                "(parent exec FAILED on local API is not reliable)",
-                exec_id,
-            )
-            self._apply_last_command(node_address, LAST_CMD_COMPLETED, exec_id)
-            return
 
         LOGGER.debug(
             "Execution watch timed out for %s (%s); awaiting TaHoma event",

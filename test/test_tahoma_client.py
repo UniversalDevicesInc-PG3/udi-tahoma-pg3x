@@ -123,6 +123,46 @@ async def test_tahoma_client_get_scenarios(mock_overkiz_client):
 
 
 @pytest.mark.asyncio
+async def test_tahoma_client_execute_scenario(mock_overkiz_client):
+    """Scenes run via exec/apply on the local Developer Mode API."""
+    mock_class, mock_instance = mock_overkiz_client
+
+    client = TaHomaClient(token="test-token", gateway_pin="1234-5678-9012")
+    await client.connect()
+    mock_instance._OverkizClient__get = AsyncMock(
+        return_value=[
+            {
+                "label": "Morning",
+                "oid": "1234567890",
+                "actions": [
+                    {
+                        "deviceURL": "rts://1234-5678-9012/1",
+                        "commands": [{"name": "my", "parameters": []}],
+                    }
+                ],
+            }
+        ]
+    )
+    mock_instance._OverkizClient__post = AsyncMock(return_value={"execId": "exec-scene-1"})
+
+    exec_id = await client.execute_scenario("1234567890")
+
+    assert exec_id == "exec-scene-1"
+    mock_instance._OverkizClient__post.assert_called_once_with(
+        "exec/apply",
+        {
+            "label": "Morning",
+            "actions": [
+                {
+                    "deviceURL": "rts://1234-5678-9012/1",
+                    "commands": [{"name": "my", "parameters": []}],
+                }
+            ],
+        },
+    )
+
+
+@pytest.mark.asyncio
 async def test_tahoma_client_register_event_listener(mock_overkiz_client):
     """Test registering event listener."""
     mock_class, mock_instance = mock_overkiz_client

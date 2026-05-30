@@ -87,9 +87,7 @@ class Scene(udi_interface.Node):
 
             if exec_id:
                 self.set_last_command(LAST_CMD_PENDING)
-                self.controller.track_execution(
-                    exec_id, self.address, execution_kind="scenario"
-                )
+                self.controller.track_execution(exec_id, self.address)
                 LOGGER.info(
                     f"TaHoma scenario {self.name} activated (exec: {exec_id})"
                 )

@@ -2,6 +2,7 @@
 
 from utils.scenario import (
     TaHomaScenario,
+    action_group_exec_payload,
     has_user_label,
     parse_action_group,
     scenario_oid_to_address,
@@ -59,3 +60,37 @@ def test_scenario_oid_to_address_shortens_uuid():
 
 def test_scenario_oid_to_address_numeric_oid():
     assert scenario_oid_to_address("1234567890") == "sc1234567890"
+
+
+def test_action_group_exec_payload_normalizes_actions():
+    payload = action_group_exec_payload(
+        "Morning",
+        [
+            {
+                "deviceURL": "rts://2075-3852-5398/16758638",
+                "commands": [{"name": "my", "parameters": []}],
+            },
+            {
+                "device_url": "rts://2075-3852-5398/16759934",
+                "commands": ["close"],
+            },
+        ],
+    )
+    assert payload == {
+        "label": "Morning",
+        "actions": [
+            {
+                "deviceURL": "rts://2075-3852-5398/16758638",
+                "commands": [{"name": "my", "parameters": []}],
+            },
+            {
+                "deviceURL": "rts://2075-3852-5398/16759934",
+                "commands": [{"name": "close", "parameters": []}],
+            },
+        ],
+    }
+
+
+def test_action_group_exec_payload_empty():
+    assert action_group_exec_payload("Empty", []) is None
+    assert action_group_exec_payload("Empty", [{"deviceURL": "x", "commands": []}]) is None

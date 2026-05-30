@@ -67,6 +67,50 @@ def parse_action_group(data: Any) -> TaHomaScenario | None:
     return TaHomaScenario(oid=oid, label=label)
 
 
+def action_group_exec_payload(
+    label: str, actions: Any
+) -> dict[str, Any] | None:
+    """Build a local API exec/apply payload from a persisted actionGroup.
+
+    TaHoma Developer Mode local API runs scenes via POST exec/apply, not exec/{oid}.
+    """
+    if not isinstance(actions, list):
+        return None
+
+    normalized_actions: list[dict[str, Any]] = []
+    for action in actions:
+        if not isinstance(action, Mapping):
+            continue
+        device_url = action.get("deviceURL") or action.get("device_url")
+        raw_commands = action.get("commands") or []
+        if not device_url or not raw_commands:
+            continue
+
+        commands: list[dict[str, Any]] = []
+        for cmd in raw_commands:
+            if isinstance(cmd, Mapping):
+                name = cmd.get("name")
+                if name:
+                    commands.append(
+                        {
+                            "name": str(name),
+                            "parameters": list(cmd.get("parameters") or []),
+                        }
+                    )
+            elif isinstance(cmd, str) and cmd:
+                commands.append({"name": cmd, "parameters": []})
+
+        if commands:
+            normalized_actions.append(
+                {"deviceURL": str(device_url), "commands": commands}
+            )
+
+    if not normalized_actions:
+        return None
+
+    return {"label": label or "Polyglot Scene", "actions": normalized_actions}
+
+
 def scenario_oid_to_address(scenario_oid: str) -> str:
     """Convert a TaHoma scenario OID to a valid Polyglot node address.
 
