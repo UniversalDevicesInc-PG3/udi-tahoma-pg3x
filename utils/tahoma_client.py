@@ -327,10 +327,22 @@ class TaHomaClient:
         try:
             raw_groups = await self._fetch_action_groups()
             scenarios: list[TaHomaScenario] = []
+            skipped: list[str] = []
             for item in raw_groups:
+                oid = None
+                if isinstance(item, dict):
+                    oid = item.get("oid") or item.get("OID") or item.get("id")
                 scenario = parse_action_group(item)
                 if scenario:
                     scenarios.append(scenario)
+                elif oid is not None:
+                    skipped.append(str(oid))
+            if skipped:
+                LOGGER.info(
+                    "Skipped %d unnamed actionGroups (orphan/system records): %s",
+                    len(skipped),
+                    ", ".join(skipped),
+                )
             LOGGER.info(f"Retrieved {len(scenarios)} scenarios from TaHoma")
             return scenarios
         except Exception as e:

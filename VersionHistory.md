@@ -2,6 +2,11 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.12
+
+- Skip **unnamed actionGroups** during scenario discovery — TaHoma API can return orphan/system records with no label; these no longer appear as UUID-named scene nodes
+- Skipped OIDs logged at INFO for troubleshooting
+
 ## 0.0.11
 
 - **Fix startup lockup**: scene node addresses used full UUIDs (~43 chars); Polyglot allows max 14 — addresses now use `sc` + 10 hex chars
