@@ -3,6 +3,7 @@
 from utils.scenario import (
     TaHomaScenario,
     action_group_exec_payload,
+    extract_action_group_actions,
     has_user_label,
     parse_action_group,
     scenario_oid_to_address,
@@ -81,11 +82,11 @@ def test_action_group_exec_payload_normalizes_actions():
         "actions": [
             {
                 "deviceURL": "rts://2075-3852-5398/16758638",
-                "commands": [{"name": "my", "parameters": []}],
+                "commands": [{"name": "my", "parameters": [0]}],
             },
             {
                 "deviceURL": "rts://2075-3852-5398/16759934",
-                "commands": [{"name": "close", "parameters": []}],
+                "commands": [{"name": "close", "parameters": [0]}],
             },
         ],
     }
@@ -94,3 +95,34 @@ def test_action_group_exec_payload_normalizes_actions():
 def test_action_group_exec_payload_empty():
     assert action_group_exec_payload("Empty", []) is None
     assert action_group_exec_payload("Empty", [{"deviceURL": "x", "commands": []}]) is None
+
+
+def test_extract_action_group_actions_nested():
+    actions = extract_action_group_actions(
+        {
+            "label": "Morning",
+            "oid": "1",
+            "actionGroup": {
+                "actions": [
+                    {
+                        "deviceURL": "rts://pin/1",
+                        "commands": [{"name": "my", "parameters": []}],
+                    }
+                ]
+            },
+        }
+    )
+    assert len(actions) == 1
+
+
+def test_action_group_exec_payload_adds_rts_duration():
+    payload = action_group_exec_payload(
+        "Close",
+        [
+            {
+                "deviceURL": "rts://2075-3852-5398/1",
+                "commands": [{"name": "close", "parameters": []}],
+            }
+        ],
+    )
+    assert payload["actions"][0]["commands"][0]["parameters"] == [0]

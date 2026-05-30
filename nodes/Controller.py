@@ -112,6 +112,8 @@ class Controller(Node):
         self.token = ""
         self.gateway_pin = ""
         self.gateway_ip = None
+        self.cloud_email = ""
+        self.cloud_password = ""
         self.verify_ssl = False
 
         # in function vars
@@ -239,6 +241,8 @@ class Controller(Node):
                 gateway_pin=self.gateway_pin,
                 gateway_ip=self.gateway_ip,
                 verify_ssl=self.verify_ssl,
+                cloud_email=self.cloud_email,
+                cloud_password=self.cloud_password,
             )
 
             connect_result = asyncio.run_coroutine_threadsafe(
@@ -608,6 +612,8 @@ class Controller(Node):
             "gateway_pin": DEFAULT_GATEWAY_PIN,
             "gateway_ip": DEFAULT_GATEWAY_IP,
             "verify_ssl": "false",
+            "tahoma_cloud_email": "",
+            "tahoma_cloud_password": "",
         }
         for param, default_value in defaults.items():
             if param not in self.Parameters:
@@ -728,6 +734,10 @@ class Controller(Node):
         )
         verify = self.Parameters.get("verify_ssl")
         self.verify_ssl = verify.lower() == "true" if verify else False
+        self.cloud_email = str(self.Parameters.get("tahoma_cloud_email", "")).strip()
+        self.cloud_password = str(
+            self.Parameters.get("tahoma_cloud_password", "")
+        )
 
         if self.gateway_ip:
             LOGGER.info(
@@ -1017,6 +1027,20 @@ class Controller(Node):
         asyncio.run_coroutine_threadsafe(
             self._watch_execution(exec_id, node_address), self.mainloop
         )
+
+    def track_cloud_scenario(self, node_address: str, seconds: float = 12.0):
+        """Mark a cloud-executed scene Completed after a short delay (no local exec events)."""
+
+        def _complete():
+            node = self.poly.getNode(node_address)
+            if node and hasattr(node, "set_last_command"):
+                node.set_last_command(LAST_CMD_COMPLETED)
+                LOGGER.info(
+                    "%s Last Command: Completed (Somfy cloud scene)",
+                    node_address,
+                )
+
+        Timer(seconds, _complete).start()
 
     def _resolve_node_address(
         self, exec_id: Optional[str], device_url: Optional[str]

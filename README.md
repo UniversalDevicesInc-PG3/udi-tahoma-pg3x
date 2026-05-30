@@ -97,7 +97,7 @@ See [Applications](#applications) for how RTS vs io/Zigbee nodes differ.
 
 **io / Zigbee shades** use full **Shade** nodes with position fields where supported.
 
-TaHoma **scenarios** appear as **Scenario** nodes with **Activate** and **Last Command (GV7)** feedback (same Pending / Completed / Failed model as RTS shades). Use ISY programs, schedules, or the Admin Console to run scenes.
+TaHoma **scenarios** appear as **Scenario** nodes with **Activate** and **Last Command (GV7)** feedback. Scene **Activate** requires optional Somfy cloud credentials (see [POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md)) because TaHoma app scenes are server-side; individual shade commands remain local.
 
 After upgrading the NodeServer, **Update Profile** in Polyglot, then run **Discover** again.
 

@@ -11,7 +11,12 @@ import asyncio
 
 import udi_interface
 
-from utils.exec_status import LAST_CMD_FAILED, LAST_CMD_NONE, LAST_CMD_PENDING
+from utils.exec_status import (
+    LAST_CMD_COMPLETED,
+    LAST_CMD_FAILED,
+    LAST_CMD_NONE,
+    LAST_CMD_PENDING,
+)
 
 LOGGER = udi_interface.LOGGER
 
@@ -83,11 +88,14 @@ class Scene(udi_interface.Node):
             exec_id = asyncio.run_coroutine_threadsafe(
                 self.controller.tahoma_client.execute_scenario(self.sid),
                 self.controller.mainloop,
-            ).result(timeout=10)
+            ).result(timeout=30)
 
             if exec_id:
                 self.set_last_command(LAST_CMD_PENDING)
-                self.controller.track_execution(exec_id, self.address)
+                if self.controller.tahoma_client.last_scenario_via_cloud:
+                    self.controller.track_cloud_scenario(self.address)
+                else:
+                    self.controller.track_execution(exec_id, self.address)
                 LOGGER.info(
                     f"TaHoma scenario {self.name} activated (exec: {exec_id})"
                 )
