@@ -114,6 +114,7 @@ class Controller(Node):
         self.gateway_ip = None
         self.cloud_email = ""
         self.cloud_password = ""
+        self.cloud_region = "Somfy (North America)"
         self.verify_ssl = False
 
         # in function vars
@@ -243,6 +244,7 @@ class Controller(Node):
                 verify_ssl=self.verify_ssl,
                 cloud_email=self.cloud_email,
                 cloud_password=self.cloud_password,
+                cloud_region=self.cloud_region,
             )
 
             connect_result = asyncio.run_coroutine_threadsafe(
@@ -614,6 +616,7 @@ class Controller(Node):
             "verify_ssl": "false",
             "tahoma_cloud_email": "",
             "tahoma_cloud_password": "",
+            "tahoma_cloud_region": "Somfy (North America)",
         }
         for param, default_value in defaults.items():
             if param not in self.Parameters:
@@ -738,6 +741,9 @@ class Controller(Node):
         self.cloud_password = str(
             self.Parameters.get("tahoma_cloud_password", "")
         )
+        self.cloud_region = str(
+            self.Parameters.get("tahoma_cloud_region", "Somfy (North America)")
+        ).strip() or "Somfy (North America)"
 
         if self.gateway_ip:
             LOGGER.info(

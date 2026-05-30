@@ -77,9 +77,17 @@ Optional. **Required for scene Activate** if your log shows `no device actions o
 
 TaHoma **app scenes** (Morning, All Close, etc.) are stored server-side. The local Developer Mode API lists scene names but usually does **not** include the per-shade commands needed to run them locally. Individual shade commands still use the local API; only **Activate** on scene nodes uses Somfy cloud when these fields are set.
 
-- Use the same email and password you use to sign in to the **TaHoma by Somfy** mobile app
+- Use the same email and password you sign in with in the **TaHoma by Somfy** mobile app
 - Stored in Polyglot configuration on your ISY/EISY (same as other custom parameters)
 - Shade control remains local; only scene activation contacts `tahomalink.com`
+
+#### `tahoma_cloud_region`
+
+Somfy cloud hub for your account (must match where you registered in the TaHoma app).
+
+- **Default:** `Somfy (North America)`
+- **Other values:** `Somfy (Europe)`, `Somfy (Oceania)`
+- Only needed if cloud login fails with bad credentials despite correct email/password
 
 ### Reference table
 
@@ -91,6 +99,7 @@ TaHoma **app scenes** (Morning, All Close, etc.) are stored server-side. The loc
 | `verify_ssl` | No | `false` | `false` |
 | `tahoma_cloud_email` | For scenes | (empty) | your TaHoma app login email |
 | `tahoma_cloud_password` | For scenes | (empty) | your TaHoma app password |
+| `tahoma_cloud_region` | No | `Somfy (North America)` | `Somfy (Europe)` |
 
 ## TaHoma setup
 

@@ -11,7 +11,7 @@ import ssl
 from typing import Optional, List, Any
 
 from pyoverkiz.client import OverkizClient
-from pyoverkiz.const import OverkizServer  # type: ignore[attr-defined]
+from pyoverkiz.const import OverkizServer, SUPPORTED_SERVERS  # type: ignore[attr-defined]
 from pyoverkiz.models import Command, Device, Event
 from pyoverkiz.exceptions import (
     NotAuthenticatedException,
@@ -117,6 +117,7 @@ class TaHomaClient:
         session: Optional[aiohttp.ClientSession] = None,
         cloud_email: str = "",
         cloud_password: str = "",
+        cloud_region: str = "Somfy (North America)",
     ):
         """Initialize TaHoma client.
 
@@ -128,6 +129,7 @@ class TaHomaClient:
             session: Optional aiohttp session (created if None)
             cloud_email: Optional Somfy TaHoma cloud account email (for scenes)
             cloud_password: Optional Somfy TaHoma cloud account password (for scenes)
+            cloud_region: Somfy cloud hub name (default Somfy (North America))
         """
         self.token = token
         self.gateway_pin = gateway_pin
@@ -135,12 +137,14 @@ class TaHomaClient:
         self.gateway_ip = gateway_ip
         self.cloud_email = (cloud_email or "").strip()
         self.cloud_password = cloud_password or ""
+        self.cloud_region = (cloud_region or "Somfy (North America)").strip()
         self._session = session
         self._own_session = session is None
         self.last_scenario_via_cloud = False
 
         self.client: Optional[OverkizClient] = None
         self._cloud_client: Optional[OverkizClient] = None
+        self._cloud_session: Optional[aiohttp.ClientSession] = None
         self.event_listener_id: Optional[str] = None
         self._connected = False
         self._action_groups_by_oid: dict[str, dict] = {}
@@ -206,6 +210,11 @@ class TaHomaClient:
 
             LOGGER.info(f"Connected to TaHoma gateway: {self.gateway_pin}")
             self._connected = True
+            if self.cloud_email and self.cloud_password:
+                LOGGER.info(
+                    "Somfy cloud credentials configured for scene Activate (%s)",
+                    self.cloud_region,
+                )
             
             # Register event listener separately with better error handling
             # This allows connection to succeed even if event listener fails
@@ -267,8 +276,13 @@ class TaHomaClient:
         if self._own_session and self._session and not self._session.closed:
             await self._session.close()
 
+        if self._cloud_session and not self._cloud_session.closed:
+            await self._cloud_session.close()
+
         self.client = None
+        self._cloud_client = None
         self._session = None
+        self._cloud_session = None
         self._connected = False
         LOGGER.info("Disconnected from TaHoma")
 
@@ -370,11 +384,18 @@ class TaHomaClient:
                         action_count,
                     )
                 else:
-                    LOGGER.warning(
-                        "Scenario %s: no device actions on local API "
-                        "(Activate requires tahoma_cloud_email/password)",
-                        scenario.label,
-                    )
+                    if self.cloud_email and self.cloud_password:
+                        LOGGER.info(
+                            "Scenario %s: no local actions; Activate will use Somfy cloud (%s)",
+                            scenario.label,
+                            self.cloud_region,
+                        )
+                    else:
+                        LOGGER.warning(
+                            "Scenario %s: no device actions on local API "
+                            "(Activate requires tahoma_cloud_email/password)",
+                            scenario.label,
+                        )
             LOGGER.info(f"Retrieved {len(scenarios)} scenarios from TaHoma")
             return scenarios
         except Exception as e:
@@ -459,22 +480,43 @@ class TaHomaClient:
         if self._cloud_client is not None:
             return self._cloud_client
 
-        if self._session is None or self._session.closed:
-            return None
+        if self._cloud_session is None or self._cloud_session.closed:
+            ssl_context = ssl.create_default_context()
+            if not self.verify_ssl:
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+            timeout = aiohttp.ClientTimeout(total=60, connect=10, sock_read=30)
+            connector = aiohttp.TCPConnector(ssl=ssl_context)
+            self._cloud_session = aiohttp.ClientSession(
+                connector=connector,
+                timeout=timeout,
+            )
 
-        cloud_server = SUPPORTED_SERVERS.get("Somfy (Europe)")
+        cloud_server = SUPPORTED_SERVERS.get(self.cloud_region)
         if cloud_server is None:
-            LOGGER.error("Somfy cloud server configuration missing in pyoverkiz")
+            LOGGER.error(
+                "Unknown Somfy cloud region %r (expected one of %s)",
+                self.cloud_region,
+                ", ".join(sorted(SUPPORTED_SERVERS)),
+            )
             return None
 
         self._cloud_client = OverkizClient(
             username=self.cloud_email,
             password=self.cloud_password,
-            session=self._session,
+            session=self._cloud_session,
             server=cloud_server,
         )
-        await self._cloud_client.login(register_event_listener=False)
-        LOGGER.info("Connected to Somfy TaHoma cloud API for scene execution")
+        try:
+            await self._cloud_client.login(register_event_listener=False)
+        except Exception:
+            self._cloud_client = None
+            raise
+
+        LOGGER.info(
+            "Connected to Somfy TaHoma cloud API (%s) for scene execution",
+            self.cloud_region,
+        )
         return self._cloud_client
 
     async def _execute_scenario_via_cloud(self, scenario_oid: str) -> Optional[str]:
