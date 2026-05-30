@@ -12,7 +12,7 @@ from typing import Optional, List, Any
 
 from pyoverkiz.client import OverkizClient
 from pyoverkiz.const import OverkizServer  # type: ignore[attr-defined]
-from pyoverkiz.models import Command, Device, Event, Scenario
+from pyoverkiz.models import Command, Device, Event
 from pyoverkiz.exceptions import (
     NotAuthenticatedException,
     InvalidTokenException,
@@ -23,6 +23,8 @@ from pyoverkiz.exceptions import (
 )
 from udi_interface import LOGGER
 import aiohttp
+
+from utils.scenario import TaHomaScenario, parse_action_group
 
 
 class TaHomaSSLVerificationError(Exception):
@@ -313,31 +315,41 @@ class TaHomaClient:
             LOGGER.error(f"Failed to get device {device_url}: {e}")
             return None
 
-    async def get_scenarios(self) -> List[Scenario]:
-        """Get all scenarios (scenes) from TaHoma.
+    async def get_scenarios(self) -> List[TaHomaScenario]:
+        """Get all scenarios (scenes) from TaHoma actionGroups API.
 
         Returns:
-            List of Scenario objects
+            List of TaHomaScenario records
         """
         if not self._connected or not self.client:
             raise RuntimeError("Not connected to TaHoma")
 
         try:
-            scenarios = await self.client.get_scenarios()
+            raw_groups = await self._fetch_action_groups()
+            scenarios: list[TaHomaScenario] = []
+            for item in raw_groups:
+                scenario = parse_action_group(item)
+                if scenario:
+                    scenarios.append(scenario)
             LOGGER.info(f"Retrieved {len(scenarios)} scenarios from TaHoma")
             return scenarios
-        except TypeError as e:
-            # Handle case where API response doesn't match Scenario model
-            if "missing" in str(e) and "required positional argument" in str(e):
-                LOGGER.warning(f"Scenario response format doesn't match model: {e}")
-                LOGGER.info("Returning empty scenario list - will retry on next poll")
-                return []
-            else:
-                LOGGER.error(f"Failed to get scenarios: {e}", exc_info=True)
-                raise
         except Exception as e:
             LOGGER.error(f"Failed to get scenarios: {e}", exc_info=True)
             raise
+
+    async def _fetch_action_groups(self) -> list:
+        """Fetch raw actionGroups JSON from the gateway."""
+        if not self.client:
+            raise RuntimeError("Not connected to TaHoma")
+
+        fetch = getattr(self.client, "_OverkizClient__get", None)
+        if fetch is None:
+            raise RuntimeError("pyoverkiz client cannot fetch actionGroups")
+
+        result = await fetch("actionGroups")
+        if isinstance(result, list):
+            return result
+        return []
 
     async def execute_scenario(self, scenario_oid: str) -> Optional[str]:
         """Execute a scenario (scene).

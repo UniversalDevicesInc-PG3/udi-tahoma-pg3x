@@ -25,8 +25,12 @@ from nodes import Controller
 
 LOGGER = udi_interface.LOGGER
 
-VERSION = "0.0.9"
+VERSION = "0.0.10"
 """
+0.0.10
+- TaHoma scenario discovery via raw actionGroups API (fixes pyoverkiz model mismatch)
+- Scenario nodes: Activate plus Last Command (GV7), matching RTS shade feedback
+
 0.0.9
 - Startup connect retries with backoff (up to 10 min); health check and auto-reconnect while running
 

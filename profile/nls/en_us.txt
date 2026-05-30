@@ -90,7 +90,7 @@ BOOL-2 = N/A
 # scenario (TaHoma automation)
 ND-sceneid-NAME = Scenario
 ND-sceneid-ICON = Output
-ST-scene-ST-NAME = Activated
 ST-scene-GV0-NAME = Id
+ST-scene-GV7-NAME = Last Command
 CMD-scene-ACTIVATE-NAME = Activate
 CMD-scene-QUERY-NAME = Query
