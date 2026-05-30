@@ -6,6 +6,7 @@ __pycache__/
 # Project Specific
 !logs/
 !logs/**
+logs/debug.log
 logs/*.gz
 polyglot.py
 build.txt
