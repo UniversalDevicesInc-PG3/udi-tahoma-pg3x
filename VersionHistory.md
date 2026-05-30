@@ -2,6 +2,10 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.14
+
+- **Fix startup error on stale scene cleanup**: custom data keys must be removed with `Custom.delete()`, not `del` — v0.0.13 crashed discovery with `KeyError` while purging orphan scenes
+
 ## 0.0.13
 
 - **Fix orphan scene cleanup**: discovery cleanup now compares against Polyglot DB nodes, not just in-memory nodes — stale UUID-named scenes from before v0.0.12 are removed on restart

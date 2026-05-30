@@ -1315,7 +1315,7 @@ class Controller(Node):
         """Remove persisted custom data for a deleted node address."""
         for key in (f"device_url_{address}", f"scenario_oid_{address}"):
             if key in self.Data:
-                del self.Data[key]
+                self.Data.delete(key)
 
     def _cleanup_nodes(self, nodes_new, nodes_old):
         """Removes any nodes that are no longer present on the gateway.
@@ -1346,10 +1346,16 @@ class Controller(Node):
 
         removed = []
         for address in sorted(stale):
-            LOGGER.info(f"Removing stale node not on gateway: {address}")
-            self.poly.delNode(address)
-            self._purge_node_custom_data(address)
-            removed.append(address)
+            try:
+                LOGGER.info(f"Removing stale node not on gateway: {address}")
+                self.poly.delNode(address)
+                self._purge_node_custom_data(address)
+                removed.append(address)
+            except Exception as e:
+                LOGGER.error(
+                    f"Failed to remove stale node {address}: {e}",
+                    exc_info=True,
+                )
 
         if removed:
             LOGGER.info(f"Removed {len(removed)} stale node(s)")
