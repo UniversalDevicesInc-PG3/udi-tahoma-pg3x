@@ -98,6 +98,31 @@ async def test_tahoma_client_execute_command(mock_overkiz_client):
 
 
 @pytest.mark.asyncio
+async def test_tahoma_client_get_scenarios(mock_overkiz_client):
+    """Test getting scenarios via raw actionGroups fetch."""
+    mock_class, mock_instance = mock_overkiz_client
+
+    client = TaHomaClient(token="test-token", gateway_pin="1234-5678-9012")
+    await client.connect()
+    mock_instance._OverkizClient__get = AsyncMock(
+        return_value=[
+            {
+                "label": "Morning",
+                "oid": "1234567890",
+                "actions": [],
+                "creationTime": 1710000000,
+            }
+        ]
+    )
+
+    scenarios = await client.get_scenarios()
+
+    assert len(scenarios) == 1
+    assert scenarios[0].oid == "1234567890"
+    assert scenarios[0].label == "Morning"
+
+
+@pytest.mark.asyncio
 async def test_tahoma_client_register_event_listener(mock_overkiz_client):
     """Test registering event listener."""
     mock_class, mock_instance = mock_overkiz_client

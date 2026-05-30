@@ -133,13 +133,11 @@ class Controller(Node):
         self.devices_map_lock = Lock()
 
         self._exec_lock = Lock()
-        self._exec_to_shade: dict[str, str] = {}
+        self._exec_to_node: dict[str, str] = {}
         self._exec_resolved: set[str] = set()
         self._exec_watch_seconds = 15
 
         self.scenarios_map = {}  # Key: scenario OID, Value: scenario data
-        self.sceneIdsActive: list = []
-        self.sceneIdsActive_calc: set = set()
 
         # Events
         self.ready_event = Event()
@@ -319,13 +317,16 @@ class Controller(Node):
         self.ready_event.set()
 
         shade_count = len(self.devices_map)
-        plural = "s" if shade_count != 1 else ""
+        scene_count = len(self.scenarios_map)
+        shade_plural = "s" if shade_count != 1 else ""
+        scene_plural = "s" if scene_count != 1 else ""
         self.Notices.delete("hello")
         self.Notices.delete("error")
         self.Notices.delete("config")
         self.Notices["success"] = (
             f"Connected to TaHoma gateway {self.gateway_pin}. "
-            f"Discovered {shade_count} shade{plural}."
+            f"Discovered {shade_count} shade{shade_plural} and "
+            f"{scene_count} scenario{scene_plural}."
         )
         self._schedule_notice_clear("success", 30)
 
@@ -991,25 +992,23 @@ class Controller(Node):
         except Exception as e:
             LOGGER.error(f"Error handling device state event: {e}", exc_info=True)
 
-    def track_execution(
-        self, exec_id: str, shade_address: str, device_url: Optional[str] = None
-    ):
+    def track_execution(self, exec_id: str, node_address: str, device_url: Optional[str] = None):
         """Track a TaHoma exec ID and poll until it completes or fails."""
         if not exec_id:
             return
         with self._exec_lock:
-            self._exec_to_shade[exec_id] = shade_address
+            self._exec_to_node[exec_id] = node_address
             self._exec_resolved.discard(exec_id)
         asyncio.run_coroutine_threadsafe(
-            self._watch_execution(exec_id, shade_address), self.mainloop
+            self._watch_execution(exec_id, node_address), self.mainloop
         )
 
-    def _resolve_shade_address(
+    def _resolve_node_address(
         self, exec_id: Optional[str], device_url: Optional[str]
     ) -> Optional[str]:
         if exec_id:
             with self._exec_lock:
-                address = self._exec_to_shade.get(exec_id)
+                address = self._exec_to_node.get(exec_id)
             if address:
                 return address
         if device_url:
@@ -1019,7 +1018,7 @@ class Controller(Node):
         return None
 
     def _apply_last_command(
-        self, shade_address: str, status: int, exec_id: Optional[str] = None
+        self, node_address: str, status: int, exec_id: Optional[str] = None
     ):
         if status not in (
             LAST_CMD_PENDING,
@@ -1034,11 +1033,11 @@ class Controller(Node):
                 if status in (LAST_CMD_COMPLETED, LAST_CMD_FAILED):
                     self._exec_resolved.add(exec_id)
 
-        node = self.poly.getNode(shade_address)
+        node = self.poly.getNode(node_address)
         if node and hasattr(node, "set_last_command"):
             node.set_last_command(status)
             LOGGER.info(
-                f"{shade_address} Last Command: {last_cmd_label(status)}"
+                f"{node_address} Last Command: {last_cmd_label(status)}"
                 + (f" (exec: {exec_id})" if exec_id else "")
             )
 
@@ -1049,11 +1048,11 @@ class Controller(Node):
         status = execution_state_to_last_cmd(new_state)
         if status is None or status == LAST_CMD_PENDING:
             return
-        shade_address = self._resolve_shade_address(exec_id, device_url)
-        if shade_address:
-            self._apply_last_command(shade_address, status, exec_id)
+        node_address = self._resolve_node_address(exec_id, device_url)
+        if node_address:
+            self._apply_last_command(node_address, status, exec_id)
 
-    async def _watch_execution(self, exec_id: str, shade_address: str):
+    async def _watch_execution(self, exec_id: str, node_address: str):
         """Poll TaHoma until execution reaches a terminal state or times out."""
         if not self.tahoma_client:
             return
@@ -1070,10 +1069,10 @@ class Controller(Node):
 
             status = execution_state_to_last_cmd(getattr(execution, "state", None))
             if status in (LAST_CMD_COMPLETED, LAST_CMD_FAILED):
-                self._apply_last_command(shade_address, status, exec_id)
+                self._apply_last_command(node_address, status, exec_id)
                 return
             if status == LAST_CMD_PENDING:
-                self._apply_last_command(shade_address, LAST_CMD_PENDING, exec_id)
+                self._apply_last_command(node_address, LAST_CMD_PENDING, exec_id)
 
         LOGGER.debug(
             "Execution watch timed out for %s (%s); awaiting TaHoma event",
@@ -1265,34 +1264,40 @@ class Controller(Node):
             try:
                 scenario_oid = scenario.oid
                 node_address = f"scene{scenario_oid}"
+                label = scenario.label
 
                 # Store scenario in map
                 self.scenarios_map[scenario_oid] = {
                     "scenario": scenario,
                     "address": node_address,
-                    "label": scenario.label,
+                    "label": label,
+                    "name": label,
                 }
 
                 nodes_new.append(node_address)
 
                 if node_address not in nodes_existing:
-                    # Create new scenario node
                     LOGGER.info(
-                        f"Adding scenario node: {node_address} ({scenario.label})"
+                        f"Adding scenario node: {node_address} ({label})"
                     )
                     node = Scene(
                         self.poly,
                         self.address,
                         node_address,
-                        scenario.label,
+                        label,
                         scenario_oid,
                     )
                     self.poly.addNode(node)
                     self.wait_for_node_done()
+                else:
+                    node = self.poly.getNode(node_address)
+                    if node and node.name != label:
+                        node.rename(label)
 
             except Exception as e:
+                label = getattr(scenario, "label", scenario)
                 LOGGER.error(
-                    f"Error discovering scenario {scenario.label}: {e}", exc_info=True
+                    f"Error discovering scenario {label}: {e}", exc_info=True
                 )
 
     def _cleanup_nodes(self, nodes_new, nodes_old):

@@ -160,8 +160,8 @@
     <nodeDef id="sceneid" nls="scene">
         <editors />
         <sts>
-		  <st id="ST" editor="BOOL" />
           <st id="GV0" editor="ID" />
+          <st id="GV7" editor="EXECSTAT" />
         </sts>
         <cmds>
           <sends>

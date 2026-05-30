@@ -2,6 +2,12 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.10
+
+- **Scenario discovery** via raw `actionGroups` API (works when pyoverkiz `Scenario` model mismatches the gateway)
+- **Scenario nodes**: Activate command plus **Last Command (GV7)** — same feedback model as RTS shades
+- Startup success notice includes scenario count
+
 ## 0.0.9
 
 - Startup connect retries with exponential backoff for up to 10 minutes (survives gateway wake-up delay)
