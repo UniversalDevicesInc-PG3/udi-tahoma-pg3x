@@ -2,6 +2,18 @@
 
 See `udi-PhantomBlinds-pg3x` for in-code release notes.
 
+## 0.0.6
+
+- **GV7 Last Command** on shade nodes: — (none) until first command, then Pending / Completed / Failed from TaHoma execution status
+- Execution events logged at INFO; poll fallback when events are slow or missing
+- Includes v0.0.5 startup notices and gateway unreachable messaging
+
+## 0.0.5
+
+- Config placeholder notice survives startup (no longer cleared by `Notices.clear()`)
+- Success notice after connect/discovery (shade count and gateway PIN)
+- Clearer error when TaHoma gateway is unreachable (timeout/offline) vs auth failure
+
 ## 0.0.4
 
 - Fix shade discovery when TaHoma returns `CommandDefinition` objects in device definitions (all 8 RTS shades failed on EISY with `unhashable type: 'CommandDefinition'`)

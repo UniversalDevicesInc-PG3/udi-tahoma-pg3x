@@ -43,6 +43,25 @@ def normalize_tahoma_token(token: str) -> str:
     return value
 
 
+def config_placeholder_notice(
+    gateway_pin: str,
+    token: str,
+) -> Optional[str]:
+    """Return one Polyglot notice listing every unset placeholder, or None."""
+    missing: list[str] = []
+    if is_default_tahoma_token(normalize_tahoma_token(token)):
+        missing.append("tahoma_token (Developer Mode token from the TaHoma app)")
+    if is_default_gateway_pin(gateway_pin.strip()):
+        missing.append("gateway_pin (from the gateway label or app)")
+    if not missing:
+        return None
+    items = "; ".join(missing)
+    return (
+        f"Replace default Polyglot placeholders before connecting: {items}. "
+        "See POLYGLOT_CONFIG.md."
+    )
+
+
 def normalize_gateway_ip(gateway_ip: str, gateway_pin: str) -> Optional[str]:
     """Return gateway IP/hostname to use, or None for gateway-{pin}.local."""
     _ = gateway_pin  # reserved; hostname is derived from PIN when IP is omitted

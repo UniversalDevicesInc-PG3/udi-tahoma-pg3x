@@ -17,15 +17,28 @@ from typing import Optional
 from udi_interface import Node, LOGGER, Custom, LOG_HANDLER
 
 # personal libraries
-from utils.tahoma_client import TaHomaClient, TaHomaSSLVerificationError, TaHomaAuthenticationError
+from utils.tahoma_client import (
+    TaHomaClient,
+    TaHomaSSLVerificationError,
+    TaHomaAuthenticationError,
+    TaHomaConnectionError,
+)
 from utils.config_validation import (
     validate_gateway_pin,
     validate_bearer_token,
     normalize_gateway_ip,
     normalize_tahoma_token,
+    config_placeholder_notice,
     DEFAULT_GATEWAY_PIN,
     DEFAULT_TAHOMA_TOKEN,
     DEFAULT_GATEWAY_IP,
+)
+from utils.exec_status import (
+    LAST_CMD_COMPLETED,
+    LAST_CMD_FAILED,
+    LAST_CMD_PENDING,
+    execution_state_to_last_cmd,
+    last_cmd_label,
 )
 from utils.device_capabilities import (
     build_device_profile,
@@ -105,6 +118,11 @@ class Controller(Node):
         self.devices_map = {}  # Key: deviceURL, Value: device data
         self.devices_map_lock = Lock()
 
+        self._exec_lock = Lock()
+        self._exec_to_shade: dict[str, str] = {}
+        self._exec_resolved: set[str] = set()
+        self._exec_watch_seconds = 15
+
         self.scenarios_map = {}  # Key: scenario OID, Value: scenario data
         self.sceneIdsActive: list = []
         self.sceneIdsActive_calc: set = set()
@@ -167,7 +185,7 @@ class Controller(Node):
         LOGGER.info(f"Python version: {sys.version}")
         LOGGER.info(f"Python version info: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
         
-        self.Notices.clear()
+        self._clear_startup_notices()
         self.Notices["hello"] = "Plugin Start-up"
         self.setDriver("ST", 1, report=True, force=True)
         self.update_last = 0.0
@@ -228,6 +246,11 @@ class Controller(Node):
 
             LOGGER.info("Successfully connected to TaHoma gateway")
 
+        except TaHomaConnectionError as e:
+            LOGGER.error(str(e))
+            self.Notices["error"] = str(e)
+            self.setDriver("ST", 2)
+            return
         except TaHomaSSLVerificationError as e:
             LOGGER.error(str(e))
             self.Notices["error"] = str(e)
@@ -279,9 +302,15 @@ class Controller(Node):
         # signal to the nodes, its ok to start
         self.ready_event.set()
 
-        # clear inital start-up message
-        if self.Notices.get("hello"):
-            self.Notices.delete("hello")
+        shade_count = len(self.devices_map)
+        plural = "s" if shade_count != 1 else ""
+        self.Notices.delete("hello")
+        self.Notices.delete("error")
+        self.Notices.delete("config")
+        self.Notices["success"] = (
+            f"Connected to TaHoma gateway {self.gateway_pin}. "
+            f"Discovered {shade_count} shade{plural}."
+        )
 
         LOGGER.info(f"exit {self.name}")
 
@@ -496,6 +525,12 @@ class Controller(Node):
             LOG_HANDLER.set_basic_config(True, logging.INFO)
         LOGGER.info(f"exit: level={level}")
 
+    def _clear_startup_notices(self):
+        """Clear transient startup notices without removing config guidance."""
+        self.Notices.delete("hello")
+        self.Notices.delete("error")
+        self.Notices.delete("success")
+
     def checkParams(self):
         """Validates the custom parameters for the controller.
 
@@ -506,16 +541,21 @@ class Controller(Node):
         """
         self.Notices.delete("config")
 
-        # Check for required TaHoma token
+        gateway_pin = str(self.Parameters.get("gateway_pin", ""))
         token = normalize_tahoma_token(str(self.Parameters.get("tahoma_token", "")))
+
+        notice = config_placeholder_notice(gateway_pin, token)
+        if notice:
+            LOGGER.error(notice)
+            self.Notices["config"] = notice
+            return False
+
         is_valid, error_msg = validate_bearer_token(token)
         if not is_valid:
             LOGGER.error(f"Bearer token validation failed: {error_msg}")
             self.Notices["config"] = error_msg
             return False
 
-        # Check for gateway PIN
-        gateway_pin = str(self.Parameters.get("gateway_pin", ""))
         is_valid, error_msg = validate_gateway_pin(gateway_pin)
         if not is_valid:
             LOGGER.error(f"Gateway PIN validation failed: {error_msg}")
@@ -625,7 +665,7 @@ class Controller(Node):
                     events = await self.tahoma_client.fetch_events()
 
                     if events:
-                        LOGGER.debug(f"Received {len(events)} events")
+                        LOGGER.info(f"Received {len(events)} TaHoma event(s)")
                         for event in events:
                             self.process_tahoma_event(event)
                         retries = 0  # Reset on successful fetch
@@ -704,13 +744,22 @@ class Controller(Node):
                 self._handle_device_state_event(event)
 
             elif event_name == "ExecutionRegisteredEvent":
-                # Command execution started
-                LOGGER.debug(f"Execution registered: {event}")
+                LOGGER.info(
+                    "Execution registered: exec=%s device=%s",
+                    getattr(event, "exec_id", None),
+                    getattr(event, "device_url", None),
+                )
                 self.eventTimer = 0
+                self._handle_execution_state_event(event)
 
             elif event_name == "ExecutionStateChangedEvent":
-                # Command execution state changed (completed, failed, etc.)
-                LOGGER.debug(f"Execution state changed: {event}")
+                LOGGER.info(
+                    "Execution state changed: exec=%s %s -> %s",
+                    getattr(event, "exec_id", None),
+                    getattr(event, "old_state", None),
+                    getattr(event, "new_state", None),
+                )
+                self._handle_execution_state_event(event)
 
             elif event_name == "GatewayAliveEvent":
                 # Gateway heartbeat / connection restored
@@ -765,6 +814,96 @@ class Controller(Node):
 
         except Exception as e:
             LOGGER.error(f"Error handling device state event: {e}", exc_info=True)
+
+    def track_execution(
+        self, exec_id: str, shade_address: str, device_url: Optional[str] = None
+    ):
+        """Track a TaHoma exec ID and poll until it completes or fails."""
+        if not exec_id:
+            return
+        with self._exec_lock:
+            self._exec_to_shade[exec_id] = shade_address
+            self._exec_resolved.discard(exec_id)
+        asyncio.run_coroutine_threadsafe(
+            self._watch_execution(exec_id, shade_address), self.mainloop
+        )
+
+    def _resolve_shade_address(
+        self, exec_id: Optional[str], device_url: Optional[str]
+    ) -> Optional[str]:
+        if exec_id:
+            with self._exec_lock:
+                address = self._exec_to_shade.get(exec_id)
+            if address:
+                return address
+        if device_url:
+            for node_addr, node in self.poly.getNodes().items():
+                if getattr(node, "device_url", None) == device_url:
+                    return node_addr
+        return None
+
+    def _apply_last_command(
+        self, shade_address: str, status: int, exec_id: Optional[str] = None
+    ):
+        if status not in (
+            LAST_CMD_PENDING,
+            LAST_CMD_COMPLETED,
+            LAST_CMD_FAILED,
+        ):
+            return
+        if exec_id:
+            with self._exec_lock:
+                if exec_id in self._exec_resolved:
+                    return
+                if status in (LAST_CMD_COMPLETED, LAST_CMD_FAILED):
+                    self._exec_resolved.add(exec_id)
+
+        node = self.poly.getNode(shade_address)
+        if node and hasattr(node, "set_last_command"):
+            node.set_last_command(status)
+            LOGGER.info(
+                f"{shade_address} Last Command: {last_cmd_label(status)}"
+                + (f" (exec: {exec_id})" if exec_id else "")
+            )
+
+    def _handle_execution_state_event(self, event):
+        exec_id = getattr(event, "exec_id", None)
+        device_url = getattr(event, "device_url", None)
+        new_state = getattr(event, "new_state", None)
+        status = execution_state_to_last_cmd(new_state)
+        if status is None or status == LAST_CMD_PENDING:
+            return
+        shade_address = self._resolve_shade_address(exec_id, device_url)
+        if shade_address:
+            self._apply_last_command(shade_address, status, exec_id)
+
+    async def _watch_execution(self, exec_id: str, shade_address: str):
+        """Poll TaHoma until execution reaches a terminal state or times out."""
+        if not self.tahoma_client:
+            return
+
+        for _ in range(self._exec_watch_seconds):
+            with self._exec_lock:
+                if exec_id in self._exec_resolved:
+                    return
+            await asyncio.sleep(1)
+            try:
+                execution = await self.tahoma_client.get_current_execution(exec_id)
+            except Exception:
+                continue
+
+            status = execution_state_to_last_cmd(getattr(execution, "state", None))
+            if status in (LAST_CMD_COMPLETED, LAST_CMD_FAILED):
+                self._apply_last_command(shade_address, status, exec_id)
+                return
+            if status == LAST_CMD_PENDING:
+                self._apply_last_command(shade_address, LAST_CMD_PENDING, exec_id)
+
+        LOGGER.debug(
+            "Execution watch timed out for %s (%s); Last Command stays Pending",
+            exec_id,
+            shade_address,
+        )
 
     def query(self, command=None):
         """Queries all nodes and reports their current status.

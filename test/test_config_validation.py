@@ -4,6 +4,7 @@ from utils.config_validation import (
     DEFAULT_GATEWAY_IP,
     DEFAULT_GATEWAY_PIN,
     DEFAULT_TAHOMA_TOKEN,
+    config_placeholder_notice,
     is_default_gateway_ip,
     is_default_gateway_pin,
     is_default_tahoma_token,
@@ -27,6 +28,16 @@ def test_validate_rejects_default_placeholders():
 
     ok, _ = validate_bearer_token(DEFAULT_TAHOMA_TOKEN)
     assert not ok
+
+
+def test_config_placeholder_notice_lists_missing_fields():
+    notice = config_placeholder_notice(DEFAULT_GATEWAY_PIN, DEFAULT_TAHOMA_TOKEN)
+    assert notice is not None
+    assert "tahoma_token" in notice
+    assert "gateway_pin" in notice
+
+    notice = config_placeholder_notice("2001-0001-1891", "a" * 64)
+    assert notice is None
 
 
 def test_validate_accepts_real_values():

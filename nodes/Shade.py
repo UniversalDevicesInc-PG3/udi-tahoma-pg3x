@@ -7,6 +7,11 @@ from threading import Thread
 
 import udi_interface
 
+from utils.exec_status import (
+    LAST_CMD_FAILED,
+    LAST_CMD_NONE,
+    LAST_CMD_PENDING,
+)
 from utils.device_capabilities import (
     CMD_CLOSURE,
     CMD_DEPLOYMENT,
@@ -37,6 +42,7 @@ SHADE_DRIVERS_FULL = [
     {"driver": "GV4", "value": POSITION_NA, "uom": 2, "name": "Tilt"},
     {"driver": "GV5", "value": 0, "uom": 25, "name": "Protocol"},
     {"driver": "GV6", "value": GV6_UNKNOWN, "uom": 25, "name": "Battery Status"},
+    {"driver": "GV7", "value": LAST_CMD_NONE, "uom": 25, "name": "Last Command"},
 ]
 
 # TaHoma state name -> (driver, uom when value present)
@@ -158,6 +164,10 @@ class Shade(udi_interface.Node):
 
     def _set_position_na(self, driver_key: str):
         self.setDriver(driver_key, POSITION_NA, report=True, force=False, uom=2)
+
+    def set_last_command(self, status: int):
+        """Update GV7 Last Command driver (EXECSTAT uom 25)."""
+        self.setDriver("GV7", status, report=True, force=False, uom=25)
 
     def updateData(self):
         try:
@@ -375,16 +385,22 @@ class Shade(udi_interface.Node):
             ).result(timeout=10)
 
             if exec_id:
+                self.set_last_command(LAST_CMD_PENDING)
+                self.controller.track_execution(
+                    exec_id, self.address, self.device_url
+                )
                 LOGGER.info(
                     f"TaHoma command '{command_name}' executed on {self.name} "
                     f"(exec: {exec_id})"
                 )
             else:
+                self.set_last_command(LAST_CMD_FAILED)
                 LOGGER.warning(
                     f"TaHoma command '{command_name}' failed on {self.name}"
                 )
             return exec_id
         except Exception as e:
+            self.set_last_command(LAST_CMD_FAILED)
             LOGGER.error(
                 f"Error executing TaHoma command '{command_name}' on {self.name}: {e}",
                 exc_info=True,

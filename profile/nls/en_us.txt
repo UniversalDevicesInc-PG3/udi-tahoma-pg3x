@@ -39,6 +39,7 @@ ST-shade-GV3-NAME = Secondary
 ST-shade-GV4-NAME = Tilt
 ST-shade-GV5-NAME = Protocol
 ST-shade-GV6-NAME = Battery
+ST-shade-GV7-NAME = Last Command
 CMD-shade-OPEN-NAME = Open
 CMD-shade-CLOSE-NAME = Close
 CMD-shade-STOP-NAME = Stop
@@ -67,6 +68,11 @@ BATTERYST-2 = Medium
 BATTERYST-3 = High
 BATTERYST-4 = Plugged In
 BATTERYST-255 = N/A (Hardwired)
+
+EXECSTAT-0 = —
+EXECSTAT-1 = Pending
+EXECSTAT-2 = Completed
+EXECSTAT-3 = Failed
 
 BOOL-2 = N/A
 

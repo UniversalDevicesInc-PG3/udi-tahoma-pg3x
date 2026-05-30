@@ -46,6 +46,10 @@ class TaHomaAuthenticationError(Exception):
     )
 
 
+class TaHomaConnectionError(Exception):
+    """TaHoma gateway could not be reached on the network."""
+
+
 _SSL_ERROR_MARKERS = (
     "certificate verify failed",
     "self signed certificate",
@@ -120,6 +124,13 @@ class TaHomaClient:
             configuration_url=None,
         )
 
+    @property
+    def gateway_target(self) -> str:
+        """Human-readable gateway host used for connection attempts."""
+        if self.gateway_ip:
+            return self.gateway_ip
+        return f"gateway-{self.gateway_pin}.local"
+
     async def connect(self) -> bool:
         """Initialize connection to TaHoma gateway.
 
@@ -183,6 +194,21 @@ class TaHomaClient:
             raise TaHomaAuthenticationError(
                 TaHomaAuthenticationError.USER_MESSAGE
             ) from e
+        except (
+            asyncio.TimeoutError,
+            TimeoutError,
+            aiohttp.ClientConnectorError,
+            aiohttp.ConnectionTimeoutError,
+            aiohttp.ServerConnectionError,
+        ) as e:
+            message = (
+                f"Cannot reach TaHoma gateway at {self.gateway_target}. "
+                "The gateway may be offline or still starting. Verify it is "
+                "powered on and reachable on the network, then restart the NodeServer."
+            )
+            LOGGER.error(message)
+            LOGGER.debug("TaHoma connection failure details", exc_info=True)
+            raise TaHomaConnectionError(message) from e
         except Exception as e:
             if self.verify_ssl and is_ssl_verification_error(e):
                 LOGGER.error(TaHomaSSLVerificationError.USER_MESSAGE)
@@ -340,6 +366,23 @@ class TaHomaClient:
                 exc_info=True,
             )
             return None
+
+    async def get_current_execution(self, exec_id: str):
+        """Return current execution status for an exec ID."""
+        if not self._connected or not self.client:
+            raise RuntimeError("Not connected to TaHoma")
+
+        try:
+            execution = await self.client.get_current_execution(exec_id)
+            LOGGER.debug(
+                "Execution %s state=%s",
+                exec_id,
+                getattr(execution, "state", None),
+            )
+            return execution
+        except Exception as e:
+            LOGGER.debug("Could not fetch execution %s: %s", exec_id, e)
+            raise
 
     async def register_event_listener(self) -> str:
         """Register for event notifications.

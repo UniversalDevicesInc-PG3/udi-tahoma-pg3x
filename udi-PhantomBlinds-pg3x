@@ -24,8 +24,16 @@ from nodes import Controller
 
 LOGGER = udi_interface.LOGGER
 
-VERSION = "0.0.4"
+VERSION = "0.0.6"
 """
+0.0.6
+- Shade GV7 Last Command driver (— / Pending / Completed / Failed) from TaHoma exec status
+- Execution events logged at INFO; poll fallback via get_current_execution
+
+0.0.5
+- Preserve config placeholder notice during startup; show success notice after discovery
+- Clearer Polyglot notice when TaHoma gateway is unreachable (offline/starting)
+
 0.0.4
 - Fix shade discovery when gateway returns CommandDefinition lists (EISY/pyoverkiz)
 - Default tahoma_token placeholder shortened to 20 zeros

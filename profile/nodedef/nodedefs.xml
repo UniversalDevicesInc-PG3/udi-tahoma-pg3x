@@ -33,6 +33,7 @@
             <st id="GV4" editor="TILT" uom="100" />
             <st id="GV5" editor="SHADECAP" />
             <st id="GV6" editor="BATTERYST" />
+            <st id="GV7" editor="EXECSTAT" />
         </sts>
         <cmds>
           <sends>
@@ -72,6 +73,7 @@
             <st id="GV3" editor="POSITION" uom="100" />
             <st id="GV5" editor="SHADECAP" />
             <st id="GV6" editor="BATTERYST" />
+            <st id="GV7" editor="EXECSTAT" />
         </sts>
         <cmds>
           <sends>
@@ -105,6 +107,7 @@
             <st id="GV2" editor="POSITION" uom="100" />
             <st id="GV5" editor="SHADECAP" />
             <st id="GV6" editor="BATTERYST" />
+            <st id="GV7" editor="EXECSTAT" />
         </sts>
         <cmds>
           <sends>

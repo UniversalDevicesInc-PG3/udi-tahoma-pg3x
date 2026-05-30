@@ -9,6 +9,7 @@ import aiohttp
 from unittest.mock import Mock, AsyncMock, patch
 from utils.tahoma_client import (
     TaHomaClient,
+    TaHomaConnectionError,
     TaHomaSSLVerificationError,
     create_tahoma_client,
     is_ssl_verification_error,
@@ -218,4 +219,22 @@ async def test_tahoma_client_connect_ssl_verification_error(mock_overkiz_client)
     )
 
     with pytest.raises(TaHomaSSLVerificationError, match="verify_ssl is true"):
+        await client.connect()
+
+
+@pytest.mark.asyncio
+async def test_tahoma_client_connect_timeout_raises_connection_error(mock_overkiz_client):
+    """Unreachable gateway raises a clear connection error."""
+    mock_class, mock_instance = mock_overkiz_client
+    mock_instance.login.side_effect = aiohttp.ConnectionTimeoutError(
+        "Connection timeout to host"
+    )
+
+    client = TaHomaClient(
+        token="test-token",
+        gateway_pin="1234-5678-9012",
+        gateway_ip="192.168.1.50",
+    )
+
+    with pytest.raises(TaHomaConnectionError, match="Cannot reach TaHoma gateway"):
         await client.connect()

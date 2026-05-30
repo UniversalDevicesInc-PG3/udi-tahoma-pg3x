@@ -20,6 +20,9 @@
     <editor id="BATTERYST">
       <range uom="25" subset="0-4,255" nls="BATTERYST" />
     </editor>
+    <editor id="EXECSTAT">
+      <range uom="25" subset="0-3" nls="EXECSTAT" />
+    </editor>
     <editor id="POSITION">
       <range uom="2" subset="0" />
       <range uom="100" min="0" max="100" />
