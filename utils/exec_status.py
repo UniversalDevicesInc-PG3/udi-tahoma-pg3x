@@ -59,3 +59,22 @@ def execution_state_to_last_cmd(state: ExecutionState | str | None) -> int | Non
     if parsed in _PENDING_STATES:
         return LAST_CMD_PENDING
     return None
+
+
+def scenario_parent_exec_to_last_cmd(state: ExecutionState | str | None) -> int | None:
+    """Map scenario parent exec state for Last Command (GV7).
+
+    TaHoma local API often reports spurious FAILED/INITIALIZED oscillation on the
+    parent exec for persisted action groups. Child shade commands still run.
+    Only COMPLETED and NOT_TRANSMITTED are treated as terminal here.
+    """
+    parsed = parse_execution_state(state)
+    if parsed is None:
+        return None
+    if parsed == ExecutionState.COMPLETED:
+        return LAST_CMD_COMPLETED
+    if parsed == ExecutionState.NOT_TRANSMITTED:
+        return LAST_CMD_FAILED
+    if parsed in _PENDING_STATES:
+        return LAST_CMD_PENDING
+    return None

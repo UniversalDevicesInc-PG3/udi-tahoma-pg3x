@@ -2,6 +2,11 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.15
+
+- **Scene Last Command (GV7)**: TaHoma local API reports spurious `FAILED` on the parent exec when activating persisted action groups; scenes still run. Scenario exec tracking ignores that parent `FAILED` state and marks **Completed** ~5s after a successful Activate (or immediately on real `COMPLETED` / `NOT_TRANSMITTED`)
+- Fix execution watch timeout log referencing undefined `shade_address`
+
 ## 0.0.14
 
 - **Fix startup error on stale scene cleanup**: custom data keys must be removed with `Custom.delete()`, not `del` — v0.0.13 crashed discovery with `KeyError` while purging orphan scenes
