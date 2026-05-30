@@ -24,7 +24,7 @@ from pyoverkiz.exceptions import (
 from udi_interface import LOGGER
 import aiohttp
 
-from utils.scenario import TaHomaScenario, parse_action_group
+from utils.scenario import TaHomaScenario, action_group_exec_payload, parse_action_group
 
 
 class TaHomaSSLVerificationError(Exception):
@@ -130,6 +130,7 @@ class TaHomaClient:
         self.client: Optional[OverkizClient] = None
         self.event_listener_id: Optional[str] = None
         self._connected = False
+        self._action_groups_by_oid: dict[str, dict] = {}
 
         # Build server config for local API
         # Use IP address if provided, otherwise use hostname
@@ -328,10 +329,13 @@ class TaHomaClient:
             raw_groups = await self._fetch_action_groups()
             scenarios: list[TaHomaScenario] = []
             skipped: list[str] = []
+            self._action_groups_by_oid = {}
             for item in raw_groups:
                 oid = None
                 if isinstance(item, dict):
                     oid = item.get("oid") or item.get("OID") or item.get("id")
+                    if oid is not None:
+                        self._action_groups_by_oid[str(oid)] = item
                 scenario = parse_action_group(item)
                 if scenario:
                     scenarios.append(scenario)
@@ -363,8 +367,40 @@ class TaHomaClient:
             return result
         return []
 
+    async def _find_action_group(self, scenario_oid: str) -> Optional[dict]:
+        """Return raw actionGroup JSON for a scenario OID."""
+        oid = str(scenario_oid)
+        cached = self._action_groups_by_oid.get(oid)
+        if cached:
+            return cached
+
+        for item in await self._fetch_action_groups():
+            if not isinstance(item, dict):
+                continue
+            item_oid = item.get("oid") or item.get("OID") or item.get("id")
+            if item_oid is not None and str(item_oid) == oid:
+                self._action_groups_by_oid[oid] = item
+                return item
+        return None
+
+    async def _exec_apply(self, payload: dict) -> str:
+        """POST exec/apply — the local Developer Mode API for action groups."""
+        if not self.client:
+            raise RuntimeError("Not connected to TaHoma")
+
+        post = getattr(self.client, "_OverkizClient__post", None)
+        if post is None:
+            raise RuntimeError("pyoverkiz client cannot post exec/apply")
+
+        response = await post("exec/apply", payload)
+        return str(response["execId"])
+
     async def execute_scenario(self, scenario_oid: str) -> Optional[str]:
-        """Execute a scenario (scene).
+        """Execute a scenario (scene) via local API exec/apply.
+
+        Persisted TaHoma scenes are stored as actionGroups. Developer Mode local
+        API does not run them through exec/{oid}; copy the group's actions to
+        exec/apply instead (same approach as single-shade commands).
 
         Args:
             scenario_oid: Scenario OID
@@ -376,8 +412,31 @@ class TaHomaClient:
             raise RuntimeError("Not connected to TaHoma")
 
         try:
-            exec_id = await self.client.execute_scenario(scenario_oid)
-            LOGGER.info(f"Executed scenario {scenario_oid} (exec: {exec_id})")
+            group = await self._find_action_group(scenario_oid)
+            if not group:
+                LOGGER.error("Scenario %s not found in actionGroups", scenario_oid)
+                return None
+
+            label = (
+                str(group.get("label") or group.get("Label") or "Polyglot Scene").strip()
+                or "Polyglot Scene"
+            )
+            payload = action_group_exec_payload(label, group.get("actions") or [])
+            if not payload:
+                LOGGER.error(
+                    "Scenario %s (%s) has no executable actions",
+                    scenario_oid,
+                    label,
+                )
+                return None
+
+            exec_id = await self._exec_apply(payload)
+            LOGGER.info(
+                "Executed scenario %s via exec/apply (exec: %s, %d actions)",
+                scenario_oid,
+                exec_id,
+                len(payload["actions"]),
+            )
             return exec_id
         except ExecutionQueueFullException:
             LOGGER.warning("Execution queue full - try again later")

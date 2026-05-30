@@ -25,8 +25,11 @@ from nodes import Controller
 
 LOGGER = udi_interface.LOGGER
 
-VERSION = "0.0.15"
+VERSION = "0.0.16"
 """
+0.0.16
+- Scene Activate: use exec/apply with actionGroup actions (local Developer Mode API does not run persisted scenes via exec/{oid})
+
 0.0.15
 - Scene Activate Last Command: ignore spurious FAILED on scenario parent exec (TaHoma local API quirk); mark Completed ~5s after successful Activate
 

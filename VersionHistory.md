@@ -2,6 +2,11 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.16
+
+- **Scene Activate actually runs shades**: local Developer Mode API only supports `POST exec/apply` for action groups — not `POST exec/{oid}` for persisted TaHoma scenes. v0.0.15 masked the failure as Completed; scenes now copy the actionGroup's device commands to `exec/apply` (same path as shade commands)
+- Revert v0.0.15 optimistic Completed for scenario parent exec
+
 ## 0.0.15
 
 - **Scene Last Command (GV7)**: TaHoma local API reports spurious `FAILED` on the parent exec when activating persisted action groups; scenes still run. Scenario exec tracking ignores that parent `FAILED` state and marks **Completed** ~5s after a successful Activate (or immediately on real `COMPLETED` / `NOT_TRANSMITTED`)
