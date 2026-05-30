@@ -2,6 +2,11 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.11
+
+- **Fix startup lockup**: scene node addresses used full UUIDs (~43 chars); Polyglot allows max 14 — addresses now use `sc` + 10 hex chars
+- Scene OID stored in custom data for restart; `wait_for_node_done` times out instead of hanging forever
+
 ## 0.0.10
 
 - **Scenario discovery** via raw `actionGroups` API (works when pyoverkiz `Scenario` model mismatches the gateway)

@@ -26,7 +26,7 @@ class Scene(udi_interface.Node):
 
     id = "sceneid"
 
-    def __init__(self, poly, primary, address, name, sid):
+    def __init__(self, poly, primary, address, name, sid=None):
         super().__init__(poly, primary, address, name)
         self.poly = poly
         self.primary = primary
@@ -40,7 +40,21 @@ class Scene(udi_interface.Node):
         self.poly.subscribe(self.poly.POLL, self.poll)
 
     def start(self):
-        self.setDriver("GV0", self.sid)
+        oid_key = f"scenario_oid_{self.address}"
+        if oid_key in self.controller.Data:
+            self.sid = self.controller.Data[oid_key]
+            LOGGER.info(f"{self.lpfx}: Restored scenario OID: {self.sid}")
+        elif self.sid:
+            self.controller.Data[oid_key] = self.sid
+        else:
+            LOGGER.error(
+                f"{self.lpfx}: Could not recover scenario OID - not in custom data"
+            )
+
+        if self.sid:
+            scenario_id_num = abs(hash(self.sid)) % 9999999
+            self.setDriver("GV0", scenario_id_num)
+
         self.controller.ready_event.wait()
         self._sync_label_from_controller()
 
