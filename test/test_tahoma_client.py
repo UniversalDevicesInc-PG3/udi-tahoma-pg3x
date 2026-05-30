@@ -13,6 +13,7 @@ from utils.tahoma_client import (
     TaHomaSSLVerificationError,
     create_tahoma_client,
     is_ssl_verification_error,
+    is_transient_connection_error,
 )
 
 
@@ -22,6 +23,7 @@ def mock_overkiz_client():
     with patch("utils.tahoma_client.OverkizClient") as mock:
         client = Mock()
         client.login = AsyncMock()
+        client.get_api_version = AsyncMock(return_value="2024.4.3-11")
         client.get_devices = AsyncMock(return_value=[])
         client.get_scenarios = AsyncMock(return_value=[])
         client.register_event_listener = AsyncMock(return_value="listener-123")
@@ -186,6 +188,46 @@ async def test_get_device_url_from_address():
     # Test not found
     device_url = client.get_device_url_from_address("sh99999999", devices)  # type: ignore[arg-type]
     assert device_url is None
+
+
+def test_is_transient_connection_error_detects_network_failures():
+    assert is_transient_connection_error(TaHomaConnectionError("offline"))
+    assert is_transient_connection_error(Exception("connection refused"))
+    assert not is_transient_connection_error(Exception("invalid token"))
+
+
+@pytest.mark.asyncio
+async def test_tahoma_client_check_health(mock_overkiz_client):
+    """Health check uses apiVersion."""
+    mock_class, mock_instance = mock_overkiz_client
+
+    client = TaHomaClient(token="test-token", gateway_pin="1234-5678-9012")
+    await client.connect()
+
+    assert await client.check_health() is True
+    mock_instance.get_api_version.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_tahoma_client_check_health_when_disconnected():
+    client = TaHomaClient(token="test-token", gateway_pin="1234-5678-9012")
+    assert await client.check_health() is False
+
+
+@pytest.mark.asyncio
+async def test_tahoma_client_reconnect(mock_overkiz_client):
+    """Reconnect drops the session and logs in again."""
+    mock_class, mock_instance = mock_overkiz_client
+
+    client = TaHomaClient(token="test-token", gateway_pin="1234-5678-9012")
+    await client.connect()
+    assert mock_instance.login.call_count == 1
+
+    result = await client.reconnect()
+
+    assert result is True
+    assert client.is_connected
+    assert mock_instance.login.call_count == 2
 
 
 def test_is_ssl_verification_error_detects_ssl_types():

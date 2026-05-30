@@ -2,6 +2,12 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.9
+
+- Startup connect retries with exponential backoff for up to 10 minutes (survives gateway wake-up delay)
+- Periodic TaHoma health check while running; automatic reconnect on local API failure
+- shortPoll watchdog as secondary reconnect trigger
+
 ## 0.0.8
 
 - **TaHoma plugin** branding: controller node **TaHoma Controller** (was Phantom Blinds TaHoma Controller)
