@@ -10,7 +10,7 @@ manages the connection to the gateway, and processes events.
 # std libraries
 import asyncio
 import logging
-from threading import Thread, Event, Lock, Condition
+from threading import Thread, Event, Lock, Condition, Timer
 from typing import Optional
 
 # external libraries
@@ -133,6 +133,7 @@ class Controller(Node):
         self.ready_event = Event()
         self.stop_event = Event()
         self.all_handlers_st_event = Event()
+        self._notice_clear_timer: Optional[Timer] = None
 
         # Create data storage classes
         self.Notices = Custom(self.poly, "notices")
@@ -313,17 +314,33 @@ class Controller(Node):
             f"Connected to TaHoma gateway {self.gateway_pin}. "
             f"Discovered {shade_count} shade{plural}."
         )
-        asyncio.run_coroutine_threadsafe(
-            self._clear_notice_after("success", 30), self.mainloop
-        )
+        self._schedule_notice_clear("success", 30)
 
         LOGGER.info(f"exit {self.name}")
 
-    async def _clear_notice_after(self, key: str, seconds: float):
-        """Remove a Polyglot notice after a delay."""
-        await asyncio.sleep(seconds)
-        if self.Notices.get(key):
-            self.Notices.delete(key)
+    def _cancel_notice_clear_timer(self):
+        """Cancel any pending Polyglot notice auto-clear."""
+        if self._notice_clear_timer:
+            self._notice_clear_timer.cancel()
+            self._notice_clear_timer = None
+
+    def _schedule_notice_clear(self, key: str, seconds: float):
+        """Remove a Polyglot notice after a delay (thread timer, not asyncio)."""
+        self._cancel_notice_clear_timer()
+
+        def _clear():
+            try:
+                if key in self.Notices:
+                    self.Notices.delete(key)
+                    LOGGER.info(f"Cleared Polyglot notice {key!r}")
+            except Exception as e:
+                LOGGER.warning(f"Failed to clear notice {key!r}: {e}")
+            finally:
+                self._notice_clear_timer = None
+
+        self._notice_clear_timer = Timer(seconds, _clear)
+        self._notice_clear_timer.daemon = True
+        self._notice_clear_timer.start()
 
     def node_queue(self, data):
         """Queues a node address to signify its creation is complete.
@@ -538,6 +555,7 @@ class Controller(Node):
 
     def _clear_startup_notices(self):
         """Clear transient startup notices without removing config guidance."""
+        self._cancel_notice_clear_timer()
         self.Notices.delete("hello")
         self.Notices.delete("error")
         self.Notices.delete("success")
@@ -1240,6 +1258,8 @@ class Controller(Node):
         stopping event polling, and setting the driver status to off.
         """
         LOGGER.info("Stopping NodeServer...")
+
+        self._cancel_notice_clear_timer()
 
         # Stop event polling
         self.stop_event.set()
