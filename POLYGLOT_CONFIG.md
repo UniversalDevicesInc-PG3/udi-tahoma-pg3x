@@ -111,6 +111,17 @@ The NodeServer reaches TaHoma on your LAN over HTTPS (port **8443**).
 
 Ensure firewall rules allow HTTPS to the gateway.
 
+### Polyglot shortPoll and longPoll
+
+Polyglot calls **shortPoll** and **longPoll** on a schedule configured in the ISY/Polyglot interface (often every 10–60 seconds for shortPoll). **Leave these at the defaults** — do not change them unless Universal Devices support asks you to.
+
+| Poll | Used by this NodeServer? | Purpose |
+|------|--------------------------|---------|
+| **shortPoll** | Yes (controller) | ISY heartbeat (DON/DOF), TaHoma reconnect watchdog, restarts event polling if it stopped |
+| **longPoll** | No | Ignored; TaHoma updates use the gateway event stream instead |
+
+Shade and scene nodes subscribe to shortPoll for Polyglot compatibility but do not poll the TaHoma box. All gateway communication (commands, events, health checks) runs in the NodeServer’s own background loop, not through Polyglot poll intervals.
+
 ## Troubleshooting
 
 ### Configuration errors
@@ -133,6 +144,7 @@ Ensure firewall rules allow HTTPS to the gateway.
 - Try `ping gateway-{pin}.local`. If that fails, set `gateway_ip` to the TaHoma’s static/reserved IP.
 - Verify Developer Mode is enabled and the token is current.
 - Leave `verify_ssl` at `false` unless you installed the Somfy root CA on the EISY/Polisy.
+- If the gateway was idle, **open the TaHoma mobile app** once — the local API on port 8443 sometimes does not respond until the app wakes the box. The NodeServer retries startup for up to 10 minutes and reconnects automatically while running.
 
 **NodeServer won't start**
 

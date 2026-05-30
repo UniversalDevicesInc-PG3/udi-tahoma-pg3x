@@ -59,6 +59,25 @@ _SSL_ERROR_MARKERS = (
 )
 
 
+def is_transient_connection_error(exc: BaseException) -> bool:
+    """Return True if exc looks like a recoverable network/gateway outage."""
+    if isinstance(exc, TaHomaConnectionError):
+        return True
+    if isinstance(
+        exc,
+        (
+            asyncio.TimeoutError,
+            TimeoutError,
+            aiohttp.ClientConnectorError,
+            aiohttp.ConnectionTimeoutError,
+            aiohttp.ServerConnectionError,
+        ),
+    ):
+        return True
+    message = str(exc).lower()
+    return "timeout" in message or "connection" in message
+
+
 def is_ssl_verification_error(exc: BaseException) -> bool:
     """Return True if exc (or its cause chain) is an SSL verification failure."""
     current: BaseException | None = exc
@@ -138,8 +157,10 @@ class TaHomaClient:
             True if connection successful, False otherwise
         """
         try:
-            # Create session if needed
-            if self._own_session:
+            # Create session if needed (or replace a closed session after reconnect)
+            if self._own_session and (
+                self._session is None or self._session.closed
+            ):
                 ssl_context = ssl.create_default_context()
                 if not self.verify_ssl:
                     ssl_context.check_hostname = False
@@ -227,11 +248,34 @@ class TaHomaClient:
             except Exception as e:
                 LOGGER.warning(f"Error unregistering event listener: {e}")
 
-        if self._own_session and self._session:
+        if self._own_session and self._session and not self._session.closed:
             await self._session.close()
 
+        self.client = None
+        self._session = None
         self._connected = False
         LOGGER.info("Disconnected from TaHoma")
+
+    async def check_health(self) -> bool:
+        """Return True if the gateway local API responds."""
+        if not self._connected or not self.client:
+            return False
+
+        try:
+            version = await self.client.get_api_version()
+            LOGGER.debug(f"TaHoma health OK (apiVersion={version})")
+            return True
+        except Exception as e:
+            if is_transient_connection_error(e):
+                LOGGER.warning(f"TaHoma health check failed: {e}")
+            else:
+                LOGGER.error(f"TaHoma health check failed: {e}", exc_info=True)
+            return False
+
+    async def reconnect(self) -> bool:
+        """Disconnect and establish a fresh session to the gateway."""
+        await self.disconnect()
+        return await self.connect()
 
     async def get_devices(self) -> List[Device]:
         """Get all devices from TaHoma.

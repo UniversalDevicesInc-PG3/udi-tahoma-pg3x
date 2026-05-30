@@ -10,6 +10,7 @@ manages the connection to the gateway, and processes events.
 # std libraries
 import asyncio
 import logging
+import time
 from threading import Thread, Event, Lock, Condition, Timer
 from typing import Optional
 
@@ -22,6 +23,7 @@ from utils.tahoma_client import (
     TaHomaSSLVerificationError,
     TaHomaAuthenticationError,
     TaHomaConnectionError,
+    is_transient_connection_error,
 )
 from utils.config_validation import (
     validate_gateway_pin,
@@ -61,6 +63,13 @@ from nodes import (
 
 # limit the room label length as room - shade/scene must be < 30
 ROOM_NAME_LIMIT = 15
+
+# TaHoma connect / health-check tuning
+STARTUP_CONNECT_TIMEOUT_SEC = 600
+STARTUP_CONNECT_INITIAL_DELAY = 5.0
+STARTUP_CONNECT_MAX_DELAY = 60.0
+HEALTH_CHECK_INTERVAL_SEC = 60.0
+GATEWAY_STALE_SEC = 120.0
 
 # We need an event loop as we run in a thread which doesn't have a loop
 mainloop = asyncio.get_event_loop()
@@ -109,6 +118,9 @@ class Controller(Node):
         self.discovery_in = False
         self.poll_in = False
         self.event_polling_in = False
+        self._reconnect_in = False
+        self._last_gateway_ok = 0.0
+        self._gateway_lock: Optional[asyncio.Lock] = None
 
         # storage arrays & conditions
         self.n_queue = []
@@ -230,24 +242,25 @@ class Controller(Node):
                 verify_ssl=self.verify_ssl,
             )
 
-            # Connect to TaHoma gateway
             connect_result = asyncio.run_coroutine_threadsafe(
-                self.tahoma_client.connect(), self.mainloop
-            ).result(timeout=30)
+                self._connect_with_backoff(), self.mainloop
+            ).result(timeout=STARTUP_CONNECT_TIMEOUT_SEC + 30)
 
             if not connect_result:
                 LOGGER.error(
-                    "Failed to connect to TaHoma gateway - check network, "
+                    "Failed to connect to TaHoma gateway after retries - check network, "
                     "gateway PIN, and token"
                 )
                 self.Notices["error"] = (
-                    "Failed to connect to TaHoma - check network, gateway PIN, "
-                    "and token"
+                    "Failed to connect to TaHoma after retries - check network, "
+                    "gateway PIN, and token. Open the TaHoma app if the gateway "
+                    "was idle, then restart the NodeServer."
                 )
                 self.setDriver("ST", 2)
                 return
 
             LOGGER.info("Successfully connected to TaHoma gateway")
+            self._mark_gateway_ok()
 
         except TaHomaConnectionError as e:
             LOGGER.error(str(e))
@@ -317,6 +330,110 @@ class Controller(Node):
         self._schedule_notice_clear("success", 30)
 
         LOGGER.info(f"exit {self.name}")
+
+    def _mark_gateway_ok(self):
+        """Record a successful gateway contact for health/watchdog logic."""
+        self._last_gateway_ok = time.monotonic()
+        self.eventTimer = 0
+
+    async def _connect_with_backoff(self) -> bool:
+        """Connect to TaHoma with exponential backoff (auth errors fail immediately)."""
+        if not self.tahoma_client:
+            return False
+
+        deadline = time.monotonic() + STARTUP_CONNECT_TIMEOUT_SEC
+        delay = STARTUP_CONNECT_INITIAL_DELAY
+        attempt = 0
+
+        while time.monotonic() < deadline:
+            if self.stop_event.is_set():
+                return False
+
+            attempt += 1
+            try:
+                if await self.tahoma_client.connect():
+                    if attempt > 1:
+                        LOGGER.info(f"Connected to TaHoma on attempt {attempt}")
+                    return True
+            except (TaHomaAuthenticationError, TaHomaSSLVerificationError):
+                raise
+            except TaHomaConnectionError as e:
+                LOGGER.warning(f"TaHoma connect attempt {attempt} failed: {e}")
+            except Exception as e:
+                LOGGER.warning(f"TaHoma connect attempt {attempt} failed: {e}")
+
+            await self.tahoma_client.disconnect()
+
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+
+            wait = min(delay, remaining)
+            LOGGER.info(f"Retrying TaHoma connection in {wait:.0f}s...")
+            self.Notices["hello"] = (
+                f"Connecting to TaHoma gateway (attempt {attempt}, "
+                f"retry in {wait:.0f}s)..."
+            )
+            await asyncio.sleep(wait)
+            delay = min(delay * 2, STARTUP_CONNECT_MAX_DELAY)
+
+        return False
+
+    async def _ensure_gateway_connection(self) -> bool:
+        """Health-check the gateway and reconnect if the local API is down."""
+        if self._reconnect_in or not self.tahoma_client:
+            return False
+
+        if self._gateway_lock is None:
+            self._gateway_lock = asyncio.Lock()
+
+        async with self._gateway_lock:
+            if self._reconnect_in:
+                return False
+            self._reconnect_in = True
+            try:
+                if self.tahoma_client.is_connected:
+                    if await self.tahoma_client.check_health():
+                        self._mark_gateway_ok()
+                        return True
+
+                LOGGER.warning("TaHoma gateway health check failed — reconnecting")
+                self.Notices["error"] = (
+                    "TaHoma gateway unreachable — reconnecting. "
+                    "Open the TaHoma app if this persists."
+                )
+                if await self.tahoma_client.reconnect():
+                    self.Notices.delete("error")
+                    self._mark_gateway_ok()
+                    LOGGER.info("TaHoma gateway reconnected")
+                    await self.discover()
+                    self._start_event_polling_task()
+                    return True
+
+                LOGGER.error("TaHoma gateway reconnect failed")
+                return False
+            except (TaHomaAuthenticationError, TaHomaSSLVerificationError) as e:
+                LOGGER.error(str(e))
+                self.Notices["error"] = str(e)
+                self.setDriver("ST", 2)
+                return False
+            finally:
+                self._reconnect_in = False
+
+    def _start_event_polling_task(self):
+        """Start the async event polling loop when running on the mainloop thread."""
+        if self.event_polling_in or not self.tahoma_client or not self.tahoma_client.is_connected:
+            return
+        self.stop_event.clear()
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self.start_event_polling()
+            return
+        if loop is self.mainloop:
+            asyncio.create_task(self._poll_events())
+        else:
+            self.start_event_polling()
 
     def _cancel_notice_clear_timer(self):
         """Cancel any pending Polyglot notice auto-clear."""
@@ -633,10 +750,24 @@ class Controller(Node):
             LOGGER.debug("shortPoll controller")
 
             # Event polling is started automatically in start()
-            # eventTimer has no purpose beyond an indicator of how long since the last event
+            # eventTimer counts shortPolls since the last successful gateway contact
             self.eventTimer += 1
-            LOGGER.info(f"increment eventTimer = {self.eventTimer}")
+            LOGGER.debug(f"eventTimer = {self.eventTimer}")
             self.heartbeat()
+
+            if (
+                self.tahoma_client
+                and self.ready_event.is_set()
+                and time.monotonic() - self._last_gateway_ok > GATEWAY_STALE_SEC
+                and not self._reconnect_in
+            ):
+                LOGGER.warning(
+                    "TaHoma gateway stale (no contact for "
+                    f"{GATEWAY_STALE_SEC:.0f}s) — scheduling reconnect"
+                )
+                asyncio.run_coroutine_threadsafe(
+                    self._ensure_gateway_connection(), self.mainloop
+                )
 
             # start event polling loop only when connected
             if (
@@ -677,6 +808,7 @@ class Controller(Node):
         retries = 0
         max_retries = 5
         base_delay = 1
+        last_health_check = time.monotonic()
 
         try:
             if self.tahoma_client is None or not self.tahoma_client.is_connected:
@@ -689,9 +821,20 @@ class Controller(Node):
                 LOGGER.info(f"Event listener registered: {listener_id}")
 
             while not self.stop_event.is_set():
+                now = time.monotonic()
+                if now - last_health_check >= HEALTH_CHECK_INTERVAL_SEC:
+                    last_health_check = now
+                    if not await self.tahoma_client.check_health():
+                        if await self._ensure_gateway_connection():
+                            retries = 0
+                        else:
+                            await asyncio.sleep(base_delay)
+                            continue
+
                 try:
                     # Fetch events (Somfy recommends max once per second)
                     events = await self.tahoma_client.fetch_events()
+                    self._mark_gateway_ok()
 
                     if events:
                         LOGGER.info(f"Received {len(events)} TaHoma event(s)")
@@ -728,6 +871,10 @@ class Controller(Node):
 
                 except Exception as e:
                     LOGGER.error(f"Event polling error: {e}", exc_info=True)
+                    if is_transient_connection_error(e):
+                        if await self._ensure_gateway_connection():
+                            retries = 0
+                            continue
                     if retries >= max_retries:
                         LOGGER.error("Max retries reached. Stopping event polling.")
                         break
@@ -793,7 +940,7 @@ class Controller(Node):
             elif event_name == "GatewayAliveEvent":
                 # Gateway heartbeat / connection restored
                 LOGGER.debug("Gateway alive event")
-                self.eventTimer = 0
+                self._mark_gateway_ok()
 
             elif event_name == "ScenarioAddedEvent":
                 # New scenario added - trigger discovery
