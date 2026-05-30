@@ -30,7 +30,7 @@ TaHoma gateway PIN in `XXXX-XXXX-XXXX` format (12 digits with dashes).
 Bearer token from TaHoma Developer Mode.
 
 - **Default (placeholder):** 64 zeros — replace with your token before starting
-- **Format:** Long alphanumeric string (typically 50+ characters)
+- **Format:** Long alphanumeric string (typically 50+ characters); paste the token only, not a `Bearer ` prefix
 - **Security:** Stored in Polyglot; used only to authenticate to your local gateway
 
 ### Optional

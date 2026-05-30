@@ -17,11 +17,12 @@ from typing import Optional
 from udi_interface import Node, LOGGER, Custom, LOG_HANDLER
 
 # personal libraries
-from utils.tahoma_client import TaHomaClient, TaHomaSSLVerificationError
+from utils.tahoma_client import TaHomaClient, TaHomaSSLVerificationError, TaHomaAuthenticationError
 from utils.config_validation import (
     validate_gateway_pin,
     validate_bearer_token,
     normalize_gateway_ip,
+    normalize_tahoma_token,
     DEFAULT_GATEWAY_PIN,
     DEFAULT_TAHOMA_TOKEN,
     DEFAULT_GATEWAY_IP,
@@ -232,6 +233,11 @@ class Controller(Node):
             self.Notices["error"] = str(e)
             self.setDriver("ST", 2)
             return
+        except TaHomaAuthenticationError as e:
+            LOGGER.error(str(e))
+            self.Notices["error"] = str(e)
+            self.setDriver("ST", 2)
+            return
         except Exception as e:
             LOGGER.error(f"Error connecting to TaHoma: {e}", exc_info=True)
             self.Notices["error"] = f"TaHoma connection error: {e}"
@@ -421,8 +427,9 @@ class Controller(Node):
         for param, default_value in defaults.items():
             if param not in self.Parameters:
                 self.Parameters[param] = default_value
-            if self.checkParams():
-                self.handler_params_st = True
+
+        if self.checkParams():
+            self.handler_params_st = True
         self.check_handlers()
 
     def typedParameterHandler(self, params):
@@ -500,7 +507,7 @@ class Controller(Node):
         self.Notices.delete("config")
 
         # Check for required TaHoma token
-        token = str(self.Parameters.get("tahoma_token", ""))
+        token = normalize_tahoma_token(str(self.Parameters.get("tahoma_token", "")))
         is_valid, error_msg = validate_bearer_token(token)
         if not is_valid:
             LOGGER.error(f"Bearer token validation failed: {error_msg}")
@@ -544,8 +551,8 @@ class Controller(Node):
         """
         LOGGER.debug("enter")
         # no updates until node is through start-up
-        if not self.ready_event:
-            LOGGER.error("Node not ready yet, exiting")
+        if not self.ready_event.is_set():
+            LOGGER.debug("Node not ready yet, exiting poll")
             return
 
         # pause updates when in discovery
@@ -562,8 +569,12 @@ class Controller(Node):
             LOGGER.info(f"increment eventTimer = {self.eventTimer}")
             self.heartbeat()
 
-            # start event polling loop
-            if not self.event_polling_in:
+            # start event polling loop only when connected
+            if (
+                not self.event_polling_in
+                and self.tahoma_client
+                and self.tahoma_client.is_connected
+            ):
                 self.start_event_polling()
 
         if "longPoll" in flag:
@@ -599,8 +610,9 @@ class Controller(Node):
         base_delay = 1
 
         try:
-            # Ensure tahoma_client is initialized
-            assert self.tahoma_client is not None, "TaHoma client not initialized"
+            if self.tahoma_client is None or not self.tahoma_client.is_connected:
+                LOGGER.warning("Event polling skipped: TaHoma client not connected")
+                return
 
             # Register event listener
             if not self.tahoma_client.event_listener_id:

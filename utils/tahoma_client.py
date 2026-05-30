@@ -36,6 +36,16 @@ class TaHomaSSLVerificationError(Exception):
     )
 
 
+class TaHomaAuthenticationError(Exception):
+    """TaHoma rejected the configured bearer token."""
+
+    USER_MESSAGE = (
+        "TaHoma authentication failed. Verify gateway_pin and tahoma_token "
+        "match your TaHoma Developer Mode settings. Paste the token only (no "
+        "'Bearer ' prefix). Generate a new token in the TaHoma app if needed."
+    )
+
+
 _SSL_ERROR_MARKERS = (
     "certificate verify failed",
     "self signed certificate",
@@ -161,12 +171,18 @@ class TaHomaClient:
             
             return True
 
-        except InvalidTokenException:
-            LOGGER.error("Invalid TaHoma token - regenerate in app")
-            raise
-        except NotAuthenticatedException:
-            LOGGER.error("Authentication failed - check token")
-            raise
+        except InvalidTokenException as e:
+            LOGGER.error(TaHomaAuthenticationError.USER_MESSAGE)
+            LOGGER.debug("TaHoma invalid token details", exc_info=True)
+            raise TaHomaAuthenticationError(
+                TaHomaAuthenticationError.USER_MESSAGE
+            ) from e
+        except NotAuthenticatedException as e:
+            LOGGER.error(TaHomaAuthenticationError.USER_MESSAGE)
+            LOGGER.debug("TaHoma authentication failure details", exc_info=True)
+            raise TaHomaAuthenticationError(
+                TaHomaAuthenticationError.USER_MESSAGE
+            ) from e
         except Exception as e:
             if self.verify_ssl and is_ssl_verification_error(e):
                 LOGGER.error(TaHomaSSLVerificationError.USER_MESSAGE)

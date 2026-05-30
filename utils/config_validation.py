@@ -35,6 +35,14 @@ def is_default_gateway_ip(gateway_ip: str) -> bool:
     return not value or value == DEFAULT_GATEWAY_IP
 
 
+def normalize_tahoma_token(token: str) -> str:
+    """Strip whitespace and an optional Bearer prefix from the configured token."""
+    value = token.strip()
+    if value.lower().startswith("bearer "):
+        value = value[7:].strip()
+    return value
+
+
 def normalize_gateway_ip(gateway_ip: str, gateway_pin: str) -> Optional[str]:
     """Return gateway IP/hostname to use, or None for gateway-{pin}.local."""
     _ = gateway_pin  # reserved; hostname is derived from PIN when IP is omitted
@@ -97,8 +105,8 @@ def validate_bearer_token(token: str) -> tuple[bool, str]:
             "Generate in TaHoma app: Settings > Developer Mode > Generate Token"
         )
 
-    # Remove whitespace
-    token = token.strip()
+    # Remove whitespace and optional Bearer prefix from UI paste
+    token = normalize_tahoma_token(token)
 
     if is_default_tahoma_token(token):
         return False, (
