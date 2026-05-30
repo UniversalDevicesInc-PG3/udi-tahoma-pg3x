@@ -2,6 +2,11 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.13
+
+- **Fix orphan scene cleanup**: discovery cleanup now compares against Polyglot DB nodes, not just in-memory nodes — stale UUID-named scenes from before v0.0.12 are removed on restart
+- Clears orphaned `scenario_oid_*` / `device_url_*` custom data when a node is deleted
+
 ## 0.0.12
 
 - Skip **unnamed actionGroups** during scenario discovery — TaHoma API can return orphan/system records with no label; these no longer appear as UUID-named scene nodes

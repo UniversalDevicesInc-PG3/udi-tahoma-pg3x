@@ -1180,6 +1180,7 @@ class Controller(Node):
 
             # Get all scenarios (scenes) from TaHoma
             try:
+                self.scenarios_map = {}
                 scenarios = await self.tahoma_client.get_scenarios()
                 LOGGER.info(f"Retrieved {len(scenarios)} scenarios from TaHoma")
 
@@ -1310,6 +1311,12 @@ class Controller(Node):
                     f"Error discovering scenario {label}: {e}", exc_info=True
                 )
 
+    def _purge_node_custom_data(self, address: str):
+        """Remove persisted custom data for a deleted node address."""
+        for key in (f"device_url_{address}", f"scenario_oid_{address}"):
+            if key in self.Data:
+                del self.Data[key]
+
     def _cleanup_nodes(self, nodes_new, nodes_old):
         """Removes any nodes that are no longer present on the gateway.
 
@@ -1319,25 +1326,34 @@ class Controller(Node):
             nodes_old (list): A list of node addresses that existed before
                               the current discovery process.
         """
-        nodes_db = self.poly.getNodesFromDb()
-        LOGGER.debug(f"db nodes = {nodes_db}")
-
-        nodes_current = self.poly.getNodes()
         skip = {self.address, self.id, "controller", "hdctrl"}
-        nodes_get = {
-            key: nodes_current[key] for key in nodes_current if key not in skip
-        }
+        nodes_new_set = set(nodes_new)
 
+        db_addresses = set()
+        for entry in self.poly.getNodesFromDb() or []:
+            if isinstance(entry, dict):
+                addr = entry.get("address")
+                if addr and addr not in skip:
+                    db_addresses.add(addr)
+
+        in_memory = {key for key in self.poly.getNodes() if key not in skip}
+        stale = (db_addresses | in_memory) - nodes_new_set
+
+        LOGGER.debug(f"db nodes = {sorted(db_addresses)}")
         LOGGER.debug(f"old nodes = {nodes_old}")
         LOGGER.debug(f"new nodes = {nodes_new}")
-        LOGGER.debug(f"pre-delete nodes = {nodes_get}")
+        LOGGER.debug(f"stale nodes = {sorted(stale)}")
 
-        for node in nodes_get:
-            if node not in nodes_new:
-                LOGGER.info(f"need to delete node {node}")
-                self.poly.delNode(node)
+        removed = []
+        for address in sorted(stale):
+            LOGGER.info(f"Removing stale node not on gateway: {address}")
+            self.poly.delNode(address)
+            self._purge_node_custom_data(address)
+            removed.append(address)
 
-        if set(nodes_get) == set(nodes_new):
+        if removed:
+            LOGGER.info(f"Removed {len(removed)} stale node(s)")
+        elif db_addresses == nodes_new_set:
             LOGGER.info("Discovery NO NEW activity")
 
     def _create_device_node(self, device, node_address):
