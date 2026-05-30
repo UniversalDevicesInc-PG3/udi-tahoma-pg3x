@@ -1,176 +1,96 @@
 <!-- markdownlint-disable MD022 MD013 -->
-# Phantom Blinds Nodeserver for PG3x
+# Phantom Blinds NodeServer for PG3x
 
-## Overview
-
-This nodeserver integrates Phantom Blinds motorized shades with the Universal Devices ISY/Polisy/EISY home automation systems through the Somfy TaHoma gateway. It provides comprehensive control and monitoring of Phantom motorized shades using the Somfy TaHoma Developer Mode Local API.
-
-## Quick Start
-
-1. **Prerequisites**: TaHoma gateway with Developer Mode enabled
-2. **Configure**: Enter Gateway PIN (XXXX-XXXX-XXXX format) and Bearer Token in Polyglot UI
-3. **Connect**: NodeServer will validate configuration and connect to TaHoma
-4. **Discover**: Run Discover command to find all shades
-5. **Control**: Use ISY programs to control your shades
-
-📖 **See**: [POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md) for configuration details and [INSTALLATION.md](INSTALLATION.md) for complete setup guide
-
-## Features
-
-- **Local API Control**: Direct connection to TaHoma on your network (no cloud required)
-- **Automatic Discovery**: Discovers all RTS and Zigbee devices from TaHoma
-- **Real-time Status**: Event-driven updates for shade position and status
-- **Full Control**: Open, Close, Stop, My Position, Tilt control
-- **Scene Support**: Execute TaHoma scenes from ISY
-- **Robust Error Handling**: Automatic reconnection and error recovery
+NodeServer for Universal Devices **EISY** or **Polisy** (Polyglot V3) that controls Phantom Blinds and other Somfy RTS shades through a TaHoma gateway using the Developer Mode local API.
 
 ## Requirements
 
-- Universal Devices ISY994i, Polisy, or EISY with Polyglot V3 (PG3x)
+- Universal Devices **EISY** or **Polisy** with Polyglot V3 (PG3x)
 - Somfy TaHoma RTS/Zigbee gateway (Item #1811731)
-- Phantom Blinds motorized shades with RTS motors
-- TaHoma Developer Mode enabled with Bearer Token
-- Network connectivity (2.4 GHz WiFi or Ethernet to TaHoma)
+- Phantom Blinds (or other Somfy RTS devices) paired in the TaHoma app
+- TaHoma Developer Mode enabled with a Bearer token
+- Network connectivity between Polisy/EISY and TaHoma (2.4 GHz Wi‑Fi or Ethernet)
 
-## Supported Devices
+## Features
 
-- **RTS Motorized Shades**: Roller shades, venetian blinds, awnings, screens
-- **RTS with Tilt**: Blinds with slat tilt control
-- **Dual Shades**: Top-down/bottom-up configurations
-- **TaHoma Scenes**: Multi-shade coordinated actions
-- **Zigbee Devices**: Zigbee 3.0 compatible devices (untested)
+- Local API control (direct connection on your LAN; no Somfy cloud required)
+- Automatic discovery of RTS shades and TaHoma scenes
+- Open, Close, Stop, My Position, and position control where supported
+- Real-time status via event polling
+- Tilt control on compatible blinds
 
 ## Installation
 
-**See**: [INSTALLATION.md](INSTALLATION.md) for complete installation instructions.
+### 1. Prepare TaHoma
 
-### Quick Installation
+Before installing the NodeServer:
 
-1. **Install NodeServer** in Polyglot UI from NodeServer Store
-2. **Configure Settings** in Polyglot UI:
-   - `gateway_pin`: `2001-0001-1891` (from TaHoma device)
-   - `tahoma_token`: Generate in TaHoma app Developer Mode
-   - `use_local_api`: `true` (recommended)
-3. **Start NodeServer** and verify connection in logs
-4. **Discover Devices**: Right-click Controller → Discover
+1. Install and power the TaHoma gateway; confirm it is on your network (green LED).
+2. Pair your shades in the TaHoma mobile app.
+3. Enable Developer Mode and generate a Bearer token (see [POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md#generating-a-bearer-token)).
+4. Note your Gateway PIN (`XXXX-XXXX-XXXX`) from the device label or TaHoma app.
 
-### Configuration Parameters
+### 2. Install the NodeServer
 
-Enter these parameters in the Polyglot UI Configuration page:
+**From the Polyglot Store (recommended)**
 
-| Parameter Name | Required | Example/Format | Description |
-|---|---|---|---|
-| `gateway_pin` | Yes | `2001-0001-1891` | TaHoma gateway PIN (XXXX-XXXX-XXXX format with dashes) |
-| `tahoma_token` | Yes | `abc123def456...` | Bearer token from TaHoma app Developer Mode |
-| `gateway_ip` | No | `192.168.1.100` | Optional: IP address if hostname resolution fails |
-| `use_local_api` | No | `true` | Use local API (true) or cloud API (false). Default: true |
-| `verify_ssl` | No | `false` | Verify SSL certificate. Default: false (TaHoma uses self-signed) |
+1. Open the Polyglot UI (`http://<polisy-or-eisy-ip>:3000`).
+2. Go to **NodeServer Store**.
+3. Search for **Phantom Blinds** and click **Install**.
 
-📖 **Troubleshooting**: See [INSTALLATION.md](INSTALLATION.md#troubleshooting)
+**From GitHub**
 
-## Usage
+1. In the NodeServer Store, choose **Install from GitHub**.
+2. Enter the repository URL and select the `main` branch.
+3. Click **Install**.
 
-### Shade Control
+### 3. Configure and start
 
-Each shade node provides the following controls:
+1. Open the NodeServer **Configuration** tab.
+2. Enter your settings (see [POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md) for parameter details).
+3. Click **Save**, then **Start**, and check the **Log** tab for a successful TaHoma connection.
 
-- **Position**: Set shade position (0-100%)
-- **Open/Close**: Fully open or close the shade
-- **Stop**: Stop shade movement
-- **My Position**: Move to programmed favorite position
-- **Tilt** (if supported): Adjust slat angle
+### 4. Discover devices
 
-### Scenes
-
-Create scenes to control multiple shades:
-
-- Group shades by room or function
-- Set coordinated positions for multiple shades
-- Trigger scenes from ISY programs or schedules
-
-### Status Monitoring
-
-Monitor shade status in real-time:
-
-- Current position
-- Movement state (opening, closing, stopped)
-- Battery level (for battery-powered shades)
-- Connection status
-- Last update timestamp
+1. In the ISY Admin Console, expand the NodeServer folder.
+2. Right-click **Phantom Blinds Controller** → **Discover**.
+3. Shade and scene nodes should appear within about a minute.
 
 ## Configuration
 
-See [POLYGLOT_CONFIG.md][config] for detailed configuration options including:
+All settings are entered in the Polyglot UI Configuration page (not a YAML file).
 
-- OAuth authentication setup
-- API credentials configuration
-- Polling intervals
-- Logging levels
-- Advanced settings
+| Parameter | Required | Default | Description |
+|-----------|----------|---------|-------------|
+| `gateway_pin` | Yes | `0000-0000-0000` | Your TaHoma PIN (`XXXX-XXXX-XXXX`) |
+| `tahoma_token` | Yes | (64 zeros) | Bearer token from Developer Mode |
+| `gateway_ip` | No | `gateway-0000-0000-0000.local` | Ignored by default; set IP if mDNS fails |
+| `verify_ssl` | No | `false` | See config doc for `true` |
 
-## Architecture
+Full setup steps and troubleshooting: **[POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md)**
 
-This nodeserver uses:
+## Usage
 
-- **pyoverkiz**: Official Somfy/Overkiz Python library for TaHoma API
-- **OAuth 2.0**: Secure authentication with token refresh
-- **SSE**: Server-Sent Events for real-time status updates
-- **udi_interface**: PG3x interface library for ISY integration
+Each shade node supports position, Open, Close, Stop, and My Position where the motor supports them. Scenes from TaHoma appear as separate nodes. Use ISY programs, schedules, or the Admin Console to control shades.
 
-See [Somfy Documentation](Somfy/) for detailed API information and migration notes.
+After upgrading the NodeServer, update the profile in Polyglot if prompted, then run **Discover** again.
 
 ## Troubleshooting
 
-### Authentication Issues
+Common issues (invalid PIN, token errors, connection failures, discovery, commands) are covered in [POLYGLOT_CONFIG.md — Troubleshooting](POLYGLOT_CONFIG.md#troubleshooting).
 
-- Verify your Developer API credentials are correct
-- Check that OAuth token hasn't expired (auto-refreshes every 30 days)
-- Ensure your TaHoma account is active
+Enable debug logging in Polyglot for detailed diagnostics. Check the NodeServer **Log** tab first.
 
-### Discovery Issues
+## Documentation
 
-- Confirm shades are properly paired with TaHoma gateway
-- Check network connectivity to TaHoma cloud
-- Review nodeserver logs for error messages
-
-### Control Issues
-
-- Verify shade is online in TaHoma app
-- Check for conflicting commands or schedules
-- Ensure shade batteries are charged (if applicable)
-
-### Logging
-
-- Enable debug logging in Polyglot configuration
-- Check `logs/debug.log` for detailed diagnostic information
-- Look for connection errors or API rate limiting
-
-## Version History
-
-See [VersionHistory.md][versions] for release notes and update history.
+- **[POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md)** — Configuration, TaHoma setup, troubleshooting
+- **[VersionHistory.md](VersionHistory.md)** — Release notes
 
 ## Support
 
-- **Issues**: Report bugs on GitHub Issues
-- **Documentation**: See Somfy folder for API documentation
-- **Forum**: Universal Devices Forum
+- GitHub Issues: [udi-phantomblinds-pg3x](https://github.com/sejgit/udi-phantomblinds-pg3x/issues)
+- [Universal Devices Forum](https://forum.universal-devices.com)
 
 ## License
 
-See [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- Universal Devices for the ISY platform and PG3x framework
-- Somfy for TaHoma API and pyoverkiz library
-- Hunter Douglas PowerView plugin for implementation inspiration
-
-## Related Links
-
-- [Somfy Developer Portal](https://developer.somfy.com)
-- [TaHoma Documentation](https://github.com/iMicknl/python-overkiz-api)
-- [Universal Devices](https://www.universal-devices.com)
-- [PG3x Documentation](https://github.com/UniversalDevicesInc/udi_python_interface)
-
-[versions]: VersionHistory.md
-[config]: POLYGLOT_CONFIG.md
+See [LICENSE](LICENSE).

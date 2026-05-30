@@ -25,6 +25,41 @@ from udi_interface import LOGGER
 import aiohttp
 
 
+class TaHomaSSLVerificationError(Exception):
+    """TaHoma HTTPS certificate could not be verified."""
+
+    USER_MESSAGE = (
+        "TaHoma SSL certificate verification failed (verify_ssl is true). "
+        "TaHoma uses a self-signed certificate. Set verify_ssl to false in "
+        "Polyglot configuration (recommended), or install the Somfy root CA "
+        "on your EISY/Polisy. See POLYGLOT_CONFIG.md."
+    )
+
+
+_SSL_ERROR_MARKERS = (
+    "certificate verify failed",
+    "self signed certificate",
+    "self-signed certificate",
+    "unable to get local issuer certificate",
+    "certificate_verify_failed",
+)
+
+
+def is_ssl_verification_error(exc: BaseException) -> bool:
+    """Return True if exc (or its cause chain) is an SSL verification failure."""
+    current: BaseException | None = exc
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, (ssl.SSLCertVerificationError, aiohttp.ClientConnectorCertificateError)):
+            return True
+        message = str(current).lower()
+        if any(marker in message for marker in _SSL_ERROR_MARKERS):
+            return True
+        current = current.__cause__ or current.__context__
+    return False
+
+
 class TaHomaClient:
     """Wrapper around pyoverkiz for TaHoma/Phantom Blinds integration.
 
@@ -37,7 +72,7 @@ class TaHomaClient:
         self,
         token: str,
         gateway_pin: str,
-        verify_ssl: bool = True,
+        verify_ssl: bool = False,
         gateway_ip: Optional[str] = None,
         session: Optional[aiohttp.ClientSession] = None,
     ):
@@ -133,6 +168,12 @@ class TaHomaClient:
             LOGGER.error("Authentication failed - check token")
             raise
         except Exception as e:
+            if self.verify_ssl and is_ssl_verification_error(e):
+                LOGGER.error(TaHomaSSLVerificationError.USER_MESSAGE)
+                LOGGER.debug("TaHoma SSL verification failure details", exc_info=True)
+                raise TaHomaSSLVerificationError(
+                    TaHomaSSLVerificationError.USER_MESSAGE
+                ) from e
             LOGGER.error(f"Failed to connect to TaHoma: {e}", exc_info=True)
             return False
 
@@ -386,7 +427,7 @@ class TaHomaClient:
 
 # Convenience function for creating client
 async def create_tahoma_client(
-    token: str, gateway_pin: str, verify_ssl: bool = True
+    token: str, gateway_pin: str, verify_ssl: bool = False
 ) -> TaHomaClient:
     """Create and connect a TaHoma client.
 

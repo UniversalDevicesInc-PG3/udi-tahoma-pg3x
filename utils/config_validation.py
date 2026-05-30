@@ -8,8 +8,39 @@ to ensure they meet the required format and contain valid values.
 
 import re
 import logging
+from typing import Optional
 
 LOGGER = logging.getLogger(__name__)
+
+# Polyglot UI placeholder defaults (must be replaced before connecting).
+DEFAULT_GATEWAY_PIN = "0000-0000-0000"
+DEFAULT_TAHOMA_TOKEN = "0" * 64
+DEFAULT_GATEWAY_IP = "gateway-0000-0000-0000.local"
+
+
+def is_default_gateway_pin(pin: str) -> bool:
+    """Return True if pin is the unset Polyglot placeholder."""
+    return pin.strip() == DEFAULT_GATEWAY_PIN
+
+
+def is_default_tahoma_token(token: str) -> bool:
+    """Return True if token is the unset Polyglot placeholder."""
+    value = token.strip()
+    return value == DEFAULT_TAHOMA_TOKEN or (bool(value) and set(value) == {"0"})
+
+
+def is_default_gateway_ip(gateway_ip: str) -> bool:
+    """Return True if gateway_ip is empty or the unset Polyglot placeholder."""
+    value = gateway_ip.strip()
+    return not value or value == DEFAULT_GATEWAY_IP
+
+
+def normalize_gateway_ip(gateway_ip: str, gateway_pin: str) -> Optional[str]:
+    """Return gateway IP/hostname to use, or None for gateway-{pin}.local."""
+    _ = gateway_pin  # reserved; hostname is derived from PIN when IP is omitted
+    if is_default_gateway_ip(gateway_ip):
+        return None
+    return gateway_ip.strip()
 
 
 def validate_gateway_pin(pin: str) -> tuple[bool, str]:
@@ -41,6 +72,12 @@ def validate_gateway_pin(pin: str) -> tuple[bool, str]:
             "Expected format: 1234-5678-9012 (12 digits with dashes)"
         )
 
+    if is_default_gateway_pin(pin):
+        return False, (
+            "Gateway PIN is still set to the default placeholder (0000-0000-0000). "
+            "Enter your TaHoma PIN from the device label or app."
+        )
+
     LOGGER.debug(f"Gateway PIN format valid: {pin}")
     return True, ""
 
@@ -62,6 +99,12 @@ def validate_bearer_token(token: str) -> tuple[bool, str]:
 
     # Remove whitespace
     token = token.strip()
+
+    if is_default_tahoma_token(token):
+        return False, (
+            "Bearer token is still set to the default placeholder. "
+            "Generate a token in the TaHoma app Developer Mode and paste it here."
+        )
 
     # Check minimum length (tokens are typically 50+ characters)
     if len(token) < 20:

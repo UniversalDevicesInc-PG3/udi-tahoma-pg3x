@@ -2,6 +2,15 @@
 
 See `udi-PhantomBlinds-pg3x` for in-code release notes.
 
+## 0.0.3
+
+- Consolidated user documentation into **README.md** and **POLYGLOT_CONFIG.md**; removed **INSTALLATION.md** and **exampleConfigFile.yaml**
+- Trimmed **Somfy/** to a small developer reference set; removed obsolete archive and PowerView-era API docs
+- Removed **ISY994** and **ISY Access** references from user docs
+- Removed unused **use_local_api** parameter; default **verify_ssl** to `false`
+- Clearer log and Polyglot notice when SSL verification fails with **verify_ssl** `true`
+- Polyglot **placeholder defaults** for `gateway_pin`, `tahoma_token`, and `gateway_ip`; ignored until replaced with real values
+
 ## 0.0.2
 
 - Generic full-UI shade nodes for all discovered blinds; behavior tightens from gateway data and user logs

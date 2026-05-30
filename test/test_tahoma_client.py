@@ -4,8 +4,15 @@
 """
 
 import pytest
+import ssl
+import aiohttp
 from unittest.mock import Mock, AsyncMock, patch
-from utils.tahoma_client import TaHomaClient, create_tahoma_client
+from utils.tahoma_client import (
+    TaHomaClient,
+    TaHomaSSLVerificationError,
+    create_tahoma_client,
+    is_ssl_verification_error,
+)
 
 
 @pytest.fixture
@@ -178,3 +185,37 @@ async def test_get_device_url_from_address():
     # Test not found
     device_url = client.get_device_url_from_address("sh99999999", devices)  # type: ignore[arg-type]
     assert device_url is None
+
+
+def test_is_ssl_verification_error_detects_ssl_types():
+    assert is_ssl_verification_error(ssl.SSLCertVerificationError("certificate verify failed"))
+    assert is_ssl_verification_error(
+        aiohttp.ClientConnectorCertificateError(None, OSError("cert verify failed"))
+    )
+
+
+def test_is_ssl_verification_error_detects_message():
+    assert is_ssl_verification_error(Exception("self signed certificate"))
+
+
+def test_is_ssl_verification_error_ignores_unrelated():
+    assert not is_ssl_verification_error(Exception("connection refused"))
+
+
+@pytest.mark.asyncio
+async def test_tahoma_client_connect_ssl_verification_error(mock_overkiz_client):
+    """verify_ssl=true with untrusted TaHoma cert raises a clear SSL error."""
+    mock_class, mock_instance = mock_overkiz_client
+    mock_instance.login.side_effect = ssl.SSLCertVerificationError(
+        "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: "
+        "self signed certificate"
+    )
+
+    client = TaHomaClient(
+        token="test-token",
+        gateway_pin="1234-5678-9012",
+        verify_ssl=True,
+    )
+
+    with pytest.raises(TaHomaSSLVerificationError, match="verify_ssl is true"):
+        await client.connect()

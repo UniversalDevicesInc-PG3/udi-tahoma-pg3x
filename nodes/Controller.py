@@ -17,10 +17,14 @@ from typing import Optional
 from udi_interface import Node, LOGGER, Custom, LOG_HANDLER
 
 # personal libraries
-from utils.tahoma_client import TaHomaClient
+from utils.tahoma_client import TaHomaClient, TaHomaSSLVerificationError
 from utils.config_validation import (
     validate_gateway_pin,
     validate_bearer_token,
+    normalize_gateway_ip,
+    DEFAULT_GATEWAY_PIN,
+    DEFAULT_TAHOMA_TOKEN,
+    DEFAULT_GATEWAY_IP,
 )
 from utils.device_capabilities import (
     build_device_profile,
@@ -82,8 +86,7 @@ class Controller(Node):
         self.token = ""
         self.gateway_pin = ""
         self.gateway_ip = None
-        self.use_local_api = True
-        self.verify_ssl = True
+        self.verify_ssl = False
 
         # in function vars
         self.update_in = False
@@ -211,15 +214,24 @@ class Controller(Node):
             ).result(timeout=30)
 
             if not connect_result:
-                LOGGER.error("Failed to connect to TaHoma gateway")
+                LOGGER.error(
+                    "Failed to connect to TaHoma gateway - check network, "
+                    "gateway PIN, and token"
+                )
                 self.Notices["error"] = (
-                    "Failed to connect to TaHoma - check token and gateway PIN"
+                    "Failed to connect to TaHoma - check network, gateway PIN, "
+                    "and token"
                 )
                 self.setDriver("ST", 2)
                 return
 
             LOGGER.info("Successfully connected to TaHoma gateway")
 
+        except TaHomaSSLVerificationError as e:
+            LOGGER.error(str(e))
+            self.Notices["error"] = str(e)
+            self.setDriver("ST", 2)
+            return
         except Exception as e:
             LOGGER.error(f"Error connecting to TaHoma: {e}", exc_info=True)
             self.Notices["error"] = f"TaHoma connection error: {e}"
@@ -400,12 +412,11 @@ class Controller(Node):
             self.Parameters.load(params)
 
         defaults = {
-            # TaHoma/Phantom Blinds parameters
-            "tahoma_token": "",  # Bearer token from TaHoma app Developer Mode
-            "gateway_pin": "",  # Gateway PIN (e.g., 2001-0001-1891)
-            "gateway_ip": "",  # Optional: IP address of gateway (e.g., 192.168.1.100)
-            "use_local_api": "true",  # Use local API (true) or cloud API (false)
-            "verify_ssl": "true",  # Verify SSL certificates
+            # TaHoma/Phantom Blinds parameters (placeholders until user configures)
+            "tahoma_token": DEFAULT_TAHOMA_TOKEN,
+            "gateway_pin": DEFAULT_GATEWAY_PIN,
+            "gateway_ip": DEFAULT_GATEWAY_IP,
+            "verify_ssl": "false",
         }
         for param, default_value in defaults.items():
             if param not in self.Parameters:
@@ -507,11 +518,12 @@ class Controller(Node):
         # Store validated parameters
         self.token = token
         self.gateway_pin = gateway_pin
-        self.gateway_ip = str(self.Parameters.get("gateway_ip", "")).strip() or None
-        use_local = self.Parameters.get("use_local_api")
+        self.gateway_ip = normalize_gateway_ip(
+            str(self.Parameters.get("gateway_ip", "")),
+            gateway_pin,
+        )
         verify = self.Parameters.get("verify_ssl")
-        self.use_local_api = use_local.lower() == "true" if use_local else True
-        self.verify_ssl = verify.lower() == "true" if verify else True
+        self.verify_ssl = verify.lower() == "true" if verify else False
 
         if self.gateway_ip:
             LOGGER.info(

@@ -1,8 +1,9 @@
 <!-- markdownlint-disable MD022 MD013 MD029 -->
 # TaHoma Hardware Testing Guide
 
-**Status**: Ready for testing when hardware arrives
-**Prerequisites**: TaHoma gateway installed and configured
+**Audience**: Developers validating the NodeServer against real TaHoma hardware.
+
+**Prerequisites**: TaHoma gateway installed and configured; see [POLYGLOT_CONFIG.md](../POLYGLOT_CONFIG.md) for user-facing setup.
 
 📖 **See Also**: [HARDWARE_REFERENCE.md](HARDWARE_REFERENCE.md) for hardware specifications and installation requirements.
 
@@ -49,17 +50,9 @@ Gateway PIN: 1234-5678-9012
 
 1. Navigate to **NodeServers** → **Phantom Blinds**
 2. Click **Configuration**
-3. Add Custom Parameters:
-
-   ```yaml
-   tahoma_token: "Bearer <your-token-here>"
-   gateway_pin: "1234-5678-9012"
-   use_local_api: "true"
-   verify_ssl: "true"
-   ```
-
-1. **Save Configuration**
-2. **Restart NodeServer**
+3. Enter Polyglot configuration parameters (`tahoma_token`, `gateway_pin`; optionally `gateway_ip`, `verify_ssl`).
+4. **Save Configuration**
+5. **Restart NodeServer**
 
 ---
 

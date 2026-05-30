@@ -1,175 +1,166 @@
-# Phantom Blinds Device Controller (TaHoma Integration)
+# Phantom Blinds — Polyglot Configuration
 <!-- markdownlint-disable-file MD036 MD007 MD022 MD013 -->
 
-**NEED TO SELECT ISY ACCESS AND SAVE IN CONFIGURATION**
-Required for variable write access
+## Prerequisites
 
-**After updating you MAY need to restart your Admin Console**
+1. Somfy TaHoma RTS/Zigbee gateway (Item #1811731) on your network
+2. Shades paired and working in the TaHoma mobile app
+3. Developer Mode enabled in the TaHoma app
+4. Bearer token generated and saved securely (shown only once)
+5. Gateway PIN noted (`XXXX-XXXX-XXXX`)
 
-## Initial Setup
+## Configuration parameters
 
-### Step 1: Prerequisites
+Enter all values in the Polyglot UI **Configuration** tab. There is no separate YAML config file.
 
-Before configuring this NodeServer, ensure you have:
+New installs show **placeholder defaults** until you enter your real TaHoma settings. The NodeServer will not connect while placeholders remain.
 
-1. ✅ Somfy TaHoma RTS/Zigbee gateway (Item #1811731) installed and connected to network
-2. ✅ Your Phantom Blinds configured in the TaHoma mobile app
-3. ✅ TaHoma Developer Mode enabled (see [INSTALLATION.md](INSTALLATION.md) for detailed steps)
-4. ✅ Bearer token generated in TaHoma app (save securely - only shown once)
-5. ✅ Gateway PIN (found on bottom of TaHoma device or in app)
+### Required
 
-### Step 2: Required Configuration Parameters
+#### `gateway_pin`
 
-The following configuration parameters are **REQUIRED** to connect to your TaHoma gateway:
+TaHoma gateway PIN in `XXXX-XXXX-XXXX` format (12 digits with dashes).
 
-#### **gateway_pin** (Required)
+- **Default (placeholder):** `0000-0000-0000` — replace with your PIN before starting
+- **Example:** `2001-0001-1891`
+- **Where to find:** Label on the bottom of the TaHoma unit, or TaHoma app → Menu → Help & Advanced Features → My Setup → TaHoma PIN
 
-Your TaHoma gateway PIN in format: `XXXX-XXXX-XXXX` (e.g., `2001-0001-1891`)
+#### `tahoma_token`
 
-- **Format**: 4 digits, dash, 4 digits, dash, 4 digits (12 total digits with dashes)
-- **Where to find**:
-  - On a label on the bottom of your TaHoma device
-  - In TaHoma app: Menu → Help & Advanced Features → My Setup → TaHoma PIN
-- **Example**: `2001-0001-1891`
+Bearer token from TaHoma Developer Mode.
 
-#### **bearer_token** (Required)
+- **Default (placeholder):** 64 zeros — replace with your token before starting
+- **Format:** Long alphanumeric string (typically 50+ characters)
+- **Security:** Stored in Polyglot; used only to authenticate to your local gateway
 
-Authentication token from TaHoma app Developer Mode.
+### Optional
 
-- **How to generate**:
-  1. Open TaHoma app on mobile device
-  2. Tap Menu (bottom right) → Help & Advanced Features → Advanced Features
-  3. Tap on version number 7 times to enable Developer Mode
-  4. Go back to Menu → Developer Mode
-  5. Tap "Generate Token"
-  6. Copy token immediately (only shown once!)
-- **Format**: Long alphanumeric string (typically 50+ characters)
-- **Security**: Token is stored securely and never transmitted to cloud
+#### `gateway_ip`
 
-### Step 3: Optional Configuration Parameters
+Optional. Leave at the default unless you need an explicit address.
 
-#### **gateway_ip** (Optional)
+- **Default (placeholder):** `gateway-0000-0000-0000.local` — ignored; the NodeServer uses `gateway-{pin}.local` from your PIN
+- **When to change:** If mDNS to `gateway-{pin}.local` is unreliable, enter the TaHoma **IP address** (for example `192.168.1.100`)
+- **Important:** Assign the TaHoma a static IP or router DHCP reservation if you use an IP here
 
-IP address of TaHoma gateway on your network (for cases where DNS/mDNS doesn't work)
+#### `verify_ssl`
 
-- **Example**: `192.168.1.100`
-- **When to use**: If automatic hostname resolution (`gateway-XXXX-XXXX-XXXX.local`) fails
-- **Default**: Uses hostname when not specified
+Whether to verify the TaHoma HTTPS certificate.
 
-#### **use_local_api** (Optional)
+- **Default:** `false`
+- **Recommended:** Leave at `false`. TaHoma presents a self-signed certificate on your LAN; verification is not required for normal home use.
 
-Use local API (direct connection) vs cloud API
+Setting **`true`** is optional and only makes sense if you install the [Somfy root CA](https://ca.overkiz.com/overkiz-root-ca-2048.crt) on your **EISY or Polisy** so the system trusts that certificate. On FreeBSD (EISY/Polisy), that typically means copying the `.crt` file into the local trusted certs directory (for example `/usr/local/share/certs/`), then running `certctl rehash` as root over SSH. We do **not** recommend this for typical installations.
 
-- **Default**: `true` (recommended)
-- **Recommended**: `true` for better performance and privacy
-- **Note**: Local API requires TaHoma to be on same network
+### Reference table
 
-#### **verify_ssl** (Optional)
+| Parameter | Required | Default | Example |
+|-----------|----------|---------|---------|
+| `gateway_pin` | Yes | `0000-0000-0000` | `2001-0001-1891` |
+| `tahoma_token` | Yes | (64 zeros) | (token from app) |
+| `gateway_ip` | No | `gateway-0000-0000-0000.local` (ignored) | `192.168.1.100` |
+| `verify_ssl` | No | `false` | `false` |
 
-Whether to verify SSL certificates
+## TaHoma setup
 
-- **Default**: `false` (TaHoma uses self-signed certificate)
-- **Recommended**: `false` for local network
-- **Note**: Can install Somfy root CA for strict verification if desired
+### Generating a Bearer token
 
-### Step 4: Save Configuration
+1. Open the TaHoma app on your mobile device.
+2. Tap **Menu** (bottom right) → **Configuration of the installation** → **Access the parameters**.
+3. Tap the PIN number **7 times** to enable Developer Mode; accept the disclaimer.
+4. Go to Menu → **Developer Mode**.
+5. Tap **Generate Token** and copy the token immediately — it is only shown once.
 
-1. Enter your Gateway PIN in the format `XXXX-XXXX-XXXX`
-2. Enter your Bearer Token (generated from TaHoma app)
-3. Optionally enter Gateway IP if needed
-4. Click **Save**
-5. The NodeServer will automatically:
-   - Validate your configuration
-   - Connect to your TaHoma gateway
-   - Discover your Phantom Blinds devices
-   - Create nodes for each device in the ISY
+If you lose the token, generate a new one in Developer Mode.
 
-### Step 5: Verify Connection
+### Save and verify
 
-After saving the configuration:
+1. Enter `gateway_pin` and `tahoma_token` (replace the placeholder defaults).
+2. Leave `gateway_ip` at the default unless mDNS to `gateway-{pin}.local` fails; if you set an IP, use a static/reserved address on the TaHoma.
+3. Leave `verify_ssl` at `false` unless you have installed the Somfy root CA on the EISY/Polisy.
+4. Click **Save**.
+5. Start the NodeServer and check the log for successful authentication.
+6. Run **Discover** on the controller node in the Admin Console.
+7. Test Open/Close on a shade node.
 
-1. Check the NodeServer logs for connection success
-2. Wait 30-60 seconds for device discovery
-3. Verify your shades appear in the ISY Admin Console
-4. Test basic commands (Open, Close, Stop)
+### Network
 
-## Supported Device Types
+The NodeServer reaches TaHoma on your LAN over HTTPS (port **8443**).
 
-### Phantom Blinds and RTS Devices
+- **Default:** `gateway-{pin}.local` via mDNS (for example `gateway-2001-0001-1891.local`)
+- **Fallback:** `gateway_ip` if mDNS is unreliable (static/reserved IP on the TaHoma recommended)
 
-- **Open/Close**: Full range motion control
-- **Position**: Set to specific percentage (0-100%)
-- **Stop**: Halt motion at current position
-- **Tilt** (if supported): Adjust slat angle for blinds
-- **Status Monitoring**: Position, connectivity
-- **Scenes**: Execute TaHoma scenes from ISY
+Ensure firewall rules allow HTTPS to the gateway.
 
 ## Troubleshooting
 
-### Configuration Errors
+### Configuration errors
 
-**Invalid Gateway PIN format**
+**Invalid Gateway PIN**
 
-- PIN must be in format: `XXXX-XXXX-XXXX` (12 digits with dashes)
-- Example: `2001-0001-1891`
-- Found on bottom of TaHoma device or in app
+- Must match `^\d{4}-\d{4}-\d{4}$` (e.g. `2001-0001-1891`, not digits without dashes).
 
-**Bearer Token not valid**
+**Invalid Bearer token**
 
-- Token appears to be placeholder text - replace with actual token from TaHoma app
-- Token must be 50+ characters
-- Generate new token if needed - old tokens may have expired
-- Only shown once when created, save securely
+- Replace placeholder text with the token from the TaHoma app.
+- Token must be at least 20 characters (typically 50+); no spaces or line breaks.
+- Generate a new token if the old one was lost or revoked.
 
-### Connection Issues
+### Connection issues
 
-**Cannot connect to TaHoma gateway**
+**Cannot connect to TaHoma**
 
-- Verify TaHoma is connected to your network (check LED is green)
-- If using hostname resolution fails, try entering Gateway IP address manually
-- Check that your firewall allows port 8443 (HTTPS) to TaHoma
-- Try pinging: `gateway-XXXX-XXXX-XXXX.local` or your Gateway IP
-- Restart TaHoma device
+- Confirm TaHoma is online (green LED) and on the same network as Polisy/EISY.
+- Try `ping gateway-{pin}.local`. If that fails, set `gateway_ip` to the TaHoma’s static/reserved IP.
+- Verify Developer Mode is enabled and the token is current.
+- Leave `verify_ssl` at `false` unless you installed the Somfy root CA on the EISY/Polisy.
 
-**No Devices Discovered**
+**NodeServer won't start**
 
-- Verify devices are properly configured in TaHoma app
-- Check that devices are online in TaHoma app
-- Try initiating discovery again: Right-click Controller → Discover
-- Review NodeServer logs for specific error messages
+- Check the Polyglot log for validation errors on `gateway_pin` or `tahoma_token`.
+- Restart Polyglot if dependencies failed to install: `sudo systemctl restart polyglot`
 
-**Devices Don't Respond to Commands**
+### Discovery and control
 
-- Test commands in TaHoma app first to verify devices work
-- Check device batteries if battery-powered
-- Verify TaHoma RF range (RTS requires 25-35 feet line of sight)
-- Check NodeServer logs for command execution errors
+**No devices discovered**
 
-### Network Troubleshooting
+- Confirm shades appear and respond in the TaHoma app.
+- Wait a minute after startup, then right-click the controller → **Discover**.
+- Review the NodeServer log for API errors.
 
-**Use Gateway IP instead of hostname**
+**Shades don't respond**
 
-If automatic hostname resolution doesn't work:
+- Test the shade in the TaHoma app first.
+- Check RTS range (roughly 25–35 feet line of sight to the gateway).
+- Check battery-powered motors for low battery.
 
-1. Find your TaHoma IP address (check router or TaHoma app)
-2. Enter IP address in `gateway_ip` configuration parameter (optional)
-3. Save configuration and restart NodeServer
+**Position not updating**
 
-**SSL Certificate Errors**
+- Confirm the log shows the event polling loop running.
+- Right-click the shade → **Query** to force a refresh.
+- Restart the NodeServer if event polling stopped.
 
-- Set `verify_ssl` to `false` (safe for local network)
-- Alternatively, install Somfy root CA certificate
+### SSL certificate errors
 
-## Support
+The default is `verify_ssl` **`false`**, which skips verification of TaHoma’s self-signed certificate. That is appropriate for normal home use on a local network.
 
-For issues, feature requests, or questions:
+If you set `verify_ssl` to **`true`**, you must install the [Somfy root CA](https://ca.overkiz.com/overkiz-root-ca-2048.crt) on the EISY or Polisy (SSH as root). On FreeBSD, copy the certificate into `/usr/local/share/certs/` (create the directory if needed), then run:
 
-- GitHub Issues: [udi-phantomblinds-pg3x](https://github.com/sejgit/udi-phantomblinds-pg3x/issues)
-- UDI Forum: [Phantom Blinds NodeServer Discussion](https://forum.universal-devices.com)
-- See [INSTALLATION.md](INSTALLATION.md) for detailed setup guide
+```bash
+certctl rehash
+```
+
+We do not recommend enabling certificate verification unless you have a specific reason to do so.
+
+## Uninstalling
+
+1. Stop the NodeServer in Polyglot.
+2. Delete the NodeServer.
+3. Remove the NodeServer folder in the Admin Console if it remains.
+4. Optionally revoke tokens in the TaHoma app Developer Mode.
 
 ## References
 
-- [Complete Installation Guide](INSTALLATION.md)
-- [README](README.md)
-- [TaHoma Developer Mode Setup](INSTALLATION.md#step-2-configure-nodeserver)
+- [README.md](README.md) — Overview and installation
+- [Somfy Developer Mode API](https://github.com/Somfy-Developer/Somfy-TaHoma-Developer-Mode)
+- [TaHoma documentation (Somfy Pro)](https://www.somfypro.com/tahomadocumentation)

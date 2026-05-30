@@ -24,8 +24,15 @@ from nodes import Controller
 
 LOGGER = udi_interface.LOGGER
 
-VERSION = "0.0.2"
+VERSION = "0.0.3"
 """
+0.0.3
+- User docs consolidated to README.md and POLYGLOT_CONFIG.md; removed redundant install/YAML docs
+- Trimmed Somfy/ to developer reference; removed obsolete archive and PowerView-era API docs
+- Removed use_local_api parameter; default verify_ssl to false; clearer SSL verification errors
+- Dropped ISY994 and ISY Access references from user documentation
+- Polyglot placeholder defaults for gateway_pin, tahoma_token, and gateway_ip; ignored until user configures
+
 0.0.2
 - Generic full-UI shade nodes for all discovered blinds (field feedback refines behavior)
 - DeviceProfile from TaHoma discovery (protocol, commands, states); INFO summary per device
