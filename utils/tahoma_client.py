@@ -75,7 +75,7 @@ def is_ssl_verification_error(exc: BaseException) -> bool:
 
 
 class TaHomaClient:
-    """Wrapper around pyoverkiz for TaHoma/Phantom Blinds integration.
+    """Wrapper around pyoverkiz for Somfy TaHoma integration.
 
     This class provides a simplified interface to the TaHoma API,
     handling authentication, event listening, and device control

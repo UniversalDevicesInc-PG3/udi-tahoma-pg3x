@@ -1,6 +1,13 @@
 # Version History
 
-See `udi-PhantomBlinds-pg3x` for in-code release notes.
+See `udi-tahoma-pg3x` for in-code release notes.
+
+## 0.0.8
+
+- **TaHoma plugin** branding: controller node **TaHoma Controller** (was Phantom Blinds TaHoma Controller)
+- User docs: **Applications** section (RTS / io / Zigbee / other); Phantom Blinds as RTS application
+- Entry script renamed to **`udi-tahoma-pg3x`** — delete old NodeServer on EISY/Polisy and install fresh
+- After upgrade: **Update Profile** in Polyglot so the Admin Console shows the new controller name
 
 ## 0.0.7
 

@@ -48,7 +48,7 @@ Gateway PIN: 1234-5678-9012
 
 ### In Polyglot UI
 
-1. Navigate to **NodeServers** → **Phantom Blinds**
+1. Navigate to **NodeServers** → **TaHoma** (or your store listing name)
 2. Click **Configuration**
 3. Enter Polyglot configuration parameters (`tahoma_token`, `gateway_pin`; optionally `gateway_ip`, `verify_ssl`).
 4. **Save Configuration**
@@ -88,7 +88,7 @@ INFO: Starting event polling...
 
 ### In Polyglot UI
 
-1. Go to **Phantom Blinds Controller** node
+1. Go to **TaHoma Controller** node
 2. Click **Discover Devices**
 3. Wait 10-15 seconds
 
@@ -326,7 +326,7 @@ ERROR: Device not responding
 
 ```bash
 # Check if NodeServer is running
-ps aux | grep phantom
+ps aux | grep tahoma
 
 # View recent logs
 tail -100 ~/.polyglot/pg3/ns/<uuid>/logs/debug.log

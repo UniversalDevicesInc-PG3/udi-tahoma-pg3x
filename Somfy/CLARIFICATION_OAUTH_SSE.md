@@ -179,7 +179,7 @@ async def _poll_events(self):
 
 ## Recommendation for Your Project
 
-Since you're setting up **local Phantom Blinds** in your home:
+Since you're setting up **local RTS shades** (e.g. Phantom Blinds) in your home:
 
 **Use the Local API** (Developer Mode):
 

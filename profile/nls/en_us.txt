@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD013 MD022 -->
 
 # controller
-ND-hdctrl-NAME = Phantom Blinds TaHoma Controller
+ND-hdctrl-NAME = TaHoma Controller
 ND-hdctrl-ICON = GenericRspCtl
 ST-GV0-NAME = NumberOfNodes
 CMD-ctl-QUERY-NAME = Query

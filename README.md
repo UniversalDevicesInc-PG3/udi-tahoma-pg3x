@@ -1,23 +1,43 @@
 <!-- markdownlint-disable MD022 MD013 -->
-# Phantom Blinds NodeServer for PG3x
+# Somfy TaHoma NodeServer for PG3x
 
-NodeServer for Universal Devices **EISY** or **Polisy** (Polyglot V3) that controls Phantom Blinds and other Somfy RTS shades through a TaHoma gateway using the Developer Mode local API.
+NodeServer for Universal Devices **EISY** or **Polisy** (Polyglot V3) that controls shades and automations through a **Somfy TaHoma** gateway using the Developer Mode local API.
+
+This is a **TaHoma plugin**. Specific shade families (Phantom Blinds, io-homecontrol rollers, Zigbee motors, and others) are supported as **applications** on top of the same gateway connection — see [Applications](#applications) below.
 
 ## Requirements
 
 - Universal Devices **EISY** or **Polisy** with Polyglot V3 (PG3x)
 - Somfy TaHoma RTS/Zigbee gateway (Item #1811731)
-- Phantom Blinds (or other Somfy RTS devices) paired in the TaHoma app
+- Shades paired and working in the TaHoma mobile app
 - TaHoma Developer Mode enabled with a Bearer token
 - Network connectivity between Polisy/EISY and TaHoma (2.4 GHz Wi‑Fi or Ethernet)
 
 ## Features
 
 - Local API control (direct connection on your LAN; no Somfy cloud required)
-- Automatic discovery of RTS shades and TaHoma scenes
-- **RTS Shade** nodes (Open, Close, Stop, My Position, Last Command status)
-- Full **Shade** nodes for io/Zigbee devices with position feedback where supported
-- Real-time status via event polling
+- Automatic discovery of shades and TaHoma scenarios
+- Application-specific node types (RTS Shade vs full Shade) based on device protocol
+- Open, Close, Stop, My Position; position and tilt where the gateway supports them
+- **Last Command** status (Pending / Completed / Failed) for ISY programs
+- Real-time updates via event polling
+
+## Applications
+
+The plugin discovers whatever shades and scenarios exist on your TaHoma. How they appear in the ISY depends on the **protocol** reported by the gateway:
+
+| Application / protocol | Example products | Node type | Feedback |
+|------------------------|------------------|-----------|----------|
+| **RTS** (one-way radio) | **Phantom Blinds**, Somfy RTS rollers/awnings | **RTS Shade** | Commands + Last Command; no position or motion |
+| **io** (io-homecontrol) | Somfy RS100, many wired/two-way rollers | **Shade** | Position (and often tilt) when the gateway reports states |
+| **Zigbee** | TaHoma-paired Zigbee motors | **Shade** | Varies by device; position when reported |
+| **Other** | Less common TaHoma device types | **Shade** | Best-effort; capabilities learned at discovery |
+
+### Phantom Blinds (RTS application)
+
+**Phantom Blinds** are the primary RTS application this project was built for: Somfy RTS motors controlled through TaHoma with no position feedback from the gateway. They appear as **RTS Shade** nodes (Id, Battery, Last Command) with Open, Close, Stop, and My Position.
+
+If you only have Phantom Blinds or other RTS shades, you only need the RTS Shade behavior — you do not need position fields in the Admin Console.
 
 ## Installation
 
@@ -36,11 +56,11 @@ Before installing the NodeServer:
 
 1. Open the Polyglot UI (`http://<polisy-or-eisy-ip>:3000`).
 2. Go to **NodeServer Store**.
-3. Search for **Phantom Blinds** and click **Install**.
+3. Search for **TaHoma** (or your store listing name) and click **Install**.
 
-**From GitHub**
+**From Git**
 
-1. In the NodeServer Store, choose **Install from GitHub**.
+1. In the NodeServer Store, choose **Install from GitHub** (or your Git host).
 2. Enter the repository URL and select the `main` branch.
 3. Click **Install**.
 
@@ -53,7 +73,7 @@ Before installing the NodeServer:
 ### 4. Discover devices
 
 1. In the ISY Admin Console, expand the NodeServer folder.
-2. Right-click **Phantom Blinds Controller** → **Discover**.
+2. Right-click **TaHoma Controller** → **Discover**.
 3. Shade and scene nodes should appear within about a minute.
 
 ## Configuration
@@ -71,11 +91,13 @@ Full setup steps and troubleshooting: **[POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md)
 
 ## Usage
 
-**RTS shades** (Somfy one-way radio) appear as **RTS Shade** nodes with Id, Battery, and **Last Command** status. They support Open, Close, Stop, and My Position. They do not report position or motion — see [POLYGLOT_CONFIG.md — RTS shades and Last Command](POLYGLOT_CONFIG.md#rts-shades-and-last-command).
+See [Applications](#applications) for how RTS vs io/Zigbee nodes differ.
 
-**io / Zigbee shades** appear as full **Shade** nodes with position fields where the gateway provides feedback.
+**RTS shades** (including Phantom Blinds) use **RTS Shade** nodes — see [POLYGLOT_CONFIG.md — RTS shades and Last Command](POLYGLOT_CONFIG.md#rts-shades-and-last-command).
 
-Scenes from TaHoma appear as separate nodes. Use ISY programs, schedules, or the Admin Console to control shades.
+**io / Zigbee shades** use full **Shade** nodes with position fields where supported.
+
+TaHoma **scenarios** appear as separate scene nodes. Use ISY programs, schedules, or the Admin Console to control shades.
 
 After upgrading the NodeServer, **Update Profile** in Polyglot, then run **Discover** again.
 
@@ -87,12 +109,12 @@ Enable debug logging in Polyglot for detailed diagnostics. Check the NodeServer 
 
 ## Documentation
 
-- **[POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md)** — Configuration, TaHoma setup, troubleshooting
+- **[POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md)** — Configuration, applications, TaHoma setup, troubleshooting
 - **[VersionHistory.md](VersionHistory.md)** — Release notes
 
 ## Support
 
-- GitHub Issues: [udi-phantomblinds-pg3x](https://github.com/sejgit/udi-phantomblinds-pg3x/issues)
+- GitHub Issues: [udi-phantomblinds-pg3x](https://github.com/sejgit/udi-phantomblinds-pg3x/issues) *(repository rename planned — see README or forum for current URL)*
 - [Universal Devices Forum](https://forum.universal-devices.com)
 
 ## License

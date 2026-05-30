@@ -1,5 +1,5 @@
 <nodeDefs>
-    <!-- NODE DEF for Somfy TaHoma / Phantom Blinds NodeServer -->
+    <!-- NODE DEF for Somfy TaHoma NodeServer (RTS, io, Zigbee applications) -->
     <!-- Polyglot v3 - ISY 5.0+ compatible -->
     <!-- controller, this must match the id in your Controller class-->
     <nodeDef id="hdctrl" nls="ctl">

@@ -1,4 +1,4 @@
-"""Module for Somfy TaHoma/Phantom Blinds Shade nodes in a Polyglot v3 NodeServer.
+"""Module for Somfy TaHoma Shade nodes in a Polyglot v3 NodeServer.
 
 (C) 2025 Stephen Jenkins
 """

@@ -4,10 +4,11 @@ This is a Plugin/NodeServer for Polyglot v3 written in Python3
 modified from v3 template version by (Bob Paauwe) bpaauwe@yahoo.com
 Refactored and improved from a PG2 plugin originally by Mark Vittes and
 updated to PG3 by Bob Paauwe
-It is a plugin for controlling Phantom Blinds Shades and Scenes with
-virtual devices for use on Polyglot for EISY/Polisy
+It is a Somfy TaHoma NodeServer plugin for controlling shades and scenarios
+(RTS, io, Zigbee, and other TaHoma applications) on Polyglot for EISY/Polisy.
+Phantom Blinds (RTS) is the primary application this project was built for.
 
-udi-PhantomBlinds-pg3 NodeServer/Plugin for EISY/Polisy
+udi-tahoma-pg3x NodeServer/Plugin for EISY/Polisy (TaHoma plugin)
 
 (C) 2025 Stephen Jenkins
 
@@ -24,8 +25,13 @@ from nodes import Controller
 
 LOGGER = udi_interface.LOGGER
 
-VERSION = "0.0.7"
+VERSION = "0.0.8"
 """
+0.0.8
+- TaHoma plugin branding: controller name TaHoma Controller; Applications docs (RTS/io/Zigbee)
+- Phantom Blinds documented as primary RTS application
+- Entry script renamed to udi-tahoma-pg3x (fresh Polyglot install required)
+
 0.0.7
 - Dedicated RTS Shade nodedef (Id, Battery, Last Command; Open/Close/Stop/MY only)
 - Startup success notice auto-clears after 30 seconds
@@ -93,7 +99,7 @@ if __name__ == "__main__":
           to automatically update node server status
         """
         control = Controller(
-            polyglot, "controller", "controller", "Phantom Blinds TaHoma Controller"
+            polyglot, "controller", "controller", "TaHoma Controller"
         )
 
         """

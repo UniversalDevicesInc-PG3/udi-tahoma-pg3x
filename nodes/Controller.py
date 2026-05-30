@@ -1,4 +1,4 @@
-"""Module for Somfy TaHoma/Phantom Blinds Controller node in a Polyglot v3 NodeServer.
+"""Module for Somfy TaHoma Controller node in a Polyglot v3 NodeServer.
 
 This module defines the Controller class, which is the primary node for interacting
 with Somfy TaHoma gateways. It handles discovery of devices and scenarios,
@@ -67,7 +67,7 @@ mainloop = asyncio.get_event_loop()
 
 
 class Controller(Node):
-    """Polyglot v3 NodeServer Controller for Somfy TaHoma/Phantom Blinds.
+    """Polyglot v3 NodeServer Controller for Somfy TaHoma.
 
     This class represents the main controller node that communicates with the
     Somfy TaHoma gateway. It is responsible for discovering and managing
@@ -179,7 +179,7 @@ class Controller(Node):
         tasks for event polling.
         """
         LOGGER.info(
-            f"Started Phantom Blinds/TaHoma PG3 NodeServer {self.poly.serverdata['version']}"
+            f"Started Somfy TaHoma PG3 NodeServer {self.poly.serverdata['version']}"
         )
         
         # Log Python version for debugging/compatibility checking
@@ -458,7 +458,7 @@ class Controller(Node):
             self.Parameters.load(params)
 
         defaults = {
-            # TaHoma/Phantom Blinds parameters (placeholders until user configures)
+            # TaHoma configuration parameters (placeholders until user configures)
             "tahoma_token": DEFAULT_TAHOMA_TOKEN,
             "gateway_pin": DEFAULT_GATEWAY_PIN,
             "gateway_ip": DEFAULT_GATEWAY_IP,

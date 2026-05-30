@@ -1,4 +1,4 @@
-"""Node classes for Somfy TaHoma/Phantom Blinds NodeServer."""
+"""Node classes for Somfy TaHoma NodeServer."""
 
 from .Scene import Scene
 from .Shade import (

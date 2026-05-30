@@ -1,5 +1,24 @@
-# Phantom Blinds — Polyglot Configuration
+# Somfy TaHoma — Polyglot Configuration
 <!-- markdownlint-disable-file MD036 MD007 MD022 MD013 -->
+
+Configuration guide for the **Somfy TaHoma NodeServer** (Polyglot V3 on EISY/Polisy). Phantom Blinds and other shade families are supported as **applications** on the same gateway — see [Applications](#applications).
+
+## Applications
+
+The NodeServer connects once to your TaHoma gateway and discovers all paired devices. The **protocol** reported by the gateway determines the ISY node type and available status fields:
+
+| Application / protocol | Example products | Node type | Status fields |
+|------------------------|------------------|-----------|---------------|
+| **RTS** (one-way radio) | **Phantom Blinds**, Somfy RTS rollers/awnings | **RTS Shade** | Id, Battery, **Last Command** — no position or motion |
+| **io** (io-homecontrol) | Somfy RS100, many two-way rollers | **Shade** | Position (and often tilt) when the gateway reports states |
+| **Zigbee** | TaHoma-paired Zigbee motors | **Shade** | Varies; position when reported |
+| **Other** | Less common TaHoma device types | **Shade** | Best-effort from discovery |
+
+### Phantom Blinds (RTS)
+
+**Phantom Blinds** use Somfy RTS motors through TaHoma. They are discovered as **RTS Shade** nodes with Open, Close, Stop, and My Position only. See [RTS shades and Last Command](#rts-shades-and-last-command) for **Last Command (GV7)** behavior and timing.
+
+If you have io or Zigbee shades as well, they appear as full **Shade** nodes alongside RTS nodes under the same controller.
 
 ## Prerequisites
 
