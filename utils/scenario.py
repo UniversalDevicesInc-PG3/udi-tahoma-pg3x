@@ -32,3 +32,13 @@ def parse_action_group(data: Any) -> TaHomaScenario | None:
     )
 
     return TaHomaScenario(oid=str(oid), label=str(label).strip() or str(oid))
+
+
+def scenario_oid_to_address(scenario_oid: str) -> str:
+    """Convert a TaHoma scenario OID to a valid Polyglot node address.
+
+    Polyglot node addresses are limited to 14 alphanumeric/underscore characters.
+    """
+    hex_id = "".join(c for c in str(scenario_oid).lower() if c.isalnum())
+    suffix = hex_id[:10] if hex_id else "0"
+    return f"sc{suffix}"[:14]

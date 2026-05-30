@@ -42,6 +42,7 @@ from utils.exec_status import (
     execution_state_to_last_cmd,
     last_cmd_label,
 )
+from utils.scenario import scenario_oid_to_address
 from utils.device_capabilities import (
     build_device_profile,
     log_device_discovery,
@@ -477,14 +478,23 @@ class Controller(Node):
                 self.n_queue.append(address)
                 self.queue_condition.notify()
 
-    def wait_for_node_done(self):
+    def wait_for_node_done(self, timeout=30.0):
         """Waits for a node to be fully added before proceeding.
 
         See node_queue() for more details on the synchronization mechanism.
         """
+        deadline = time.monotonic() + timeout
         with self.queue_condition:
             while not self.n_queue:
-                self.queue_condition.wait(timeout=0.2)
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    LOGGER.error(
+                        "Timed out waiting for addNode completion; "
+                        "Polyglot may have rejected the node (check address length "
+                        "and profile)."
+                    )
+                    return
+                self.queue_condition.wait(timeout=min(0.2, remaining))
             self.n_queue.pop()
 
     def get_shade_data(self, sid):
@@ -1263,7 +1273,7 @@ class Controller(Node):
         for scenario in scenarios:
             try:
                 scenario_oid = scenario.oid
-                node_address = f"scene{scenario_oid}"
+                node_address = scenario_oid_to_address(scenario_oid)
                 label = scenario.label
 
                 # Store scenario in map

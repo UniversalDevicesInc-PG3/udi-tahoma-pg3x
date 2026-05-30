@@ -25,8 +25,12 @@ from nodes import Controller
 
 LOGGER = udi_interface.LOGGER
 
-VERSION = "0.0.10"
+VERSION = "0.0.11"
 """
+0.0.11
+- Fix scene node addresses exceeding Polyglot 14-character limit (startup lockup)
+- Scene OID persisted in custom data; addNode wait timeout prevents infinite hang
+
 0.0.10
 - TaHoma scenario discovery via raw actionGroups API (fixes pyoverkiz model mismatch)
 - Scenario nodes: Activate plus Last Command (GV7), matching RTS shade feedback
