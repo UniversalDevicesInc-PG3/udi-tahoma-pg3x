@@ -25,8 +25,11 @@ from nodes import Controller
 
 LOGGER = udi_interface.LOGGER
 
-VERSION = "0.0.11"
+VERSION = "0.0.12"
 """
+0.0.12
+- Skip unnamed actionGroups during scenario discovery (orphan/system records with no TaHoma label)
+
 0.0.11
 - Fix scene node addresses exceeding Polyglot 14-character limit (startup lockup)
 - Scene OID persisted in custom data; addNode wait timeout prevents infinite hang

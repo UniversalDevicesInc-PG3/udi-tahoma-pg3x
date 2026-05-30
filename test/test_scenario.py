@@ -2,6 +2,7 @@
 
 from utils.scenario import (
     TaHomaScenario,
+    has_user_label,
     parse_action_group,
     scenario_oid_to_address,
 )
@@ -35,9 +36,17 @@ def test_parse_action_group_missing_oid():
     assert parse_action_group({"label": "No Id"}) is None
 
 
-def test_parse_action_group_uses_oid_as_fallback_label():
-    scenario = parse_action_group({"oid": "555"})
-    assert scenario == TaHomaScenario(oid="555", label="555")
+def test_parse_action_group_missing_label():
+    assert parse_action_group({"oid": "555"}) is None
+
+
+def test_has_user_label_rejects_uuid():
+    oid = "8acf134e-e837-4388-ae23-c635295f3ee8"
+    assert not has_user_label(oid, oid)
+
+
+def test_has_user_label_accepts_named_scenario():
+    assert has_user_label("All Lite Close", "eaa75cf5-f495-4034-a483-6ae4b7efa5ed")
 
 
 def test_scenario_oid_to_address_shortens_uuid():
