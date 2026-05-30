@@ -114,7 +114,7 @@ Enable debug logging in Polyglot for detailed diagnostics. Check the NodeServer 
 
 ## Support
 
-- GitHub Issues: [udi-phantomblinds-pg3x](https://github.com/sejgit/udi-phantomblinds-pg3x/issues) *(repository rename planned — see README or forum for current URL)*
+- GitHub Issues: [udi-tahoma-pg3x](https://github.com/sejgit/udi-tahoma-pg3x/issues)
 - [Universal Devices Forum](https://forum.universal-devices.com)
 
 ## License
