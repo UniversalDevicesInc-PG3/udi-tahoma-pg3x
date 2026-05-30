@@ -24,8 +24,12 @@ from nodes import Controller
 
 LOGGER = udi_interface.LOGGER
 
-VERSION = "0.0.3"
+VERSION = "0.0.4"
 """
+0.0.4
+- Fix shade discovery when gateway returns CommandDefinition lists (EISY/pyoverkiz)
+- Default tahoma_token placeholder shortened to 20 zeros
+
 0.0.3
 - User docs consolidated to README.md and POLYGLOT_CONFIG.md; removed redundant install/YAML docs
 - Trimmed Somfy/ to developer reference; removed obsolete archive and PowerView-era API docs

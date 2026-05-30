@@ -120,7 +120,13 @@ def _command_names(device: Any) -> set[str]:
         return set()
     if hasattr(commands, "keys"):
         return set(commands.keys())
-    return set(commands)
+    names: set[str] = set()
+    for command in commands:
+        if isinstance(command, str):
+            names.add(command)
+        elif hasattr(command, "command_name"):
+            names.add(command.command_name)
+    return names
 
 
 def _state_names(device: Any) -> set[str]:

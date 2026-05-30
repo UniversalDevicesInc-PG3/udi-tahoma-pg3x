@@ -2,6 +2,11 @@
 
 See `udi-PhantomBlinds-pg3x` for in-code release notes.
 
+## 0.0.4
+
+- Fix shade discovery when TaHoma returns `CommandDefinition` objects in device definitions (all 8 RTS shades failed on EISY with `unhashable type: 'CommandDefinition'`)
+- Default `tahoma_token` Polyglot placeholder shortened from 64 to 20 zeros
+
 ## 0.0.3
 
 - Consolidated user documentation into **README.md** and **POLYGLOT_CONFIG.md**; removed **INSTALLATION.md** and **exampleConfigFile.yaml**

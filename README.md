@@ -63,7 +63,7 @@ All settings are entered in the Polyglot UI Configuration page (not a YAML file)
 | Parameter | Required | Default | Description |
 |-----------|----------|---------|-------------|
 | `gateway_pin` | Yes | `0000-0000-0000` | Your TaHoma PIN (`XXXX-XXXX-XXXX`) |
-| `tahoma_token` | Yes | (64 zeros) | Bearer token from Developer Mode |
+| `tahoma_token` | Yes | (20 zeros) | Bearer token from Developer Mode |
 | `gateway_ip` | No | `gateway-0000-0000-0000.local` | Ignored by default; set IP if mDNS fails |
 | `verify_ssl` | No | `false` | See config doc for `true` |
 

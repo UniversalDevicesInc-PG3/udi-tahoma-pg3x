@@ -2,6 +2,8 @@
 
 from unittest.mock import Mock
 
+from pyoverkiz.models import CommandDefinition
+
 from utils.device_capabilities import (
     GV5_RTS,
     GV6_NA_HARDWIRED,
@@ -73,6 +75,16 @@ class TestBuildDeviceProfile:
         assert profile.has_position_feedback is False
         assert profile.show_primary is True
         assert profile.command_names == set()
+        assert profile.supports_set_closure is False
+
+    def test_command_definition_list_from_gateway(self):
+        commands = [
+            CommandDefinition(command_name="open", nparams=0),
+            CommandDefinition(command_name="close", nparams=0),
+            CommandDefinition(command_name="stop", nparams=0),
+        ]
+        profile = build_device_profile(_device(commands=commands))
+        assert profile.command_names == {"open", "close", "stop"}
         assert profile.supports_set_closure is False
 
     def test_io_with_closure_state_has_feedback(self):

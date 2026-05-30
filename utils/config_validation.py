@@ -14,7 +14,7 @@ LOGGER = logging.getLogger(__name__)
 
 # Polyglot UI placeholder defaults (must be replaced before connecting).
 DEFAULT_GATEWAY_PIN = "0000-0000-0000"
-DEFAULT_TAHOMA_TOKEN = "0" * 64
+DEFAULT_TAHOMA_TOKEN = "0" * 20
 DEFAULT_GATEWAY_IP = "gateway-0000-0000-0000.local"
 
 

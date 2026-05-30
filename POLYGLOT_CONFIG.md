@@ -29,7 +29,7 @@ TaHoma gateway PIN in `XXXX-XXXX-XXXX` format (12 digits with dashes).
 
 Bearer token from TaHoma Developer Mode.
 
-- **Default (placeholder):** 64 zeros — replace with your token before starting
+- **Default (placeholder):** 20 zeros — replace with your token before starting
 - **Format:** Long alphanumeric string (typically 50+ characters); paste the token only, not a `Bearer ` prefix
 - **Security:** Stored in Polyglot; used only to authenticate to your local gateway
 
@@ -57,7 +57,7 @@ Setting **`true`** is optional and only makes sense if you install the [Somfy ro
 | Parameter | Required | Default | Example |
 |-----------|----------|---------|---------|
 | `gateway_pin` | Yes | `0000-0000-0000` | `2001-0001-1891` |
-| `tahoma_token` | Yes | (64 zeros) | (token from app) |
+| `tahoma_token` | Yes | (20 zeros) | (token from app) |
 | `gateway_ip` | No | `gateway-0000-0000-0000.local` (ignored) | `192.168.1.100` |
 | `verify_ssl` | No | `false` | `false` |
 
