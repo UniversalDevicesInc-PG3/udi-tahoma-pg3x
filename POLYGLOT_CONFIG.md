@@ -136,9 +136,27 @@ Ensure firewall rules allow HTTPS to the gateway.
 
 **Position not updating**
 
+- Applies to full **Shade** nodes (io/Zigbee), not **RTS Shade** nodes — RTS has no position feedback.
 - Confirm the log shows the event polling loop running.
 - Right-click the shade → **Query** to force a refresh.
 - Restart the NodeServer if event polling stopped.
+
+### RTS shades and Last Command
+
+RTS devices are discovered as **RTS Shade** nodes (Id, Battery, **Last Command** only — no position or motion fields).
+
+**Last Command (GV7)** reports whether the TaHoma gateway finished handling your command:
+
+| Value | Meaning |
+|-------|---------|
+| — | No command sent yet this session |
+| Pending | Gateway accepted the command (`execId` returned) |
+| Completed | Gateway reports the execution finished |
+| Failed | Gateway reports failure |
+
+**Important:** On RTS, the blind often stops moving long before **Last Command** shows **Completed**. The TaHoma gateway may keep the execution in a pending state for up to about a minute while its internal timers run — this is normal gateway behavior, not a stuck motor. **Completed** means the gateway finished processing the command, not that the shade reached a specific position.
+
+Use **Last Command** in ISY programs (e.g. notify on **Failed**, or proceed when **Completed**). The startup success notice in Polyglot clears automatically after 30 seconds.
 
 ### SSL certificate errors
 

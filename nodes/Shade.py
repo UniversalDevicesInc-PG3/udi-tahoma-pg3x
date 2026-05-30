@@ -32,6 +32,13 @@ from utils.device_capabilities import (
 
 LOGGER = udi_interface.LOGGER
 
+# RTS shade: ID, battery, last command, and open/close/stop/MY only
+SHADE_RTS_DRIVERS = [
+    {"driver": "GV0", "value": 0, "uom": 107, "name": "Shade Id"},
+    {"driver": "GV6", "value": GV6_UNKNOWN, "uom": 25, "name": "Battery Status"},
+    {"driver": "GV7", "value": LAST_CMD_NONE, "uom": 25, "name": "Last Command"},
+]
+
 # Shared driver definitions (full generic UI)
 SHADE_DRIVERS_FULL = [
     {"driver": "GV0", "value": 0, "uom": 107, "name": "Shade Id"},
@@ -433,3 +440,37 @@ class ShadeOnlyPrimary(Shade):
 
     id = "shadeonlyprimid"
     drivers = SHADE_DRIVERS_FULL
+
+
+class ShadeRts(Shade):
+    """RTS shade node: ID, battery, last command, and open/close/stop/MY only."""
+
+    id = "shadertsid"
+
+    drivers = SHADE_RTS_DRIVERS
+
+    def _apply_profile_drivers(self):
+        """RTS nodes only expose battery status (hardwired N/A for RTS)."""
+        if not self.profile:
+            return
+        self.setDriver("GV6", self.profile.battery_gv6, report=True, force=True)
+
+    def update_drivers_from_states(self, states):
+        """Update battery only; RTS devices do not report position or motion."""
+        if not self.profile:
+            self._load_profile()
+        state_map = normalize_states(states)
+        if STATE_BATTERY not in state_map:
+            return
+        gv6 = battery_value_to_gv6(state_map[STATE_BATTERY])
+        self.setDriver("GV6", gv6, report=True, force=False)
+        self.profile.battery_gv6 = gv6
+
+
+ShadeRts.commands = {
+    "OPEN": ShadeRts.cmdOpen,
+    "CLOSE": ShadeRts.cmdClose,
+    "STOP": ShadeRts.cmdStop,
+    "MY": ShadeRts.cmdMy,
+    "QUERY": ShadeRts.query,
+}

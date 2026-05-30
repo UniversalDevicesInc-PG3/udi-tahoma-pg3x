@@ -24,8 +24,13 @@ from nodes import Controller
 
 LOGGER = udi_interface.LOGGER
 
-VERSION = "0.0.6"
+VERSION = "0.0.7"
 """
+0.0.7
+- Dedicated RTS Shade nodedef (Id, Battery, Last Command; Open/Close/Stop/MY only)
+- Startup success notice auto-clears after 30 seconds
+- User docs for RTS Last Command delay (TaHoma gateway timer)
+
 0.0.6
 - Shade GV7 Last Command driver (— / Pending / Completed / Failed) from TaHoma exec status
 - Execution events logged at INFO; poll fallback via get_current_execution

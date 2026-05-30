@@ -30,6 +30,17 @@ ND-shadeonlyprimid-NAME = Shade
 ND-shadeonlyprimid-ICON = GenericRspCtl
 ND-shadenotiltid-NAME = Shade
 ND-shadenotiltid-ICON = GenericRspCtl
+ND-shadertsid-NAME = RTS Shade
+ND-shadertsid-ICON = GenericRspCtl
+
+ST-shaderts-GV0-NAME = Id
+ST-shaderts-GV6-NAME = Battery
+ST-shaderts-GV7-NAME = Last Command
+CMD-shaderts-OPEN-NAME = Open
+CMD-shaderts-CLOSE-NAME = Close
+CMD-shaderts-STOP-NAME = Stop
+CMD-shaderts-MY-NAME = My Position
+CMD-shaderts-QUERY-NAME = Query
 
 ST-shade-ST-NAME = Motion
 ST-shade-GV0-NAME = Id

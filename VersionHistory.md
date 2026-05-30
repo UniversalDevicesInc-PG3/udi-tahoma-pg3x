@@ -2,6 +2,13 @@
 
 See `udi-PhantomBlinds-pg3x` for in-code release notes.
 
+## 0.0.7
+
+- **RTS Shade** nodedef (`shadertsid`): Id, Battery, Last Command only; Open/Close/Stop/MY commands (no position or tilt fields)
+- Discovery creates RTS Shade nodes for `rts://` devices; full Shade nodes for io/Zigbee
+- Startup success Polyglot notice clears after 30 seconds
+- User documentation for Last Command Pending delay on RTS (TaHoma gateway internal timer)
+
 ## 0.0.6
 
 - **GV7 Last Command** on shade nodes: — (none) until first command, then Pending / Completed / Failed from TaHoma execution status

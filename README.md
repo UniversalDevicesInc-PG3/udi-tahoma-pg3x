@@ -15,9 +15,9 @@ NodeServer for Universal Devices **EISY** or **Polisy** (Polyglot V3) that contr
 
 - Local API control (direct connection on your LAN; no Somfy cloud required)
 - Automatic discovery of RTS shades and TaHoma scenes
-- Open, Close, Stop, My Position, and position control where supported
+- **RTS Shade** nodes (Open, Close, Stop, My Position, Last Command status)
+- Full **Shade** nodes for io/Zigbee devices with position feedback where supported
 - Real-time status via event polling
-- Tilt control on compatible blinds
 
 ## Installation
 
@@ -71,9 +71,13 @@ Full setup steps and troubleshooting: **[POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md)
 
 ## Usage
 
-Each shade node supports position, Open, Close, Stop, and My Position where the motor supports them. Scenes from TaHoma appear as separate nodes. Use ISY programs, schedules, or the Admin Console to control shades.
+**RTS shades** (Somfy one-way radio) appear as **RTS Shade** nodes with Id, Battery, and **Last Command** status. They support Open, Close, Stop, and My Position. They do not report position or motion — see [POLYGLOT_CONFIG.md — RTS shades and Last Command](POLYGLOT_CONFIG.md#rts-shades-and-last-command).
 
-After upgrading the NodeServer, update the profile in Polyglot if prompted, then run **Discover** again.
+**io / Zigbee shades** appear as full **Shade** nodes with position fields where the gateway provides feedback.
+
+Scenes from TaHoma appear as separate nodes. Use ISY programs, schedules, or the Admin Console to control shades.
+
+After upgrading the NodeServer, **Update Profile** in Polyglot, then run **Discover** again.
 
 ## Troubleshooting
 

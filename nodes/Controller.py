@@ -44,6 +44,7 @@ from utils.device_capabilities import (
     build_device_profile,
     log_device_discovery,
     profile_to_map,
+    protocol_from_device_url,
     should_create_shade_node,
 )
 from pyoverkiz.exceptions import (
@@ -55,6 +56,7 @@ from pyoverkiz.exceptions import (
 from nodes import (
     Scene,
     Shade,
+    ShadeRts,
 )
 
 # limit the room label length as room - shade/scene must be < 30
@@ -311,8 +313,17 @@ class Controller(Node):
             f"Connected to TaHoma gateway {self.gateway_pin}. "
             f"Discovered {shade_count} shade{plural}."
         )
+        asyncio.run_coroutine_threadsafe(
+            self._clear_notice_after("success", 30), self.mainloop
+        )
 
         LOGGER.info(f"exit {self.name}")
+
+    async def _clear_notice_after(self, key: str, seconds: float):
+        """Remove a Polyglot notice after a delay."""
+        await asyncio.sleep(seconds)
+        if self.Notices.get(key):
+            self.Notices.delete(key)
 
     def node_queue(self, data):
         """Queues a node address to signify its creation is complete.
@@ -900,7 +911,7 @@ class Controller(Node):
                 self._apply_last_command(shade_address, LAST_CMD_PENDING, exec_id)
 
         LOGGER.debug(
-            "Execution watch timed out for %s (%s); Last Command stays Pending",
+            "Execution watch timed out for %s (%s); awaiting TaHoma event",
             exec_id,
             shade_address,
         )
@@ -1150,11 +1161,17 @@ class Controller(Node):
             LOGGER.info("Discovery NO NEW activity")
 
     def _create_device_node(self, device, node_address):
-        """Create a generic Shade node (full ISY UI) for field-discovered devices."""
+        """Create a shade node matched to the device protocol."""
         label = device.label
         device_url = device.device_url
+        protocol = protocol_from_device_url(device_url)
+        if protocol == "rts":
+            LOGGER.info(
+                f"Creating RTS Shade node for {label} ({device.controllable_name})"
+            )
+            return ShadeRts(self.poly, self.address, node_address, label, device_url)
         LOGGER.info(
-            f"Creating generic Shade node for {label} ({device.controllable_name})"
+            f"Creating Shade node for {label} ({device.controllable_name})"
         )
         return Shade(self.poly, self.address, node_address, label, device_url)
 

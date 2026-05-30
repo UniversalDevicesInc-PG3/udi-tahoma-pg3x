@@ -5,6 +5,7 @@ from .Shade import (
     Shade,
     ShadeNoTilt,
     ShadeOnlyPrimary,
+    ShadeRts,
 )
 from .Controller import Controller
 
@@ -13,5 +14,6 @@ __all__ = [
     "Shade",
     "ShadeNoTilt",
     "ShadeOnlyPrimary",
+    "ShadeRts",
     "Controller",
 ]

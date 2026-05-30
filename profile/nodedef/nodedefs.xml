@@ -130,6 +130,32 @@
           </accepts>
         </cmds>
     </nodeDef>
+	<!-- TaHoma RTS shade (no position feedback) -->
+    <nodeDef id="shadertsid" nls="shaderts">
+        <editors />
+        <sts>
+            <st id="GV0" editor="ID" />
+            <st id="GV6" editor="BATTERYST" />
+            <st id="GV7" editor="EXECSTAT" />
+        </sts>
+        <cmds>
+          <sends>
+			<cmd id="DON" />
+			<cmd id="DOF" />
+            <cmd id="OPEN" />
+            <cmd id="CLOSE" />
+            <cmd id="STOP" />
+            <cmd id="MY" />
+          </sends>
+          <accepts>
+            <cmd id="OPEN" />
+            <cmd id="CLOSE" />
+            <cmd id="STOP" />
+            <cmd id="MY" />
+            <cmd id="QUERY" />
+          </accepts>
+        </cmds>
+    </nodeDef>
 	<!-- TaHoma Scenario (automation) -->
     <nodeDef id="sceneid" nls="scene">
         <editors />
