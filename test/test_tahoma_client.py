@@ -345,3 +345,71 @@ async def test_tahoma_client_connect_timeout_raises_connection_error(mock_overki
 
     with pytest.raises(TaHomaConnectionError, match="Cannot reach TaHoma gateway"):
         await client.connect()
+
+
+@pytest.mark.asyncio
+async def test_get_cloud_client_resolves_supported_servers():
+    """Cloud fallback must not raise NameError on SUPPORTED_SERVERS."""
+    mock_server = Mock()
+    with patch("utils.tahoma_client.OverkizClient") as mock_class:
+        mock_cloud = Mock()
+        mock_cloud.login = AsyncMock()
+        mock_class.return_value = mock_cloud
+
+        client = TaHomaClient(
+            token="test-token",
+            gateway_pin="1234-5678-9012",
+            cloud_email="user@example.com",
+            cloud_password="secret",
+            cloud_region="Somfy (Europe)",
+        )
+
+        with patch.dict(
+            "utils.tahoma_client.SUPPORTED_SERVERS",
+            {"Somfy (Europe)": mock_server},
+            clear=True,
+        ):
+            result = await client._get_cloud_client()
+
+        assert result is mock_cloud
+        mock_cloud.login.assert_called_once_with(register_event_listener=False)
+        mock_class.assert_called_once_with(
+            username="user@example.com",
+            password="secret",
+            session=client._cloud_session,
+            server=mock_server,
+        )
+
+
+@pytest.mark.asyncio
+async def test_execute_scenario_cloud_fallback_when_no_local_actions(mock_overkiz_client):
+    """Scenes without local actions run via Somfy cloud when credentials are set."""
+    mock_class, mock_instance = mock_overkiz_client
+
+    client = TaHomaClient(
+        token="test-token",
+        gateway_pin="1234-5678-9012",
+        cloud_email="user@example.com",
+        cloud_password="secret",
+    )
+    await client.connect()
+    mock_instance._OverkizClient__get = AsyncMock(
+        return_value=[
+            {
+                "label": "Morning",
+                "oid": "1234567890",
+                "actions": [],
+            }
+        ]
+    )
+
+    with patch.object(
+        client,
+        "_execute_scenario_via_cloud",
+        new=AsyncMock(return_value="cloud-exec-1"),
+    ) as cloud_exec:
+        exec_id = await client.execute_scenario("1234567890")
+
+    assert exec_id == "cloud-exec-1"
+    assert client.last_scenario_via_cloud is True
+    cloud_exec.assert_called_once_with("1234567890")

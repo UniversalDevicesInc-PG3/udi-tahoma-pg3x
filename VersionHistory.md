@@ -2,6 +2,10 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.18
+
+- **Fix cloud scene Activate crash**: v0.0.17 raised `NameError: SUPPORTED_SERVERS is not defined` before Somfy cloud login could run; import fixed, cloud uses a separate HTTP session from local gateway auth, optional `tahoma_cloud_region` (default `Somfy (North America)`)
+
 ## 0.0.17
 
 - **Scene Activate via Somfy cloud**: local Developer Mode `actionGroups` list includes scene names but not device commands (`has no executable actions` in logs). TaHoma app scenes are server-side ([Somfy wontfix #21](https://github.com/Somfy-Developer/Somfy-TaHoma-Developer-Mode/issues/21)). Optional `tahoma_cloud_email` / `tahoma_cloud_password` run scenes through Somfy cloud `exec/{oid}`; shade commands stay local
