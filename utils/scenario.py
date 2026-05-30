@@ -67,6 +67,58 @@ def parse_action_group(data: Any) -> TaHomaScenario | None:
     return TaHomaScenario(oid=oid, label=label)
 
 
+_RTS_COMMANDS_WITHOUT_DURATION = frozenset(
+    {
+        "identify",
+        "off",
+        "on",
+        "onwithtimer",
+        "test",
+        "tiltpositive",
+        "tiltnegative",
+    }
+)
+
+
+def extract_action_group_actions(group: Any) -> list[Any]:
+    """Return the actions list from an actionGroup record (several API shapes)."""
+    if not isinstance(group, Mapping):
+        return []
+
+    for key in ("actions", "Actions"):
+        value = group.get(key)
+        if isinstance(value, list):
+            return value
+
+    nested = group.get("actionGroup") or group.get("ActionGroup")
+    if isinstance(nested, Mapping):
+        return extract_action_group_actions(nested)
+
+    return []
+
+
+def _normalize_command(device_url: str, cmd: Any) -> dict[str, Any] | None:
+    if isinstance(cmd, Mapping):
+        name = cmd.get("name")
+        if not name:
+            return None
+        parameters = list(cmd.get("parameters") or [])
+    elif isinstance(cmd, str) and cmd:
+        name = cmd
+        parameters = []
+    else:
+        return None
+
+    if (
+        str(device_url).startswith("rts://")
+        and str(name).lower() not in _RTS_COMMANDS_WITHOUT_DURATION
+        and (not parameters or parameters[-1] != 0)
+    ):
+        parameters = [*parameters, 0]
+
+    return {"name": str(name), "parameters": parameters}
+
+
 def action_group_exec_payload(
     label: str, actions: Any
 ) -> dict[str, Any] | None:
@@ -82,23 +134,15 @@ def action_group_exec_payload(
         if not isinstance(action, Mapping):
             continue
         device_url = action.get("deviceURL") or action.get("device_url")
-        raw_commands = action.get("commands") or []
+        raw_commands = action.get("commands") or action.get("Commands") or []
         if not device_url or not raw_commands:
             continue
 
         commands: list[dict[str, Any]] = []
         for cmd in raw_commands:
-            if isinstance(cmd, Mapping):
-                name = cmd.get("name")
-                if name:
-                    commands.append(
-                        {
-                            "name": str(name),
-                            "parameters": list(cmd.get("parameters") or []),
-                        }
-                    )
-            elif isinstance(cmd, str) and cmd:
-                commands.append({"name": cmd, "parameters": []})
+            normalized = _normalize_command(str(device_url), cmd)
+            if normalized:
+                commands.append(normalized)
 
         if commands:
             normalized_actions.append(

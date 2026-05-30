@@ -71,6 +71,16 @@ Whether to verify the TaHoma HTTPS certificate.
 
 Setting **`true`** is optional and only makes sense if you install the [Somfy root CA](https://ca.overkiz.com/overkiz-root-ca-2048.crt) on your **EISY or Polisy** so the system trusts that certificate. On FreeBSD (EISY/Polisy), that typically means copying the `.crt` file into the local trusted certs directory (for example `/usr/local/share/certs/`), then running `certctl rehash` as root over SSH. We do **not** recommend this for typical installations.
 
+#### `tahoma_cloud_email` / `tahoma_cloud_password`
+
+Optional. **Required for scene Activate** if your log shows `no device actions on local API`.
+
+TaHoma **app scenes** (Morning, All Close, etc.) are stored server-side. The local Developer Mode API lists scene names but usually does **not** include the per-shade commands needed to run them locally. Individual shade commands still use the local API; only **Activate** on scene nodes uses Somfy cloud when these fields are set.
+
+- Use the same email and password you use to sign in to the **TaHoma by Somfy** mobile app
+- Stored in Polyglot configuration on your ISY/EISY (same as other custom parameters)
+- Shade control remains local; only scene activation contacts `tahomalink.com`
+
 ### Reference table
 
 | Parameter | Required | Default | Example |
@@ -79,6 +89,8 @@ Setting **`true`** is optional and only makes sense if you install the [Somfy ro
 | `tahoma_token` | Yes | (20 zeros) | (token from app) |
 | `gateway_ip` | No | `gateway-0000-0000-0000.local` (ignored) | `192.168.1.100` |
 | `verify_ssl` | No | `false` | `false` |
+| `tahoma_cloud_email` | For scenes | (empty) | your TaHoma app login email |
+| `tahoma_cloud_password` | For scenes | (empty) | your TaHoma app password |
 
 ## TaHoma setup
 

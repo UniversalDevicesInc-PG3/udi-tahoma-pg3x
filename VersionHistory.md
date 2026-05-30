@@ -2,6 +2,11 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.17
+
+- **Scene Activate via Somfy cloud**: local Developer Mode `actionGroups` list includes scene names but not device commands (`has no executable actions` in logs). TaHoma app scenes are server-side ([Somfy wontfix #21](https://github.com/Somfy-Developer/Somfy-TaHoma-Developer-Mode/issues/21)). Optional `tahoma_cloud_email` / `tahoma_cloud_password` run scenes through Somfy cloud `exec/{oid}`; shade commands stay local
+- Try `GET actionGroups/{oid}` for full action details before cloud fallback; log per-scene local action counts at discovery
+
 ## 0.0.16
 
 - **Scene Activate actually runs shades**: local Developer Mode API only supports `POST exec/apply` for action groups — not `POST exec/{oid}` for persisted TaHoma scenes. v0.0.15 masked the failure as Completed; scenes now copy the actionGroup's device commands to `exec/apply` (same path as shade commands)

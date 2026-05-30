@@ -24,7 +24,12 @@ from pyoverkiz.exceptions import (
 from udi_interface import LOGGER
 import aiohttp
 
-from utils.scenario import TaHomaScenario, action_group_exec_payload, parse_action_group
+from utils.scenario import (
+    TaHomaScenario,
+    action_group_exec_payload,
+    extract_action_group_actions,
+    parse_action_group,
+)
 
 
 class TaHomaSSLVerificationError(Exception):
@@ -110,6 +115,8 @@ class TaHomaClient:
         verify_ssl: bool = False,
         gateway_ip: Optional[str] = None,
         session: Optional[aiohttp.ClientSession] = None,
+        cloud_email: str = "",
+        cloud_password: str = "",
     ):
         """Initialize TaHoma client.
 
@@ -119,15 +126,21 @@ class TaHomaClient:
             verify_ssl: Whether to verify SSL certificates
             gateway_ip: Optional IP address of gateway (e.g., "192.168.1.100")
             session: Optional aiohttp session (created if None)
+            cloud_email: Optional Somfy TaHoma cloud account email (for scenes)
+            cloud_password: Optional Somfy TaHoma cloud account password (for scenes)
         """
         self.token = token
         self.gateway_pin = gateway_pin
         self.verify_ssl = verify_ssl
         self.gateway_ip = gateway_ip
+        self.cloud_email = (cloud_email or "").strip()
+        self.cloud_password = cloud_password or ""
         self._session = session
         self._own_session = session is None
+        self.last_scenario_via_cloud = False
 
         self.client: Optional[OverkizClient] = None
+        self._cloud_client: Optional[OverkizClient] = None
         self.event_listener_id: Optional[str] = None
         self._connected = False
         self._action_groups_by_oid: dict[str, dict] = {}
@@ -347,6 +360,21 @@ class TaHomaClient:
                     len(skipped),
                     ", ".join(skipped),
                 )
+            for scenario in scenarios:
+                group = self._action_groups_by_oid.get(scenario.oid, {})
+                action_count = len(extract_action_group_actions(group))
+                if action_count:
+                    LOGGER.info(
+                        "Scenario %s: %d device action(s) available locally",
+                        scenario.label,
+                        action_count,
+                    )
+                else:
+                    LOGGER.warning(
+                        "Scenario %s: no device actions on local API "
+                        "(Activate requires tahoma_cloud_email/password)",
+                        scenario.label,
+                    )
             LOGGER.info(f"Retrieved {len(scenarios)} scenarios from TaHoma")
             return scenarios
         except Exception as e:
@@ -367,12 +395,41 @@ class TaHomaClient:
             return result
         return []
 
+    async def _fetch_action_group_by_oid(self, scenario_oid: str) -> Optional[dict]:
+        """Fetch one actionGroup by OID (list endpoint often omits actions)."""
+        if not self.client:
+            raise RuntimeError("Not connected to TaHoma")
+
+        fetch = getattr(self.client, "_OverkizClient__get", None)
+        if fetch is None:
+            return None
+
+        try:
+            result = await fetch(f"actionGroups/{scenario_oid}")
+        except Exception as exc:
+            LOGGER.debug(
+                "GET actionGroups/%s failed: %s",
+                scenario_oid,
+                exc,
+            )
+            return None
+
+        if isinstance(result, dict):
+            return result
+        return None
+
     async def _find_action_group(self, scenario_oid: str) -> Optional[dict]:
         """Return raw actionGroup JSON for a scenario OID."""
         oid = str(scenario_oid)
         cached = self._action_groups_by_oid.get(oid)
-        if cached:
+        if cached and extract_action_group_actions(cached):
             return cached
+
+        detail = await self._fetch_action_group_by_oid(oid)
+        if detail:
+            self._action_groups_by_oid[oid] = detail
+            if extract_action_group_actions(detail):
+                return detail
 
         for item in await self._fetch_action_groups():
             if not isinstance(item, dict):
@@ -381,7 +438,7 @@ class TaHomaClient:
             if item_oid is not None and str(item_oid) == oid:
                 self._action_groups_by_oid[oid] = item
                 return item
-        return None
+        return cached or detail
 
     async def _exec_apply(self, payload: dict) -> str:
         """POST exec/apply — the local Developer Mode API for action groups."""
@@ -395,12 +452,66 @@ class TaHomaClient:
         response = await post("exec/apply", payload)
         return str(response["execId"])
 
-    async def execute_scenario(self, scenario_oid: str) -> Optional[str]:
-        """Execute a scenario (scene) via local API exec/apply.
+    async def _get_cloud_client(self) -> Optional[OverkizClient]:
+        """Lazy Somfy cloud client for TaHoma app scene execution."""
+        if not self.cloud_email or not self.cloud_password:
+            return None
+        if self._cloud_client is not None:
+            return self._cloud_client
 
-        Persisted TaHoma scenes are stored as actionGroups. Developer Mode local
-        API does not run them through exec/{oid}; copy the group's actions to
-        exec/apply instead (same approach as single-shade commands).
+        if self._session is None or self._session.closed:
+            return None
+
+        cloud_server = SUPPORTED_SERVERS.get("Somfy (Europe)")
+        if cloud_server is None:
+            LOGGER.error("Somfy cloud server configuration missing in pyoverkiz")
+            return None
+
+        self._cloud_client = OverkizClient(
+            username=self.cloud_email,
+            password=self.cloud_password,
+            session=self._session,
+            server=cloud_server,
+        )
+        await self._cloud_client.login(register_event_listener=False)
+        LOGGER.info("Connected to Somfy TaHoma cloud API for scene execution")
+        return self._cloud_client
+
+    async def _execute_scenario_via_cloud(self, scenario_oid: str) -> Optional[str]:
+        """Run a TaHoma app scene via Somfy cloud exec/{oid}."""
+        try:
+            cloud = await self._get_cloud_client()
+            if not cloud:
+                LOGGER.error(
+                    "Scenario %s cannot run locally (no action details). "
+                    "Set tahoma_cloud_email and tahoma_cloud_password in Polyglot "
+                    "configuration — TaHoma app scenes are executed server-side.",
+                    scenario_oid,
+                )
+                return None
+
+            exec_id = await cloud.execute_scenario(scenario_oid)
+            LOGGER.info(
+                "Executed scenario %s via Somfy cloud (exec: %s)",
+                scenario_oid,
+                exec_id,
+            )
+            return exec_id
+        except Exception as e:
+            LOGGER.error(
+                "Somfy cloud scene execution failed for %s: %s",
+                scenario_oid,
+                e,
+                exc_info=True,
+            )
+            return None
+
+    async def execute_scenario(self, scenario_oid: str) -> Optional[str]:
+        """Execute a TaHoma app scene.
+
+        Local Developer Mode lists scenes but usually omits their device actions.
+        When actions are available locally, run exec/apply. Otherwise fall back to
+        Somfy cloud exec/{oid} when cloud credentials are configured.
 
         Args:
             scenario_oid: Scenario OID
@@ -410,6 +521,8 @@ class TaHomaClient:
         """
         if not self._connected or not self.client:
             raise RuntimeError("Not connected to TaHoma")
+
+        self.last_scenario_via_cloud = False
 
         try:
             group = await self._find_action_group(scenario_oid)
@@ -421,22 +534,26 @@ class TaHomaClient:
                 str(group.get("label") or group.get("Label") or "Polyglot Scene").strip()
                 or "Polyglot Scene"
             )
-            payload = action_group_exec_payload(label, group.get("actions") or [])
-            if not payload:
-                LOGGER.error(
-                    "Scenario %s (%s) has no executable actions",
+            actions = extract_action_group_actions(group)
+            payload = action_group_exec_payload(label, actions)
+            if payload:
+                exec_id = await self._exec_apply(payload)
+                LOGGER.info(
+                    "Executed scenario %s via exec/apply (exec: %s, %d actions)",
                     scenario_oid,
-                    label,
+                    exec_id,
+                    len(payload["actions"]),
                 )
-                return None
+                return exec_id
 
-            exec_id = await self._exec_apply(payload)
-            LOGGER.info(
-                "Executed scenario %s via exec/apply (exec: %s, %d actions)",
+            LOGGER.warning(
+                "Scenario %s (%s) has no local action details; trying Somfy cloud",
                 scenario_oid,
-                exec_id,
-                len(payload["actions"]),
+                label,
             )
+            exec_id = await self._execute_scenario_via_cloud(scenario_oid)
+            if exec_id:
+                self.last_scenario_via_cloud = True
             return exec_id
         except ExecutionQueueFullException:
             LOGGER.warning("Execution queue full - try again later")
