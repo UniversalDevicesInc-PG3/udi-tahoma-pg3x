@@ -7,12 +7,22 @@ Configuration guide for the **Somfy TaHoma NodeServer** (Polyglot V3 on EISY/Pol
 
 The NodeServer connects once to your TaHoma gateway and discovers all paired devices. The **protocol** reported by the gateway determines the ISY node type and available status fields:
 
-| Application / protocol | Example products | Node type | Status fields |
-|------------------------|------------------|-----------|---------------|
-| **RTS** (one-way radio) | **Phantom Blinds**, Somfy RTS rollers/awnings | **RTS Shade** | Id, Battery, **Last Command** — no position or motion |
-| **io** (io-homecontrol) | Somfy RS100, many two-way rollers | **Shade** | Position (and often tilt) when the gateway reports states |
-| **Zigbee** | TaHoma-paired Zigbee motors | **Shade** | Varies; position when reported |
-| **Other** | Less common TaHoma device types | **Shade** | Best-effort from discovery |
+- **RTS** (one-way radio)
+  - Examples: **Phantom Blinds**, Somfy RTS rollers/awnings
+  - Node type: **RTS Shade**
+  - Status: Id, Battery, **Last Command** — no position or motion
+- **io** (io-homecontrol)
+  - Examples: Somfy RS100, many two-way rollers
+  - Node type: **Shade**
+  - Status: Position (and often tilt) when the gateway reports states
+- **Zigbee**
+  - Examples: TaHoma-paired Zigbee motors
+  - Node type: **Shade**
+  - Status: Varies; position when reported
+- **Other**
+  - Examples: Less common TaHoma device types
+  - Node type: **Shade**
+  - Status: Best-effort from discovery
 
 ### Phantom Blinds (RTS)
 
@@ -75,11 +85,15 @@ Setting **`true`** is optional and only makes sense if you install the [Somfy ro
 
 **Shade control does not require Somfy cloud.** Only scene **Activate** may use cloud — and only if you choose to enter cloud credentials below.
 
-| What | Local API (LAN) | Somfy cloud |
-|------|-----------------|-------------|
-| Open / Close / Stop / My on shades | Yes — always | Never |
-| Discover scene node names | Yes — from gateway | No |
-| Scene **Activate** (run a TaHoma app scene) | Usually **no** — local API lists scenes but omits device commands | Yes — when you set cloud email/password |
+- **Open / Close / Stop / My on shades**
+  - Local API (LAN): Yes — always
+  - Somfy cloud: Never
+- **Discover scene node names**
+  - Local API (LAN): Yes — from gateway
+  - Somfy cloud: No
+- **Scene Activate** (run a TaHoma app scene)
+  - Local API (LAN): Usually **no** — local API lists scenes but omits device commands
+  - Somfy cloud: Yes — when you set cloud email/password
 
 TaHoma app scenes (Morning, All Close, etc.) are stored **server-side** on Somfy’s cloud ([Somfy Developer Mode limitation](https://github.com/Somfy-Developer/Somfy-TaHoma-Developer-Mode/issues/21)). The NodeServer still discovers them as **Scenario** nodes so you can use them in ISY programs — but **Activate** contacts `tahomalink.com` only when optional cloud credentials are configured.
 
@@ -102,25 +116,29 @@ Optional. Same TaHoma app login. Stored in Polyglot on your ISY/EISY like other 
 
 Somfy cloud hub for your account. **Default: `somfy_america` (North America).**
 
-| Polyglot value (recommended) | Also accepted | Region |
-|------------------------------|---------------|--------|
-| **`somfy_america`** | `Somfy (North America)`, `north america` | United States, Canada, and other NA accounts |
-| `somfy_europe` | `Somfy (Europe)`, `europe` | Europe, UK, and other EU accounts |
-| `somfy_oceania` | `Somfy (Oceania)`, `oceania` | Australia, New Zealand, and other Oceania accounts |
+- **`somfy_america`** (default — North America)
+  - Also accepted: `Somfy (North America)`, `north america`
+  - For: United States, Canada, and other NA accounts
+- **`somfy_europe`**
+  - Also accepted: `Somfy (Europe)`, `europe`
+  - For: Europe, UK, and other EU accounts
+- **`somfy_oceania`**
+  - Also accepted: `Somfy (Oceania)`, `oceania`
+  - For: Australia, New Zealand, and other Oceania accounts
 
 Change this only if cloud login fails with correct email/password — your region must match where you registered in the TaHoma app.
 
-### Reference table
+### Parameter reference
 
-| Parameter | Required | Default | Example |
-|-----------|----------|---------|---------|
-| `gateway_pin` | Yes | `0000-0000-0000` | `2001-0001-1891` |
-| `tahoma_token` | Yes | (20 zeros) | (token from app) |
-| `gateway_ip` | No | `gateway-0000-0000-0000.local` (ignored) | `192.168.1.100` |
-| `verify_ssl` | No | `false` | `false` |
-| `tahoma_cloud_email` | No | (empty) | your TaHoma app login email |
-| `tahoma_cloud_password` | No | (empty) | your TaHoma app password |
-| `tahoma_cloud_region` | No | **`somfy_america`** | `somfy_europe` |
+(Bullet list — EISY/Polyglot uses basic markdown and does not render pipe tables.)
+
+- **`gateway_pin`** — Required. Default: `0000-0000-0000`. Example: `2001-0001-1891`
+- **`tahoma_token`** — Required. Default: 20 zeros. Example: token from TaHoma app
+- **`gateway_ip`** — Optional. Default: `gateway-0000-0000-0000.local` (ignored). Example: `192.168.1.100`
+- **`verify_ssl`** — Optional. Default: `false`. Example: `false`
+- **`tahoma_cloud_email`** — Optional. Default: empty. Example: your TaHoma app login email
+- **`tahoma_cloud_password`** — Optional. Default: empty. Example: your TaHoma app password
+- **`tahoma_cloud_region`** — Optional. Default: **`somfy_america`**. Example: `somfy_europe`
 
 ## TaHoma setup
 
@@ -158,10 +176,8 @@ Ensure firewall rules allow HTTPS to the gateway.
 
 Polyglot calls **shortPoll** and **longPoll** on a schedule configured in the ISY/Polyglot interface (often every 10–60 seconds for shortPoll). **Leave these at the defaults** — do not change them unless Universal Devices support asks you to.
 
-| Poll | Used by this NodeServer? | Purpose |
-|------|--------------------------|---------|
-| **shortPoll** | Yes (controller) | ISY heartbeat (DON/DOF), TaHoma reconnect watchdog, restarts event polling if it stopped |
-| **longPoll** | No | Ignored; TaHoma updates use the gateway event stream instead |
+- **shortPoll** — Used: Yes (controller). Purpose: ISY heartbeat (DON/DOF), TaHoma reconnect watchdog, restarts event polling if it stopped
+- **longPoll** — Used: No. Purpose: Ignored; TaHoma updates use the gateway event stream instead
 
 Shade and scene nodes subscribe to shortPoll for Polyglot compatibility but do not poll the TaHoma box. All gateway communication (commands, events, health checks) runs in the NodeServer’s own background loop, not through Polyglot poll intervals.
 
@@ -221,12 +237,10 @@ RTS devices are discovered as **RTS Shade** nodes (Id, Battery, **Last Command**
 
 **Last Command (GV7)** reports whether the TaHoma gateway finished handling your command:
 
-| Value | Meaning |
-|-------|---------|
-| — | No command sent yet this session |
-| Pending | Gateway accepted the command (`execId` returned) |
-| Completed | Gateway reports the execution finished |
-| Failed | Gateway reports failure |
+- **—** — No command sent yet this session
+- **Pending** — Gateway accepted the command (`execId` returned)
+- **Completed** — Gateway reports the execution finished
+- **Failed** — Gateway reports failure
 
 **Important:** On RTS, the blind often stops moving long before **Last Command** shows **Completed**. The TaHoma gateway may keep the execution in a pending state for up to about a minute while its internal timers run — this is normal gateway behavior, not a stuck motor. **Completed** means the gateway finished processing the command, not that the shade reached a specific position.
 
@@ -236,11 +250,9 @@ Use **Last Command** in ISY programs (e.g. notify on **Failed**, or proceed when
 
 Scene nodes list TaHoma app scenes from your gateway. **Activate** is optional and usually runs on Somfy cloud — not over the local Developer Mode API. Leave `tahoma_cloud_email` and `tahoma_cloud_password` empty if you only control individual shades.
 
-| Symptom | Likely cause |
-|---------|----------------|
-| Scene nodes appear but Activate does nothing | Cloud credentials not set — expected if you chose shades-only |
-| Activate fails; log mentions cloud region | Wrong `tahoma_cloud_region` for your TaHoma account |
-| Activate fails after setting credentials | Check email/password; try `somfy_europe` vs `somfy_america` |
+- **Scene nodes appear but Activate does nothing** — Cloud credentials not set; expected if you chose shades-only
+- **Activate fails; log mentions cloud region** — Wrong `tahoma_cloud_region` for your TaHoma account
+- **Activate fails after setting credentials** — Check email/password; try `somfy_europe` vs `somfy_america`
 
 See [TaHoma app scenes (optional)](#tahoma-app-scenes-optional) for the full region table.
 

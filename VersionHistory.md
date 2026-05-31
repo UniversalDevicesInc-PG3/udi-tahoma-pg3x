@@ -2,6 +2,10 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.21
+
+- **Docs: EISY-friendly formatting** — replace pipe tables with bullet lists in README and POLYGLOT_CONFIG (Polyglot on EISY does not render GFM tables)
+
 ## 0.0.20
 
 - **Document optional cloud-only scenes**: clarify shades stay local; scene Activate is optional Somfy cloud; empty cloud credentials are OK; region table with `somfy_america` NA default; softer logs and no GV7 Failed when Activate skipped without credentials
