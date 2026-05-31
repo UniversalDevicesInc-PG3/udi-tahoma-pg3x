@@ -2,9 +2,13 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.19
+
+- **Fix cloud region lookup**: pyoverkiz uses keys `somfy_america` / `somfy_europe` / `somfy_oceania`, not display names like `Somfy (North America)` — v0.0.18 cloud login never ran; alias mapping accepts both forms
+
 ## 0.0.18
 
-- **Fix cloud scene Activate crash**: v0.0.17 raised `NameError: SUPPORTED_SERVERS is not defined` before Somfy cloud login could run; import fixed, cloud uses a separate HTTP session from local gateway auth, optional `tahoma_cloud_region` (default `Somfy (North America)`)
+- **Fix cloud scene Activate crash**: v0.0.17 raised `NameError: SUPPORTED_SERVERS is not defined` before Somfy cloud login could run; import fixed, cloud uses a separate HTTP session from local gateway auth, optional `tahoma_cloud_region` (default `somfy_america`)
 
 ## 0.0.17
 

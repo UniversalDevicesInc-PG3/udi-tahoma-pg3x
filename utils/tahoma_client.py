@@ -31,6 +31,48 @@ from utils.scenario import (
     parse_action_group,
 )
 
+# pyoverkiz SUPPORTED_SERVERS keys (somfy_america, etc.) plus legacy display names.
+CLOUD_REGION_ALIASES = {
+    "somfy_america": "somfy_america",
+    "somfy (north america)": "somfy_america",
+    "somfy north america": "somfy_america",
+    "north america": "somfy_america",
+    "somfy_europe": "somfy_europe",
+    "somfy (europe)": "somfy_europe",
+    "somfy europe": "somfy_europe",
+    "europe": "somfy_europe",
+    "somfy_oceania": "somfy_oceania",
+    "somfy (oceania)": "somfy_oceania",
+    "somfy oceania": "somfy_oceania",
+    "oceania": "somfy_oceania",
+}
+
+SOMFY_CLOUD_REGIONS = ("somfy_america", "somfy_europe", "somfy_oceania")
+
+
+def resolve_cloud_server_key(region: str) -> Optional[str]:
+    """Map Polyglot region setting to a pyoverkiz SUPPORTED_SERVERS key."""
+    normalized = (region or "somfy_america").strip()
+    if not normalized:
+        normalized = "somfy_america"
+
+    alias = CLOUD_REGION_ALIASES.get(normalized.lower())
+    if alias is not None:
+        return alias
+
+    if normalized in SUPPORTED_SERVERS:
+        return normalized
+
+    return None
+
+
+def cloud_server_label(server_key: str) -> str:
+    """Return a human-readable label for logs."""
+    server = SUPPORTED_SERVERS.get(server_key)
+    if server is not None and getattr(server, "name", None):
+        return str(server.name)
+    return server_key
+
 
 class TaHomaSSLVerificationError(Exception):
     """TaHoma HTTPS certificate could not be verified."""
@@ -117,7 +159,7 @@ class TaHomaClient:
         session: Optional[aiohttp.ClientSession] = None,
         cloud_email: str = "",
         cloud_password: str = "",
-        cloud_region: str = "Somfy (North America)",
+        cloud_region: str = "somfy_america",
     ):
         """Initialize TaHoma client.
 
@@ -129,7 +171,7 @@ class TaHomaClient:
             session: Optional aiohttp session (created if None)
             cloud_email: Optional Somfy TaHoma cloud account email (for scenes)
             cloud_password: Optional Somfy TaHoma cloud account password (for scenes)
-            cloud_region: Somfy cloud hub name (default Somfy (North America))
+            cloud_region: Somfy cloud hub key or name (default somfy_america)
         """
         self.token = token
         self.gateway_pin = gateway_pin
@@ -137,7 +179,7 @@ class TaHomaClient:
         self.gateway_ip = gateway_ip
         self.cloud_email = (cloud_email or "").strip()
         self.cloud_password = cloud_password or ""
-        self.cloud_region = (cloud_region or "Somfy (North America)").strip()
+        self.cloud_region = (cloud_region or "somfy_america").strip() or "somfy_america"
         self._session = session
         self._own_session = session is None
         self.last_scenario_via_cloud = False
@@ -213,7 +255,9 @@ class TaHomaClient:
             if self.cloud_email and self.cloud_password:
                 LOGGER.info(
                     "Somfy cloud credentials configured for scene Activate (%s)",
-                    self.cloud_region,
+                    cloud_server_label(
+                        resolve_cloud_server_key(self.cloud_region) or self.cloud_region
+                    ),
                 )
             
             # Register event listener separately with better error handling
@@ -388,7 +432,10 @@ class TaHomaClient:
                         LOGGER.info(
                             "Scenario %s: no local actions; Activate will use Somfy cloud (%s)",
                             scenario.label,
-                            self.cloud_region,
+                            cloud_server_label(
+                                resolve_cloud_server_key(self.cloud_region)
+                                or self.cloud_region
+                            ),
                         )
                     else:
                         LOGGER.warning(
@@ -492,12 +539,21 @@ class TaHomaClient:
                 timeout=timeout,
             )
 
-        cloud_server = SUPPORTED_SERVERS.get(self.cloud_region)
+        server_key = resolve_cloud_server_key(self.cloud_region)
+        if server_key is None:
+            LOGGER.error(
+                "Unknown Somfy cloud region %r (use one of %s, or legacy names like "
+                "'Somfy (North America)')",
+                self.cloud_region,
+                ", ".join(SOMFY_CLOUD_REGIONS),
+            )
+            return None
+
+        cloud_server = SUPPORTED_SERVERS.get(server_key)
         if cloud_server is None:
             LOGGER.error(
-                "Unknown Somfy cloud region %r (expected one of %s)",
-                self.cloud_region,
-                ", ".join(sorted(SUPPORTED_SERVERS)),
+                "Somfy cloud server %r missing from pyoverkiz SUPPORTED_SERVERS",
+                server_key,
             )
             return None
 
@@ -515,7 +571,7 @@ class TaHomaClient:
 
         LOGGER.info(
             "Connected to Somfy TaHoma cloud API (%s) for scene execution",
-            self.cloud_region,
+            cloud_server_label(server_key),
         )
         return self._cloud_client
 

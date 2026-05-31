@@ -25,10 +25,13 @@ from nodes import Controller
 
 LOGGER = udi_interface.LOGGER
 
-VERSION = "0.0.18"
+VERSION = "0.0.19"
 """
+0.0.19
+- Fix cloud region keys: map somfy_america/somfy_europe/somfy_oceania and legacy Somfy (North America) display names for pyoverkiz SUPPORTED_SERVERS lookup
+
 0.0.18
-- Fix Somfy cloud scene Activate: import SUPPORTED_SERVERS (v0.0.17 NameError blocked cloud fallback); separate cloud HTTP session; optional tahoma_cloud_region (default Somfy North America)
+- Fix Somfy cloud scene Activate: import SUPPORTED_SERVERS (v0.0.17 NameError blocked cloud fallback); separate cloud HTTP session; optional tahoma_cloud_region (default somfy_america)
 
 0.0.17
 - Scene Activate: local actionGroups omit device commands; optional Somfy cloud credentials run TaHoma app scenes via exec/{oid}; try GET actionGroups/{oid} when list has no actions

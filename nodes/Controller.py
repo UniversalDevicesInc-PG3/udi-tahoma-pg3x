@@ -114,7 +114,7 @@ class Controller(Node):
         self.gateway_ip = None
         self.cloud_email = ""
         self.cloud_password = ""
-        self.cloud_region = "Somfy (North America)"
+        self.cloud_region = "somfy_america"
         self.verify_ssl = False
 
         # in function vars
@@ -616,7 +616,7 @@ class Controller(Node):
             "verify_ssl": "false",
             "tahoma_cloud_email": "",
             "tahoma_cloud_password": "",
-            "tahoma_cloud_region": "Somfy (North America)",
+            "tahoma_cloud_region": "somfy_america",
         }
         for param, default_value in defaults.items():
             if param not in self.Parameters:
@@ -742,8 +742,8 @@ class Controller(Node):
             self.Parameters.get("tahoma_cloud_password", "")
         )
         self.cloud_region = str(
-            self.Parameters.get("tahoma_cloud_region", "Somfy (North America)")
-        ).strip() or "Somfy (North America)"
+            self.Parameters.get("tahoma_cloud_region", "somfy_america")
+        ).strip() or "somfy_america"
 
         if self.gateway_ip:
             LOGGER.info(

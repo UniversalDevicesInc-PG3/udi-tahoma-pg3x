@@ -14,6 +14,7 @@ from utils.tahoma_client import (
     create_tahoma_client,
     is_ssl_verification_error,
     is_transient_connection_error,
+    resolve_cloud_server_key,
 )
 
 
@@ -366,7 +367,7 @@ async def test_get_cloud_client_resolves_supported_servers():
 
         with patch.dict(
             "utils.tahoma_client.SUPPORTED_SERVERS",
-            {"Somfy (Europe)": mock_server},
+            {"somfy_europe": mock_server},
             clear=True,
         ):
             result = await client._get_cloud_client()
@@ -413,3 +414,11 @@ async def test_execute_scenario_cloud_fallback_when_no_local_actions(mock_overki
     assert exec_id == "cloud-exec-1"
     assert client.last_scenario_via_cloud is True
     cloud_exec.assert_called_once_with("1234567890")
+
+
+def test_resolve_cloud_server_key_accepts_pyoverkiz_and_display_names():
+    assert resolve_cloud_server_key("somfy_america") == "somfy_america"
+    assert resolve_cloud_server_key("Somfy (North America)") == "somfy_america"
+    assert resolve_cloud_server_key("somfy_europe") == "somfy_europe"
+    assert resolve_cloud_server_key("Somfy (Europe)") == "somfy_europe"
+    assert resolve_cloud_server_key("invalid") is None

@@ -85,8 +85,9 @@ TaHoma **app scenes** (Morning, All Close, etc.) are stored server-side. The loc
 
 Somfy cloud hub for your account (must match where you registered in the TaHoma app).
 
-- **Default:** `Somfy (North America)`
-- **Other values:** `Somfy (Europe)`, `Somfy (Oceania)`
+- **Default:** `somfy_america`
+- **Other values:** `somfy_europe`, `somfy_oceania`
+- Legacy display names also work: `Somfy (North America)`, `Somfy (Europe)`, `Somfy (Oceania)`
 - Only needed if cloud login fails with bad credentials despite correct email/password
 
 ### Reference table
@@ -99,7 +100,7 @@ Somfy cloud hub for your account (must match where you registered in the TaHoma 
 | `verify_ssl` | No | `false` | `false` |
 | `tahoma_cloud_email` | For scenes | (empty) | your TaHoma app login email |
 | `tahoma_cloud_password` | For scenes | (empty) | your TaHoma app password |
-| `tahoma_cloud_region` | No | `Somfy (North America)` | `Somfy (Europe)` |
+| `tahoma_cloud_region` | No | `somfy_america` | `somfy_europe` |
 
 ## TaHoma setup
 
