@@ -1,4 +1,8 @@
-"""TaHoma scenario (action group) parsing helpers."""
+"""TaHoma scenario (action group) parsing helpers.
+
+TaHoma app scenes are discovered from the local actionGroups API. Running them
+from ISY usually requires optional Somfy cloud credentials — see POLYGLOT_CONFIG.md.
+"""
 
 from __future__ import annotations
 

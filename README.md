@@ -15,12 +15,13 @@ This is a **TaHoma plugin**. Specific shade families (Phantom Blinds, io-homecon
 
 ## Features
 
-- Local API control (direct connection on your LAN; no Somfy cloud required)
-- Automatic discovery of shades and TaHoma scenarios
+- **Shade control over local API** — direct LAN connection; no Somfy cloud required
+- Automatic discovery of shades and TaHoma app scenes (scene Activate is optional; see below)
 - Application-specific node types (RTS Shade vs full Shade) based on device protocol
 - Open, Close, Stop, My Position; position and tilt where the gateway supports them
 - **Last Command** status (Pending / Completed / Failed) for ISY programs
 - Real-time updates via event polling
+- **Optional scene Activate** via Somfy cloud when you enter TaHoma app credentials
 
 ## Applications
 
@@ -74,7 +75,7 @@ Before installing the NodeServer:
 
 1. In the ISY Admin Console, expand the NodeServer folder.
 2. Right-click **TaHoma Controller** → **Discover**.
-3. Shade and scene nodes should appear within about a minute.
+3. Shade nodes should appear within about a minute. **Scene** nodes may also appear; they are optional — see [Scenes](#scenes-optional).
 
 ## Configuration
 
@@ -86,6 +87,9 @@ All settings are entered in the Polyglot UI Configuration page (not a YAML file)
 | `tahoma_token` | Yes | (20 zeros) | Bearer token from Developer Mode |
 | `gateway_ip` | No | `gateway-0000-0000-0000.local` | Ignored by default; set IP if mDNS fails |
 | `verify_ssl` | No | `false` | See config doc for `true` |
+| `tahoma_cloud_email` | No | (empty) | Optional — TaHoma app login for scene Activate |
+| `tahoma_cloud_password` | No | (empty) | Optional — paired with cloud email |
+| `tahoma_cloud_region` | No | **`somfy_america`** | Somfy cloud hub (NA default) |
 
 Full setup steps and troubleshooting: **[POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md)**
 
@@ -97,7 +101,15 @@ See [Applications](#applications) for how RTS vs io/Zigbee nodes differ.
 
 **io / Zigbee shades** use full **Shade** nodes with position fields where supported.
 
-TaHoma **scenarios** appear as **Scenario** nodes with **Activate** and **Last Command (GV7)** feedback. Scene **Activate** requires optional Somfy cloud credentials (see [POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md)) because TaHoma app scenes are server-side; individual shade commands remain local.
+### Scenes (optional)
+
+TaHoma **app scenes** appear as **Scenario** nodes with **Activate** and **Last Command (GV7)**. This is **optional**:
+
+- **Shades:** always local API — no cloud account needed
+- **Scene Activate:** Somfy cloud only (when you set cloud email/password)
+- **No cloud credentials:** scene nodes may still appear; Activate is skipped with no error state
+
+Details, region table, and troubleshooting: **[POLYGLOT_CONFIG.md — TaHoma app scenes](POLYGLOT_CONFIG.md#tahoma-app-scenes-optional)**
 
 After upgrading the NodeServer, **Update Profile** in Polyglot, then run **Discover** again.
 

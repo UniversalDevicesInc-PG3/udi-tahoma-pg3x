@@ -25,8 +25,11 @@ from nodes import Controller
 
 LOGGER = udi_interface.LOGGER
 
-VERSION = "0.0.19"
+VERSION = "0.0.20"
 """
+0.0.20
+- Clarify optional cloud-only TaHoma app scenes in docs and logs; empty cloud creds OK; no GV7 Failed when Activate skipped; region table with somfy_america default
+
 0.0.19
 - Fix cloud region keys: map somfy_america/somfy_europe/somfy_oceania and legacy Somfy (North America) display names for pyoverkiz SUPPORTED_SERVERS lookup
 

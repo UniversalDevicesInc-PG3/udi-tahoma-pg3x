@@ -2,6 +2,10 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.20
+
+- **Document optional cloud-only scenes**: clarify shades stay local; scene Activate is optional Somfy cloud; empty cloud credentials are OK; region table with `somfy_america` NA default; softer logs and no GV7 Failed when Activate skipped without credentials
+
 ## 0.0.19
 
 - **Fix cloud region lookup**: pyoverkiz uses keys `somfy_america` / `somfy_europe` / `somfy_oceania`, not display names like `Somfy (North America)` — v0.0.18 cloud login never ran; alias mapping accepts both forms

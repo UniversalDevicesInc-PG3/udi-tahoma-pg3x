@@ -1,8 +1,8 @@
 """Module for Somfy TaHoma Controller node in a Polyglot v3 NodeServer.
 
-This module defines the Controller class, which is the primary node for interacting
-with Somfy TaHoma gateways. It handles discovery of devices and scenarios,
-manages the connection to the gateway, and processes events.
+Manages the local Developer Mode connection (shades, events, discovery). TaHoma
+app scenes are optional: discovered as Scenario nodes; Activate uses Somfy cloud
+only when tahoma_cloud_email/password are configured.
 
 (C) 2025 Stephen Jenkins
 """
@@ -327,13 +327,23 @@ class Controller(Node):
         scene_count = len(self.scenarios_map)
         shade_plural = "s" if shade_count != 1 else ""
         scene_plural = "s" if scene_count != 1 else ""
+        if scene_count and self.cloud_email and self.cloud_password:
+            scene_part = (
+                f"{scene_count} scene{scene_plural} (Activate via Somfy cloud)"
+            )
+        elif scene_count:
+            scene_part = (
+                f"{scene_count} scene node{scene_plural} "
+                "(Activate optional — cloud credentials not set)"
+            )
+        else:
+            scene_part = "0 scenes"
         self.Notices.delete("hello")
         self.Notices.delete("error")
         self.Notices.delete("config")
         self.Notices["success"] = (
             f"Connected to TaHoma gateway {self.gateway_pin}. "
-            f"Discovered {shade_count} shade{shade_plural} and "
-            f"{scene_count} scenario{scene_plural}."
+            f"Discovered {shade_count} shade{shade_plural} and {scene_part}."
         )
         self._schedule_notice_clear("success", 30)
 

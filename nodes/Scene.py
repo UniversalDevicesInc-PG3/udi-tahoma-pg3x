@@ -1,8 +1,13 @@
 """Somfy TaHoma Scenario node for Polyglot v3.
 
-Scenes are fire-and-activate automations on the gateway. RTS installations
-have no position feedback, so this node exposes Activate plus Last Command
-(GV7) like RTS shade nodes.
+TaHoma **app scenes** (Morning, All Close, etc.) appear as Scenario nodes with
+Activate and Last Command (GV7). This is **optional**: shade control works
+without Somfy cloud credentials.
+
+On most gateways the local Developer Mode API does not include scene device
+commands, so **Activate uses Somfy cloud** when you set tahoma_cloud_email and
+tahoma_cloud_password in Polyglot. Leave those fields empty to skip cloud
+entirely — scene nodes may still appear at discovery but Activate is a no-op.
 
 (C) 2025 Stephen Jenkins
 """
@@ -27,7 +32,7 @@ SCENE_DRIVERS = [
 
 
 class Scene(udi_interface.Node):
-    """TaHoma scenario node: Activate command and Last Command feedback."""
+    """TaHoma app scene node: optional Activate via Somfy cloud; Last Command (GV7)."""
 
     id = "sceneid"
 
@@ -99,9 +104,14 @@ class Scene(udi_interface.Node):
                 LOGGER.info(
                     f"TaHoma scenario {self.name} activated (exec: {exec_id})"
                 )
-            else:
+            elif self.controller.tahoma_client.cloud_scenes_configured:
                 self.set_last_command(LAST_CMD_FAILED)
                 LOGGER.warning(f"TaHoma scenario {self.name} activation failed")
+            else:
+                LOGGER.info(
+                    f"Scene {self.name}: Activate skipped — Somfy cloud credentials "
+                    "not configured (optional; shade control is unaffected)"
+                )
         except Exception as e:
             self.set_last_command(LAST_CMD_FAILED)
             LOGGER.error(
