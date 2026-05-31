@@ -254,6 +254,19 @@ Scene nodes list TaHoma app scenes from your gateway. **Activate** is optional a
 
 See [TaHoma app scenes (optional)](#tahoma-app-scenes-optional) for the full region table.
 
+### Easy UI after profile or NodeServer update
+
+The **Java Admin Console** and **UD Mobile** often pick up profile changes after **Update Profile** and a console restart. **Easy UI** (Safari on Mac/iPad/iPhone) can keep a **stale cached copy** of the node tree or profile even after an EISY reboot and Safari restart.
+
+If Easy UI shows errors like **Profiles loaded but nodedefs missing**, a blank node area, or **404** where nodes should appear — but Admin Console and UD Mobile look fine:
+
+1. Run **Update Profile** on the TaHoma Controller (Polyglot restart also pushes profile on version change).
+2. Close Easy UI completely (all Safari tabs/windows for the EISY URL).
+3. **Clear Safari cache** for the EISY site (Safari → Settings → Privacy → Manage Website Data, or Develop → Empty Caches if enabled).
+4. Reopen Easy UI and sign in again.
+
+A full EISY reboot alone may **not** refresh Easy UI; clearing browser cache usually does.
+
 ### SSL certificate errors
 
 The default is `verify_ssl` **`false`**, which skips verification of TaHoma’s self-signed certificate. That is appropriate for normal home use on a local network.
