@@ -8,8 +8,7 @@ all: lint test
 
 # sudo apt-get install libxml2-utils libxml2-dev
 check:
-	echo ${XML_FILES}
-	xmllint --noout ${XML_FILES}
+	xmllint --noout profile/nodedef/nodedefs.xml profile/editor/editors.xml
 
 install:
 	pipenv install --dev

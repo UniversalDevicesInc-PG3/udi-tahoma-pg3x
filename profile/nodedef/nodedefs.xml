@@ -1,29 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <nodeDefs>
     <!-- NODE DEF for Somfy TaHoma NodeServer (RTS, io, Zigbee applications) -->
     <!-- Polyglot v3 - ISY 5.0+ compatible -->
     <!-- controller, this must match the id in your Controller class-->
     <nodeDef id="hdctrl" nls="ctl">
-        <editors />
+        <editors></editors>
         <sts>
-		  <st id="ST" editor="CTD" />
-		  <st id="GV0" editor="ID" />
-	    </sts>
+            <st id="ST" editor="CTD" />
+            <st id="GV0" editor="ID" />
+        </sts>
         <cmds>
-          <sends>
-            <!-- These are for our heartbeat -->
-            <cmd id="DON" />
-            <cmd id="DOF" />
-          </sends>
-          <accepts>
-            <cmd id="QUERY" />
-            <cmd id="DISCOVER" />
-            <cmd id="REMOVE_NOTICES_ALL" />
-          </accepts>
+            <sends>
+                <cmd id="DON" />
+                <cmd id="DOF" />
+            </sends>
+            <accepts>
+                <cmd id="QUERY" />
+                <cmd id="DISCOVER" />
+                <cmd id="UPDATE_PROFILE" />
+                <cmd id="REMOVE_NOTICES_ALL" />
+            </accepts>
         </cmds>
     </nodeDef>
-	<!-- TaHoma Shade (with tilt) -->
+    <!-- TaHoma Shade (with tilt) -->
     <nodeDef id="shadeid" nls="shade">
-        <editors />
+        <editors></editors>
         <sts>
             <st id="GV0" editor="ID" />
             <st id="ST" editor="BOOL" />
@@ -36,35 +37,35 @@
             <st id="GV7" editor="EXECSTAT" />
         </sts>
         <cmds>
-          <sends>
-			<cmd id="DON" />
-			<cmd id="DOF" />
-            <cmd id="OPEN" />
-            <cmd id="CLOSE" />
-            <cmd id="STOP" />
-            <cmd id="MY" />
-            <cmd id="TILTOPEN" />
-            <cmd id="TILTCLOSE" />
-          </sends>
-          <accepts>
-            <cmd id="OPEN" />
-            <cmd id="CLOSE" />
-            <cmd id="STOP" />
-            <cmd id="MY" />
-            <cmd id="TILTOPEN" />
-            <cmd id="TILTCLOSE" />
-            <cmd id="QUERY" />
-            <cmd id="SETPOS" >
-              <p id="SETPRIM" editor="POSITION" />
-              <p id="SETSECO" editor="POSITION" />
-              <p id="SETTILT" editor="TILT" />
-            </cmd>
-          </accepts>
+            <sends>
+                <cmd id="DON" />
+                <cmd id="DOF" />
+                <cmd id="OPEN" />
+                <cmd id="CLOSE" />
+                <cmd id="STOP" />
+                <cmd id="MY" />
+                <cmd id="TILTOPEN" />
+                <cmd id="TILTCLOSE" />
+            </sends>
+            <accepts>
+                <cmd id="OPEN" />
+                <cmd id="CLOSE" />
+                <cmd id="STOP" />
+                <cmd id="MY" />
+                <cmd id="TILTOPEN" />
+                <cmd id="TILTCLOSE" />
+                <cmd id="QUERY" />
+                <cmd id="SETPOS" >
+                    <p id="SETPRIM" editor="POSITION" />
+                    <p id="SETSECO" editor="POSITION" />
+                    <p id="SETTILT" editor="TILT" />
+                </cmd>
+            </accepts>
         </cmds>
     </nodeDef>
-	<!-- TaHoma Shade (no tilt) -->
+    <!-- TaHoma Shade (no tilt) -->
     <nodeDef id="shadenotiltid" nls="shade">
-        <editors />
+        <editors></editors>
         <sts>
             <st id="GV0" editor="ID" />
             <st id="ST" editor="BOOL" />
@@ -76,30 +77,30 @@
             <st id="GV7" editor="EXECSTAT" />
         </sts>
         <cmds>
-          <sends>
-			<cmd id="DON" />
-			<cmd id="DOF" />
-            <cmd id="OPEN" />
-            <cmd id="CLOSE" />
-            <cmd id="STOP" />
-            <cmd id="MY" />
-          </sends>
-          <accepts>
-            <cmd id="OPEN" />
-            <cmd id="CLOSE" />
-            <cmd id="STOP" />
-            <cmd id="MY" />
-            <cmd id="QUERY" />
-            <cmd id="SETPOS" >
-              <p id="SETPRIM" editor="POSITION" />
-              <p id="SETSECO" editor="POSITION" />
-            </cmd>
-          </accepts>
+            <sends>
+                <cmd id="DON" />
+                <cmd id="DOF" />
+                <cmd id="OPEN" />
+                <cmd id="CLOSE" />
+                <cmd id="STOP" />
+                <cmd id="MY" />
+            </sends>
+            <accepts>
+                <cmd id="OPEN" />
+                <cmd id="CLOSE" />
+                <cmd id="STOP" />
+                <cmd id="MY" />
+                <cmd id="QUERY" />
+                <cmd id="SETPOS" >
+                    <p id="SETPRIM" editor="POSITION" />
+                    <p id="SETSECO" editor="POSITION" />
+                </cmd>
+            </accepts>
         </cmds>
     </nodeDef>
-	<!-- TaHoma Shade (primary position only) -->
+    <!-- TaHoma Shade (primary position only) -->
     <nodeDef id="shadeonlyprimid" nls="shade">
-        <editors />
+        <editors></editors>
         <sts>
             <st id="GV0" editor="ID" />
             <st id="ST" editor="BOOL" />
@@ -110,68 +111,69 @@
             <st id="GV7" editor="EXECSTAT" />
         </sts>
         <cmds>
-          <sends>
-			<cmd id="DON" />
-			<cmd id="DOF" />
-            <cmd id="OPEN" />
-            <cmd id="CLOSE" />
-            <cmd id="STOP" />
-            <cmd id="MY" />
-          </sends>
-          <accepts>
-            <cmd id="OPEN" />
-            <cmd id="CLOSE" />
-            <cmd id="STOP" />
-            <cmd id="MY" />
-            <cmd id="QUERY" />
-            <cmd id="SETPOS" >
-              <p id="SETPRIM" editor="POSITION" />
-            </cmd>
-          </accepts>
+            <sends>
+                <cmd id="DON" />
+                <cmd id="DOF" />
+                <cmd id="OPEN" />
+                <cmd id="CLOSE" />
+                <cmd id="STOP" />
+                <cmd id="MY" />
+            </sends>
+            <accepts>
+                <cmd id="OPEN" />
+                <cmd id="CLOSE" />
+                <cmd id="STOP" />
+                <cmd id="MY" />
+                <cmd id="QUERY" />
+                <cmd id="SETPOS" >
+                    <p id="SETPRIM" editor="POSITION" />
+                </cmd>
+            </accepts>
         </cmds>
     </nodeDef>
-	<!-- TaHoma RTS shade (no position feedback) -->
+    <!-- TaHoma RTS shade (no position feedback) -->
     <nodeDef id="shadertsid" nls="shaderts">
-        <editors />
+        <editors></editors>
         <sts>
             <st id="GV0" editor="ID" />
             <st id="GV6" editor="BATTERYST" />
             <st id="GV7" editor="EXECSTAT" />
         </sts>
         <cmds>
-          <sends>
-			<cmd id="DON" />
-			<cmd id="DOF" />
-            <cmd id="OPEN" />
-            <cmd id="CLOSE" />
-            <cmd id="STOP" />
-            <cmd id="MY" />
-          </sends>
-          <accepts>
-            <cmd id="OPEN" />
-            <cmd id="CLOSE" />
-            <cmd id="STOP" />
-            <cmd id="MY" />
-            <cmd id="QUERY" />
-          </accepts>
+            <sends>
+                <cmd id="DON" />
+                <cmd id="DOF" />
+                <cmd id="OPEN" />
+                <cmd id="CLOSE" />
+                <cmd id="STOP" />
+                <cmd id="MY" />
+            </sends>
+            <accepts>
+                <cmd id="OPEN" />
+                <cmd id="CLOSE" />
+                <cmd id="STOP" />
+                <cmd id="MY" />
+                <cmd id="QUERY" />
+            </accepts>
         </cmds>
     </nodeDef>
-	<!-- TaHoma Scenario (automation) -->
+    <!-- TaHoma Scenario (automation) -->
     <nodeDef id="sceneid" nls="scene">
-        <editors />
+        <editors></editors>
         <sts>
-          <st id="GV0" editor="ID" />
-          <st id="GV7" editor="EXECSTAT" />
+            <st id="GV0" editor="ID" />
+            <st id="GV7" editor="EXECSTAT" />
         </sts>
         <cmds>
-          <sends>
-            <cmd id="DON" />
-            <cmd id="DOF" />
-          </sends>
-          <accepts>
-            <cmd id="ACTIVATE" />
-            <cmd id="QUERY" />
-          </accepts>
+            <sends>
+                <cmd id="DON" />
+                <cmd id="DOF" />
+                <cmd id="ACTIVATE" />
+            </sends>
+            <accepts>
+                <cmd id="ACTIVATE" />
+                <cmd id="QUERY" />
+            </accepts>
         </cmds>
     </nodeDef>
 </nodeDefs>

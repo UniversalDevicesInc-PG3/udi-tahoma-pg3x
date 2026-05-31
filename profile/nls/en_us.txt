@@ -3,25 +3,19 @@
 # controller
 ND-hdctrl-NAME = TaHoma Controller
 ND-hdctrl-ICON = GenericRspCtl
-ST-GV0-NAME = NumberOfNodes
+ST-ctl-ST-NAME = Connection
+ST-ctl-GV0-NAME = Number Of Nodes
 CMD-ctl-QUERY-NAME = Query
 CMD-ctl-DISCOVER-NAME = Discover
 CMD-ctl-UPDATE_PROFILE-NAME = Update Profile
 CMD-ctl-REMOVE_NOTICES_ALL-NAME = Remove All Notices
-CMD-ctl-SET_DM-NAME = Set Logger Level
+CMD-ctl-DON-NAME = On
+CMD-ctl-DOF-NAME = Off
 
 # ctd
 CTD-0 = Disconnected
 CTD-1 = Connected
 CTD-2 = Failed
-
-# Debug/Logger Modes
-CDM-9 = Debug + Modules
-CDM-10 = Debug
-CDM-20 = Info
-CDM-30 = Warning
-CDM-40 = Error
-CDM-50 = Critical
 
 # shade
 ND-shadeid-NAME = Shade
@@ -41,6 +35,8 @@ CMD-shaderts-CLOSE-NAME = Close
 CMD-shaderts-STOP-NAME = Stop
 CMD-shaderts-MY-NAME = My Position
 CMD-shaderts-QUERY-NAME = Query
+CMD-shaderts-DON-NAME = On
+CMD-shaderts-DOF-NAME = Off
 
 ST-shade-ST-NAME = Motion
 ST-shade-GV0-NAME = Id
@@ -59,6 +55,8 @@ CMD-shade-TILTOPEN-NAME = Tilt Open
 CMD-shade-TILTCLOSE-NAME = Tilt Close
 CMD-shade-QUERY-NAME = Query
 CMD-shade-SETPOS-NAME = Set Shade Position
+CMD-shade-DON-NAME = On
+CMD-shade-DOF-NAME = Off
 
 CMDP-SETPRIM-NAME = Primary
 CMDP-SETSECO-NAME = Secondary
@@ -94,3 +92,5 @@ ST-scene-GV0-NAME = Id
 ST-scene-GV7-NAME = Last Command
 CMD-scene-ACTIVATE-NAME = Activate
 CMD-scene-QUERY-NAME = Query
+CMD-scene-DON-NAME = On
+CMD-scene-DOF-NAME = Off

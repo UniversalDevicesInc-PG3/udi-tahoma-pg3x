@@ -25,8 +25,11 @@ from nodes import Controller
 
 LOGGER = udi_interface.LOGGER
 
-VERSION = "0.0.21"
+VERSION = "0.0.22"
 """
+0.0.22
+- Fix EISY Easy UI profile sync: profile/version.txt, nodedef/NLS alignment (UPDATE_PROFILE, scene ACTIVATE in sends, ctl NLS keys), explicit editor subsets
+
 0.0.21
 - Docs: bullet lists instead of pipe tables for EISY/Polyglot basic markdown renderer
 
