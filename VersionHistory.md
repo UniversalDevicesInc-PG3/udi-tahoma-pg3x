@@ -2,6 +2,10 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.22
+
+- **Fix EISY Easy UI profile errors**: add `profile/version.txt`; align nodedefs with Python commands (`UPDATE_PROFILE` on controller, `ACTIVATE` in scene sends); fix controller NLS keys (`ST-ctl-*`); explicit editor subsets; remove unused debug editor/NLS
+
 ## 0.0.21
 
 - **Docs: EISY-friendly formatting** — replace pipe tables with bullet lists in README and POLYGLOT_CONFIG (Polyglot on EISY does not render GFM tables)
