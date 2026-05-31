@@ -1,9 +1,7 @@
 # Somfy TaHoma — Polyglot Configuration
 <!-- markdownlint-disable-file MD036 MD007 MD022 MD013 -->
 
-Configuration guide for the **Somfy TaHoma NodeServer** (Polyglot V3 on EISY/Polisy). Phantom Blinds and other shade families are supported as **applications** on the same gateway — see the **Applications** section below.
-
-**Note:** Easy UI does not support in-page or file links in this help text. Use section headings to find topics. Copy external URLs into a new browser tab if needed.
+Configuration guide for the **Somfy TaHoma NodeServer** (Polyglot V3 on EISY/Polisy). Phantom Blinds and other shade families are supported as **applications** on the same gateway — see [Applications](#applications).
 
 ## Applications
 
@@ -28,7 +26,7 @@ The NodeServer connects once to your TaHoma gateway and discovers all paired dev
 
 ### Phantom Blinds (RTS)
 
-**Phantom Blinds** use Somfy RTS motors through TaHoma. They are discovered as **RTS Shade** nodes with Open, Close, Stop, and My Position only. See **Troubleshooting → RTS shades and Last Command** (below) for **Last Command (GV7)** behavior and timing.
+**Phantom Blinds** use Somfy RTS motors through TaHoma. They are discovered as **RTS Shade** nodes with Open, Close, Stop, and My Position only. See [RTS shades and Last Command](#rts-shades-and-last-command) for **Last Command (GV7)** behavior and timing.
 
 If you have io or Zigbee shades as well, they appear as full **Shade** nodes alongside RTS nodes under the same controller.
 
@@ -81,11 +79,7 @@ Whether to verify the TaHoma HTTPS certificate.
 - **Default:** `false`
 - **Recommended:** Leave at `false`. TaHoma presents a self-signed certificate on your LAN; verification is not required for normal home use.
 
-Setting **`true`** is optional and only makes sense if you install the Somfy root CA on your **EISY or Polisy** so the system trusts that certificate. Download:
-
-`https://ca.overkiz.com/overkiz-root-ca-2048.crt`
-
-On FreeBSD (EISY/Polisy), copy the `.crt` file into the local trusted certs directory (for example `/usr/local/share/certs/`), then run `certctl rehash` as root over SSH. We do **not** recommend this for typical installations.
+Setting **`true`** is optional and only makes sense if you install the [Somfy root CA][somfy-root-ca] on your **EISY or Polisy** so the system trusts that certificate. On FreeBSD (EISY/Polisy), copy the `.crt` file into the local trusted certs directory (for example `/usr/local/share/certs/`), then run `certctl rehash` as root over SSH. We do **not** recommend this for typical installations.
 
 ## TaHoma app scenes (optional)
 
@@ -101,7 +95,7 @@ On FreeBSD (EISY/Polisy), copy the `.crt` file into the local trusted certs dire
   - Local API (LAN): Usually **no** — local API lists scenes but omits device commands
   - Somfy cloud: Yes — when you set cloud email/password
 
-TaHoma app scenes (Morning, All Close, etc.) are stored **server-side** on Somfy’s cloud (Somfy Developer Mode does not expose scene actions locally — see `https://github.com/Somfy-Developer/Somfy-TaHoma-Developer-Mode/issues/21`). The NodeServer still discovers them as **Scenario** nodes so you can use them in ISY programs — but **Activate** contacts `tahomalink.com` only when optional cloud credentials are configured.
+TaHoma app scenes (Morning, All Close, etc.) are stored **server-side** on Somfy’s cloud ([Somfy Developer Mode limitation][somfy-scenes-issue]). The NodeServer still discovers them as **Scenario** nodes so you can use them in ISY programs — but **Activate** contacts `tahomalink.com` only when optional cloud credentials are configured.
 
 **You can leave all cloud fields empty.** Scene nodes may appear after Discover; **Activate** is a no-op and **Last Command** stays unchanged. No errors, no cloud contact.
 
@@ -161,7 +155,7 @@ If you lose the token, generate a new one in Developer Mode.
 1. Enter `gateway_pin` and `tahoma_token` (replace the placeholder defaults).
 2. Leave `gateway_ip` at the default unless mDNS to `gateway-{pin}.local` fails; if you set an IP, use a static/reserved address on the TaHoma.
 3. Leave `verify_ssl` at `false` unless you have installed the Somfy root CA on the EISY/Polisy.
-4. **Optional:** add cloud credentials only if you want ISY **Activate** on TaHoma app scenes (see **TaHoma app scenes (optional)** above).
+4. **Optional:** add cloud credentials only if you want ISY **Activate** on TaHoma app scenes (see [TaHoma app scenes (optional)](#tahoma-app-scenes-optional)).
 5. Click **Save**.
 6. Start the NodeServer and check the log for successful authentication.
 7. Run **Discover** on the controller node in the Admin Console.
@@ -258,7 +252,7 @@ Scene nodes list TaHoma app scenes from your gateway. **Activate** is optional a
 - **Activate fails; log mentions cloud region** — Wrong `tahoma_cloud_region` for your TaHoma account
 - **Activate fails after setting credentials** — Check email/password; try `somfy_europe` vs `somfy_america`
 
-See **TaHoma app scenes (optional)** above for the cloud region list.
+See [TaHoma app scenes (optional)](#tahoma-app-scenes-optional) for the cloud region list.
 
 ### Easy UI after profile or NodeServer update
 
@@ -277,11 +271,7 @@ A full EISY reboot alone may **not** refresh Easy UI; clearing browser cache usu
 
 The default is `verify_ssl` **`false`**, which skips verification of TaHoma’s self-signed certificate. That is appropriate for normal home use on a local network.
 
-If you set `verify_ssl` to **`true`**, you must install the Somfy root CA on the EISY or Polisy (SSH as root). Download:
-
-`https://ca.overkiz.com/overkiz-root-ca-2048.crt`
-
-On FreeBSD, copy the certificate into `/usr/local/share/certs/` (create the directory if needed), then run:
+If you set `verify_ssl` to **`true`**, you must install the [Somfy root CA][somfy-root-ca] on the EISY or Polisy (SSH as root). On FreeBSD, copy the certificate into `/usr/local/share/certs/` (create the directory if needed), then run:
 
 ```bash
 certctl rehash
@@ -298,6 +288,12 @@ We do not recommend enabling certificate verification unless you have a specific
 
 ## References
 
-- **README.md** — Overview and installation (in the NodeServer folder on GitHub/Gitea; not linked from Easy UI)
-- Somfy Developer Mode API: `https://github.com/Somfy-Developer/Somfy-TaHoma-Developer-Mode`
-- TaHoma documentation (Somfy Pro): `https://www.somfypro.com/tahomadocumentation`
+- [Project README][github-readme] — Overview and installation
+- [Somfy Developer Mode API][somfy-dev-mode]
+- [TaHoma documentation (Somfy Pro)][somfy-pro-docs]
+
+[somfy-root-ca]: https://ca.overkiz.com/overkiz-root-ca-2048.crt
+[somfy-scenes-issue]: https://github.com/Somfy-Developer/Somfy-TaHoma-Developer-Mode/issues/21
+[somfy-dev-mode]: https://github.com/Somfy-Developer/Somfy-TaHoma-Developer-Mode
+[somfy-pro-docs]: https://www.somfypro.com/tahomadocumentation
+[github-readme]: https://github.com/sejgit/udi-tahoma-pg3x/blob/main/README.md
