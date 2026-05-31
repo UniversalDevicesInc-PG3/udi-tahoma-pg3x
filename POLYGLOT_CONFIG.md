@@ -130,8 +130,6 @@ Change this only if cloud login fails with correct email/password — your regio
 
 ### Parameter reference
 
-(Bullet list — EISY/Polyglot uses basic markdown and does not render pipe tables.)
-
 - **`gateway_pin`** — Required. Default: `0000-0000-0000`. Example: `2001-0001-1891`
 - **`tahoma_token`** — Required. Default: 20 zeros. Example: token from TaHoma app
 - **`gateway_ip`** — Optional. Default: `gateway-0000-0000-0000.local` (ignored). Example: `192.168.1.100`
