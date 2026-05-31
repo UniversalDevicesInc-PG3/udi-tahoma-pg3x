@@ -27,12 +27,22 @@ This is a **TaHoma plugin**. Specific shade families (Phantom Blinds, io-homecon
 
 The plugin discovers whatever shades and scenarios exist on your TaHoma. How they appear in the ISY depends on the **protocol** reported by the gateway:
 
-| Application / protocol | Example products | Node type | Feedback |
-|------------------------|------------------|-----------|----------|
-| **RTS** (one-way radio) | **Phantom Blinds**, Somfy RTS rollers/awnings | **RTS Shade** | Commands + Last Command; no position or motion |
-| **io** (io-homecontrol) | Somfy RS100, many wired/two-way rollers | **Shade** | Position (and often tilt) when the gateway reports states |
-| **Zigbee** | TaHoma-paired Zigbee motors | **Shade** | Varies by device; position when reported |
-| **Other** | Less common TaHoma device types | **Shade** | Best-effort; capabilities learned at discovery |
+- **RTS** (one-way radio)
+  - Examples: **Phantom Blinds**, Somfy RTS rollers/awnings
+  - Node type: **RTS Shade**
+  - Feedback: Commands + Last Command; no position or motion
+- **io** (io-homecontrol)
+  - Examples: Somfy RS100, many wired/two-way rollers
+  - Node type: **Shade**
+  - Feedback: Position (and often tilt) when the gateway reports states
+- **Zigbee**
+  - Examples: TaHoma-paired Zigbee motors
+  - Node type: **Shade**
+  - Feedback: Varies by device; position when reported
+- **Other**
+  - Examples: Less common TaHoma device types
+  - Node type: **Shade**
+  - Feedback: Best-effort; capabilities learned at discovery
 
 ### Phantom Blinds (RTS application)
 
@@ -81,15 +91,13 @@ Before installing the NodeServer:
 
 All settings are entered in the Polyglot UI Configuration page (not a YAML file).
 
-| Parameter | Required | Default | Description |
-|-----------|----------|---------|-------------|
-| `gateway_pin` | Yes | `0000-0000-0000` | Your TaHoma PIN (`XXXX-XXXX-XXXX`) |
-| `tahoma_token` | Yes | (20 zeros) | Bearer token from Developer Mode |
-| `gateway_ip` | No | `gateway-0000-0000-0000.local` | Ignored by default; set IP if mDNS fails |
-| `verify_ssl` | No | `false` | See config doc for `true` |
-| `tahoma_cloud_email` | No | (empty) | Optional — TaHoma app login for scene Activate |
-| `tahoma_cloud_password` | No | (empty) | Optional — paired with cloud email |
-| `tahoma_cloud_region` | No | **`somfy_america`** | Somfy cloud hub (NA default) |
+- **`gateway_pin`** — Required. Default: `0000-0000-0000`. Your TaHoma PIN (`XXXX-XXXX-XXXX`)
+- **`tahoma_token`** — Required. Default: 20 zeros. Bearer token from Developer Mode
+- **`gateway_ip`** — Optional. Default: `gateway-0000-0000-0000.local` (ignored). Set IP if mDNS fails
+- **`verify_ssl`** — Optional. Default: `false`. See config doc for `true`
+- **`tahoma_cloud_email`** — Optional. Default: empty. TaHoma app login for scene Activate
+- **`tahoma_cloud_password`** — Optional. Default: empty. Paired with cloud email
+- **`tahoma_cloud_region`** — Optional. Default: **`somfy_america`**. Somfy cloud hub (NA default)
 
 Full setup steps and troubleshooting: **[POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md)**
 
