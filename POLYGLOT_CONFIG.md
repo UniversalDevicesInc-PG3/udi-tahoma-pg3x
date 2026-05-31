@@ -71,24 +71,44 @@ Whether to verify the TaHoma HTTPS certificate.
 
 Setting **`true`** is optional and only makes sense if you install the [Somfy root CA](https://ca.overkiz.com/overkiz-root-ca-2048.crt) on your **EISY or Polisy** so the system trusts that certificate. On FreeBSD (EISY/Polisy), that typically means copying the `.crt` file into the local trusted certs directory (for example `/usr/local/share/certs/`), then running `certctl rehash` as root over SSH. We do **not** recommend this for typical installations.
 
+## TaHoma app scenes (optional)
+
+**Shade control does not require Somfy cloud.** Only scene **Activate** may use cloud — and only if you choose to enter cloud credentials below.
+
+| What | Local API (LAN) | Somfy cloud |
+|------|-----------------|-------------|
+| Open / Close / Stop / My on shades | Yes — always | Never |
+| Discover scene node names | Yes — from gateway | No |
+| Scene **Activate** (run a TaHoma app scene) | Usually **no** — local API lists scenes but omits device commands | Yes — when you set cloud email/password |
+
+TaHoma app scenes (Morning, All Close, etc.) are stored **server-side** on Somfy’s cloud ([Somfy Developer Mode limitation](https://github.com/Somfy-Developer/Somfy-TaHoma-Developer-Mode/issues/21)). The NodeServer still discovers them as **Scenario** nodes so you can use them in ISY programs — but **Activate** contacts `tahomalink.com` only when optional cloud credentials are configured.
+
+**You can leave all cloud fields empty.** Scene nodes may appear after Discover; **Activate** is a no-op and **Last Command** stays unchanged. No errors, no cloud contact.
+
+To enable scene Activate:
+
+1. Enter the same email and password you use in the **TaHoma by Somfy** mobile app.
+2. Set `tahoma_cloud_region` if login fails (see region table below).
+3. Restart the NodeServer after saving configuration.
+
 #### `tahoma_cloud_email` / `tahoma_cloud_password`
 
-Optional. **Required for scene Activate** if your log shows `no device actions on local API`.
+Optional. Same TaHoma app login. Stored in Polyglot on your ISY/EISY like other custom parameters.
 
-TaHoma **app scenes** (Morning, All Close, etc.) are stored server-side. The local Developer Mode API lists scene names but usually does **not** include the per-shade commands needed to run them locally. Individual shade commands still use the local API; only **Activate** on scene nodes uses Somfy cloud when these fields are set.
-
-- Use the same email and password you sign in with in the **TaHoma by Somfy** mobile app
-- Stored in Polyglot configuration on your ISY/EISY (same as other custom parameters)
-- Shade control remains local; only scene activation contacts `tahomalink.com`
+- **Default:** empty (shades only — recommended if you do not use ISY scene Activate)
+- **When set:** scene Activate runs via Somfy cloud; shades still use the local API only
 
 #### `tahoma_cloud_region`
 
-Somfy cloud hub for your account (must match where you registered in the TaHoma app).
+Somfy cloud hub for your account. **Default: `somfy_america` (North America).**
 
-- **Default:** `somfy_america`
-- **Other values:** `somfy_europe`, `somfy_oceania`
-- Legacy display names also work: `Somfy (North America)`, `Somfy (Europe)`, `Somfy (Oceania)`
-- Only needed if cloud login fails with bad credentials despite correct email/password
+| Polyglot value (recommended) | Also accepted | Region |
+|------------------------------|---------------|--------|
+| **`somfy_america`** | `Somfy (North America)`, `north america` | United States, Canada, and other NA accounts |
+| `somfy_europe` | `Somfy (Europe)`, `europe` | Europe, UK, and other EU accounts |
+| `somfy_oceania` | `Somfy (Oceania)`, `oceania` | Australia, New Zealand, and other Oceania accounts |
+
+Change this only if cloud login fails with correct email/password — your region must match where you registered in the TaHoma app.
 
 ### Reference table
 
@@ -98,9 +118,9 @@ Somfy cloud hub for your account (must match where you registered in the TaHoma 
 | `tahoma_token` | Yes | (20 zeros) | (token from app) |
 | `gateway_ip` | No | `gateway-0000-0000-0000.local` (ignored) | `192.168.1.100` |
 | `verify_ssl` | No | `false` | `false` |
-| `tahoma_cloud_email` | For scenes | (empty) | your TaHoma app login email |
-| `tahoma_cloud_password` | For scenes | (empty) | your TaHoma app password |
-| `tahoma_cloud_region` | No | `somfy_america` | `somfy_europe` |
+| `tahoma_cloud_email` | No | (empty) | your TaHoma app login email |
+| `tahoma_cloud_password` | No | (empty) | your TaHoma app password |
+| `tahoma_cloud_region` | No | **`somfy_america`** | `somfy_europe` |
 
 ## TaHoma setup
 
@@ -119,10 +139,11 @@ If you lose the token, generate a new one in Developer Mode.
 1. Enter `gateway_pin` and `tahoma_token` (replace the placeholder defaults).
 2. Leave `gateway_ip` at the default unless mDNS to `gateway-{pin}.local` fails; if you set an IP, use a static/reserved address on the TaHoma.
 3. Leave `verify_ssl` at `false` unless you have installed the Somfy root CA on the EISY/Polisy.
-4. Click **Save**.
-5. Start the NodeServer and check the log for successful authentication.
-6. Run **Discover** on the controller node in the Admin Console.
-7. Test Open/Close on a shade node.
+4. **Optional:** add cloud credentials only if you want ISY **Activate** on TaHoma app scenes (see [TaHoma app scenes (optional)](#tahoma-app-scenes-optional)).
+5. Click **Save**.
+6. Start the NodeServer and check the log for successful authentication.
+7. Run **Discover** on the controller node in the Admin Console.
+8. Test Open/Close on a shade node.
 
 ### Network
 
@@ -210,6 +231,18 @@ RTS devices are discovered as **RTS Shade** nodes (Id, Battery, **Last Command**
 **Important:** On RTS, the blind often stops moving long before **Last Command** shows **Completed**. The TaHoma gateway may keep the execution in a pending state for up to about a minute while its internal timers run — this is normal gateway behavior, not a stuck motor. **Completed** means the gateway finished processing the command, not that the shade reached a specific position.
 
 Use **Last Command** in ISY programs (e.g. notify on **Failed**, or proceed when **Completed**). The startup success notice in Polyglot clears automatically after 30 seconds.
+
+### Scene Activate (optional, cloud-only)
+
+Scene nodes list TaHoma app scenes from your gateway. **Activate** is optional and usually runs on Somfy cloud — not over the local Developer Mode API. Leave `tahoma_cloud_email` and `tahoma_cloud_password` empty if you only control individual shades.
+
+| Symptom | Likely cause |
+|---------|----------------|
+| Scene nodes appear but Activate does nothing | Cloud credentials not set — expected if you chose shades-only |
+| Activate fails; log mentions cloud region | Wrong `tahoma_cloud_region` for your TaHoma account |
+| Activate fails after setting credentials | Check email/password; try `somfy_europe` vs `somfy_america` |
+
+See [TaHoma app scenes (optional)](#tahoma-app-scenes-optional) for the full region table.
 
 ### SSL certificate errors
 

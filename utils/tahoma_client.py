@@ -192,7 +192,6 @@ class TaHomaClient:
         self._action_groups_by_oid: dict[str, dict] = {}
 
         # Build server config for local API
-        # Use IP address if provided, otherwise use hostname
         if gateway_ip:
             endpoint = f"https://{gateway_ip}:8443/enduser-mobile-web/1/enduserAPI/"
         else:
@@ -204,6 +203,11 @@ class TaHomaClient:
             manufacturer="Somfy",
             configuration_url=None,
         )
+
+    @property
+    def cloud_scenes_configured(self) -> bool:
+        """True when optional Somfy cloud credentials are set for scene Activate."""
+        return bool(self.cloud_email and self.cloud_password)
 
     @property
     def gateway_target(self) -> str:
@@ -254,7 +258,7 @@ class TaHomaClient:
             self._connected = True
             if self.cloud_email and self.cloud_password:
                 LOGGER.info(
-                    "Somfy cloud credentials configured for scene Activate (%s)",
+                    "Optional Somfy cloud credentials configured for scene Activate (%s)",
                     cloud_server_label(
                         resolve_cloud_server_key(self.cloud_region) or self.cloud_region
                     ),
@@ -418,31 +422,45 @@ class TaHomaClient:
                     len(skipped),
                     ", ".join(skipped),
                 )
+            local_action_count = 0
+            cloud_only_count = 0
             for scenario in scenarios:
                 group = self._action_groups_by_oid.get(scenario.oid, {})
                 action_count = len(extract_action_group_actions(group))
                 if action_count:
-                    LOGGER.info(
+                    local_action_count += 1
+                    LOGGER.debug(
                         "Scenario %s: %d device action(s) available locally",
                         scenario.label,
                         action_count,
                     )
                 else:
-                    if self.cloud_email and self.cloud_password:
-                        LOGGER.info(
-                            "Scenario %s: no local actions; Activate will use Somfy cloud (%s)",
-                            scenario.label,
-                            cloud_server_label(
-                                resolve_cloud_server_key(self.cloud_region)
-                                or self.cloud_region
-                            ),
-                        )
-                    else:
-                        LOGGER.warning(
-                            "Scenario %s: no device actions on local API "
-                            "(Activate requires tahoma_cloud_email/password)",
-                            scenario.label,
-                        )
+                    cloud_only_count += 1
+                    LOGGER.debug(
+                        "Scenario %s: no local actions (Activate uses Somfy cloud when configured)",
+                        scenario.label,
+                    )
+            if scenarios:
+                if self.cloud_scenes_configured:
+                    region_label = cloud_server_label(
+                        resolve_cloud_server_key(self.cloud_region)
+                        or self.cloud_region
+                    )
+                    LOGGER.info(
+                        "Discovered %d TaHoma app scene(s): %d runnable locally, "
+                        "%d via Somfy cloud (%s) when you Activate",
+                        len(scenarios),
+                        local_action_count,
+                        cloud_only_count,
+                        region_label,
+                    )
+                else:
+                    LOGGER.info(
+                        "Discovered %d TaHoma app scene node(s). Scene Activate is "
+                        "optional and cloud-only — leave tahoma_cloud_email/password "
+                        "empty to use shade control only (no Somfy cloud contact)",
+                        len(scenarios),
+                    )
             LOGGER.info(f"Retrieved {len(scenarios)} scenarios from TaHoma")
             return scenarios
         except Exception as e:
@@ -576,14 +594,21 @@ class TaHomaClient:
         return self._cloud_client
 
     async def _execute_scenario_via_cloud(self, scenario_oid: str) -> Optional[str]:
-        """Run a TaHoma app scene via Somfy cloud exec/{oid}."""
+        """Run a TaHoma app scene via Somfy cloud exec/{oid} (optional cloud path)."""
+        if not self.cloud_scenes_configured:
+            LOGGER.info(
+                "Scenario %s not activated — Somfy cloud credentials not configured "
+                "(optional; shade control is unaffected)",
+                scenario_oid,
+            )
+            return None
+
         try:
             cloud = await self._get_cloud_client()
             if not cloud:
                 LOGGER.error(
-                    "Scenario %s cannot run locally (no action details). "
-                    "Set tahoma_cloud_email and tahoma_cloud_password in Polyglot "
-                    "configuration — TaHoma app scenes are executed server-side.",
+                    "Scenario %s cannot activate — check tahoma_cloud_region "
+                    "(default somfy_america) and cloud login credentials",
                     scenario_oid,
                 )
                 return None
@@ -605,11 +630,12 @@ class TaHomaClient:
             return None
 
     async def execute_scenario(self, scenario_oid: str) -> Optional[str]:
-        """Execute a TaHoma app scene.
+        """Execute a TaHoma app scene (optional; cloud fallback when needed).
 
-        Local Developer Mode lists scenes but usually omits their device actions.
-        When actions are available locally, run exec/apply. Otherwise fall back to
-        Somfy cloud exec/{oid} when cloud credentials are configured.
+        Shade commands always use the local Developer Mode API. TaHoma **app scenes**
+        are usually stored server-side: the local API lists names but not device
+        actions. When local actions exist, run exec/apply. Otherwise use Somfy
+        cloud exec/{oid} only if tahoma_cloud_email/password are configured.
 
         Args:
             scenario_oid: Scenario OID

@@ -422,3 +422,14 @@ def test_resolve_cloud_server_key_accepts_pyoverkiz_and_display_names():
     assert resolve_cloud_server_key("somfy_europe") == "somfy_europe"
     assert resolve_cloud_server_key("Somfy (Europe)") == "somfy_europe"
     assert resolve_cloud_server_key("invalid") is None
+
+
+def test_cloud_scenes_configured():
+    assert not TaHomaClient(token="t", gateway_pin="1234-5678-9012").cloud_scenes_configured
+    client = TaHomaClient(
+        token="t",
+        gateway_pin="1234-5678-9012",
+        cloud_email="user@example.com",
+        cloud_password="secret",
+    )
+    assert client.cloud_scenes_configured
