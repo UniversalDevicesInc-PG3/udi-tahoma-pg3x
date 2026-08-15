@@ -5,6 +5,7 @@ See `udi-tahoma-pg3x` for in-code release notes.
 ## 0.0.23
 
 - **Fix intermittent discovery failure**: TaHoma `setup/devices` sometimes returns partial records missing `controllableName`, `definition`, or `type`. pyoverkiz then raises `TypeError` and discovery aborts even though the gateway is online. Device fetch now uses a tolerant parser (same pattern as scenario `actionGroups`) that fills defaults and logs skipped records instead of failing startup.
+- **Dependency security updates**: pin runtime floors in `requirements.txt` and refresh `Pipfile.lock` — `aiohttp>=3.13.4`, `requests>=2.33.0`, `pyasn1>=0.6.2`, `pyoverkiz>=1.13.0,<2.0.0` (cap 1.x API used by this plugin), plus dev lockfile bumps for urllib3, virtualenv, and filelock to clear Dependabot alerts.
 
 ## 0.0.22
 

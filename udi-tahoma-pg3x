@@ -29,6 +29,7 @@ VERSION = "0.0.23"
 """
 0.0.23
 - Fix discovery when TaHoma setup/devices returns partial records (missing controllableName/definition/type) — tolerant parser skips bad entries instead of aborting all devices
+- Dependency security updates: aiohttp>=3.13.4, requests>=2.33.0, pyasn1>=0.6.2, pyoverkiz>=1.13.0,<2.0.0; refresh Pipfile.lock (urllib3, virtualenv, filelock dev bumps)
 
 0.0.22
 - Fix EISY Easy UI profile sync: profile/version.txt, nodedef/NLS alignment (UPDATE_PROFILE, scene ACTIVATE in sends, ctl NLS keys), explicit editor subsets
