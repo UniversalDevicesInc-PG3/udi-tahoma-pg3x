@@ -10,6 +10,7 @@ import asyncio
 import ssl
 from typing import Optional, List, Any
 
+import humps
 from pyoverkiz.client import OverkizClient
 from pyoverkiz.const import OverkizServer, SUPPORTED_SERVERS  # type: ignore[attr-defined]
 from pyoverkiz.models import Command, Device, Event
@@ -125,6 +126,69 @@ def is_transient_connection_error(exc: BaseException) -> bool:
         return True
     message = str(exc).lower()
     return "timeout" in message or "connection" in message
+
+
+def normalize_device_record(record: dict[str, Any]) -> Optional[dict[str, Any]]:
+    """Fill missing pyoverkiz Device fields from partial gateway records."""
+    data = humps.decamelize(record)
+    if not isinstance(data, dict):
+        return None
+
+    device_url = data.get("device_url")
+    if not device_url:
+        return None
+
+    if data.get("label") is None:
+        data["label"] = device_url
+
+    if data.get("available") is None:
+        data["available"] = True
+    if data.get("enabled") is None:
+        data["enabled"] = True
+
+    if not data.get("controllable_name"):
+        data["controllable_name"] = ""
+
+    if not isinstance(data.get("definition"), dict):
+        data["definition"] = {"commands": [], "states": []}
+
+    if data.get("type") is None:
+        data["type"] = 0
+
+    return data
+
+
+def parse_device_records(raw: Any) -> list[Device]:
+    """Parse setup/devices JSON, skipping records pyoverkiz cannot model."""
+    if not isinstance(raw, list):
+        return []
+
+    devices: list[Device] = []
+    skipped: list[str] = []
+
+    for record in raw:
+        if not isinstance(record, dict):
+            continue
+
+        data = normalize_device_record(record)
+        if data is None:
+            skipped.append(str(record.get("deviceURL") or record.get("device_url") or record))
+            continue
+
+        try:
+            devices.append(Device(**data))
+        except Exception as exc:
+            label = data.get("label") or data.get("device_url")
+            skipped.append(f"{label} ({exc})")
+
+    if skipped:
+        LOGGER.warning(
+            "Skipped %d incomplete device record(s) from TaHoma setup/devices: %s",
+            len(skipped),
+            "; ".join(skipped),
+        )
+
+    return devices
 
 
 def is_ssl_verification_error(exc: BaseException) -> bool:
@@ -355,8 +419,25 @@ class TaHomaClient:
         await self.disconnect()
         return await self.connect()
 
+    async def _fetch_setup_devices(self) -> list:
+        """Fetch raw setup/devices JSON from the gateway."""
+        if not self.client:
+            raise RuntimeError("Not connected to TaHoma")
+
+        fetch = getattr(self.client, "_OverkizClient__get", None)
+        if fetch is None:
+            raise RuntimeError("pyoverkiz client cannot fetch setup/devices")
+
+        result = await fetch("setup/devices")
+        if isinstance(result, list):
+            return result
+        return []
+
     async def get_devices(self) -> List[Device]:
         """Get all devices from TaHoma.
+
+        Uses a tolerant parser because the gateway sometimes returns partial
+        device records that break pyoverkiz's strict ``Device(**d)`` parsing.
 
         Returns:
             List of Device objects
@@ -365,7 +446,9 @@ class TaHomaClient:
             raise RuntimeError("Not connected to TaHoma")
 
         try:
-            devices = await self.client.get_devices()
+            raw = await self._fetch_setup_devices()
+            devices = parse_device_records(raw)
+            self.client.devices = devices
             LOGGER.info(f"Retrieved {len(devices)} devices from TaHoma")
             return devices
         except Exception as e:

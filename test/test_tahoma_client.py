@@ -14,6 +14,8 @@ from utils.tahoma_client import (
     create_tahoma_client,
     is_ssl_verification_error,
     is_transient_connection_error,
+    normalize_device_record,
+    parse_device_records,
     resolve_cloud_server_key,
 )
 
@@ -65,16 +67,22 @@ async def test_tahoma_client_get_devices(mock_overkiz_client):
     """Test getting devices from TaHoma."""
     mock_class, mock_instance = mock_overkiz_client
 
-    # Setup mock devices
-    mock_device = Mock()
-    mock_device.device_url = "io://1234-5678-9012/12345678"
-    mock_device.label = "Test Shade"
-    mock_instance.get_devices.return_value = [mock_device]
-
     client = TaHomaClient(token="test-token", gateway_pin="1234-5678-9012")
     await client.connect()
 
-    devices = await client.get_devices()
+    raw_device = {
+        "deviceURL": "io://1234-5678-9012/12345678",
+        "label": "Test Shade",
+        "available": True,
+        "enabled": True,
+        "controllableName": "io:RollerShutterGenericIOComponent",
+        "definition": {"commands": [], "states": []},
+        "type": 1,
+    }
+    with patch.object(
+        client, "_fetch_setup_devices", new=AsyncMock(return_value=[raw_device])
+    ):
+        devices = await client.get_devices()
 
     assert len(devices) == 1
     assert devices[0].device_url == "io://1234-5678-9012/12345678"
@@ -414,6 +422,38 @@ async def test_execute_scenario_cloud_fallback_when_no_local_actions(mock_overki
     assert exec_id == "cloud-exec-1"
     assert client.last_scenario_via_cloud is True
     cloud_exec.assert_called_once_with("1234567890")
+
+
+def test_parse_device_records_skips_partial_records():
+    """Partial gateway records should not abort discovery for all devices."""
+    good = {
+        "deviceURL": "rts://2075-3852-5398/16758638",
+        "label": "North Lite",
+        "available": True,
+        "enabled": True,
+        "controllableName": "rts:ExteriorBlindRTSComponent",
+        "definition": {"commands": [], "states": []},
+        "type": 1,
+        "uiClass": "ExteriorScreen",
+        "widget": "UpDownExteriorScreen",
+    }
+    partial = {
+        "deviceURL": "internal://2075-3852-5398/pod/0",
+        "label": "Pod",
+        "available": True,
+        "enabled": True,
+    }
+
+    devices = parse_device_records([good, partial])
+
+    assert len(devices) == 2
+    assert devices[0].device_url == "rts://2075-3852-5398/16758638"
+    assert devices[1].device_url == "internal://2075-3852-5398/pod/0"
+    assert devices[1].controllable_name == ""
+
+
+def test_normalize_device_record_requires_device_url():
+    assert normalize_device_record({"label": "No URL"}) is None
 
 
 def test_resolve_cloud_server_key_accepts_pyoverkiz_and_display_names():

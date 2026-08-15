@@ -2,6 +2,10 @@
 
 See `udi-tahoma-pg3x` for in-code release notes.
 
+## 0.0.23
+
+- **Fix intermittent discovery failure**: TaHoma `setup/devices` sometimes returns partial records missing `controllableName`, `definition`, or `type`. pyoverkiz then raises `TypeError` and discovery aborts even though the gateway is online. Device fetch now uses a tolerant parser (same pattern as scenario `actionGroups`) that fills defaults and logs skipped records instead of failing startup.
+
 ## 0.0.22
 
 - **Fix EISY Easy UI profile errors**: add `profile/version.txt`; align nodedefs with Python commands (`UPDATE_PROFILE` on controller, `ACTIVATE` in scene sends); fix controller NLS keys (`ST-ctl-*`); explicit editor subsets; remove unused debug editor/NLS
