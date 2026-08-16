@@ -5,6 +5,9 @@ NodeServer for Universal Devices **EISY** or **Polisy** (Polyglot V3) that contr
 
 This is a **TaHoma plugin**. Specific shade families (Phantom Blinds, io-homecontrol rollers, Zigbee motors, and others) are supported as **applications** on top of the same gateway connection — see [Applications](#applications) below.
 
+Users also report compatibility with the Somfy Beecon, though I cannot guarantee
+with all features.
+
 ## Requirements
 
 - Universal Devices **EISY** or **Polisy** with Polyglot V3 (PG3x)
