@@ -14,7 +14,7 @@ NODEDEFS = PROFILE / "nodedef" / "nodedefs.xml"
 NLS = PROFILE / "nls" / "en_us.txt"
 EDITORS = PROFILE / "editor" / "editors.xml"
 VERSION_FILE = PROFILE / "version.txt"
-ENTRY = ROOT / "udi-tahoma-pg3x"
+ENTRY = ROOT / "udi-tahoma-pg3x.py"
 
 NODE_COMMANDS = {
     "hdctrl": {"QUERY", "DISCOVER", "UPDATE_PROFILE", "REMOVE_NOTICES_ALL"},
@@ -67,7 +67,7 @@ def _editor_ids() -> set[str]:
 def _entry_version() -> str:
     text = ENTRY.read_text()
     match = re.search(r'^VERSION = "([^"]+)"', text, re.MULTILINE)
-    assert match, "VERSION not found in udi-tahoma-pg3x"
+    assert match, "VERSION not found in udi-tahoma-pg3x.py"
     return match.group(1)
 
 

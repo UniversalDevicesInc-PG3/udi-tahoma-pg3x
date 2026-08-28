@@ -2,7 +2,7 @@
     "name": "Somfy TaHoma",
     "docs": "https://github.com/UniversalDevicesInc-PG3/udi-tahoma-pg3x",
     "type": "python3",
-    "executable": "udi-tahoma-pg3x",
+    "executable": "udi-tahoma-pg3x.py",
     "install": "install.sh",
     "description": "Somfy TaHoma gateway integration for shades and scenarios on EISY/Polisy.",
     "shortPoll": "60",
