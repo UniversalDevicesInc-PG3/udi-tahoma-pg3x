@@ -1,8 +1,9 @@
 
-NAME = Virtual
+NAME = TaHoma
+ENTRY = udi-tahoma-pg3x
 XML_FILES = profile/*/*.xml
 
-.PHONY: all check clean format fulltest install lint test coverage coverage-html coverage-report zip
+.PHONY: all check clean format fulltest install lint test coverage coverage-html coverage-report zip sync-version
 
 all: lint test
 
@@ -47,3 +48,6 @@ coverage-report: coverage-html
 
 fulltest:
 	pipenv run pre-commit run --all-files
+
+sync-version:
+	pipenv run python scripts/sync_version.py --entry $(ENTRY)

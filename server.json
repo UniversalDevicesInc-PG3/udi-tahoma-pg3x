@@ -1,0 +1,30 @@
+{
+    "name": "Somfy TaHoma",
+    "docs": "https://github.com/UniversalDevicesInc-PG3/udi-tahoma-pg3x",
+    "type": "python3",
+    "executable": "udi-tahoma-pg3x",
+    "install": "install.sh",
+    "description": "Somfy TaHoma gateway integration for shades and scenarios on EISY/Polisy.",
+    "shortPoll": "60",
+    "longPoll": "300",
+    "logLevel": "INFO",
+    "customParams": {
+        "gateway_pin": "0000-0000-0000",
+        "tahoma_token": "",
+        "gateway_ip": "gateway-0000-0000-0000.local",
+        "verify_ssl": "false",
+        "tahoma_cloud_email": "",
+        "tahoma_cloud_password": "",
+        "tahoma_cloud_region": "somfy_america"
+    },
+    "credits": [
+        {
+            "title": "Somfy TaHoma NodeServer",
+            "author": "Stephen Jenkins",
+            "version": "0.0.23",
+            "date": "August 2026",
+            "source": "https://github.com/UniversalDevicesInc-PG3/udi-tahoma-pg3x",
+            "license": "https://github.com/UniversalDevicesInc-PG3/udi-tahoma-pg3x/blob/main/LICENSE"
+        }
+    ]
+}
