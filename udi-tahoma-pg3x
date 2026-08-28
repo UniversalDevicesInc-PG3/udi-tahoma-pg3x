@@ -1,169 +1,33 @@
 #!/usr/bin/env python3
-"""
-This is a Plugin/NodeServer for Polyglot v3 written in Python3
-modified from v3 template version by (Bob Paauwe) bpaauwe@yahoo.com
-Refactored and improved from a PG2 plugin originally by Mark Vittes and
-updated to PG3 by Bob Paauwe
-It is a Somfy TaHoma NodeServer plugin for controlling shades and scenarios
-(RTS, io, Zigbee, and other TaHoma applications) on Polyglot for EISY/Polisy.
-Phantom Blinds (RTS) is the primary application this project was built for.
+"""Somfy TaHoma NodeServer for Polyglot V3 on EISY/Polisy.
 
-udi-tahoma-pg3x NodeServer/Plugin for EISY/Polisy (TaHoma plugin)
+Controls shades and scenarios (RTS, io, Zigbee, and other TaHoma applications).
+Phantom Blinds (RTS) is the primary application this project was built for.
 
 (C) 2025 Stephen Jenkins
 
+Version history: see VersionHistory.md
 """
 
-# std libraries
 import sys
 
-# external libraries
 import udi_interface
 
-# nodes
 from nodes import Controller
 
-LOGGER = udi_interface.LOGGER
-
 VERSION = "0.0.23"
-"""
-0.0.23
-- Fix discovery when TaHoma setup/devices returns partial records (missing controllableName/definition/type) — tolerant parser skips bad entries instead of aborting all devices
-- Dependency security updates: aiohttp>=3.13.4, requests>=2.33.0, pyasn1>=0.6.2, pyoverkiz>=1.13.0,<2.0.0; refresh Pipfile.lock (urllib3, virtualenv, filelock dev bumps)
-
-0.0.22
-- Fix EISY Easy UI profile sync: profile/version.txt, nodedef/NLS alignment (UPDATE_PROFILE, scene ACTIVATE in sends, ctl NLS keys), explicit editor subsets
-
-0.0.21
-- Docs: bullet lists instead of pipe tables for EISY/Polyglot basic markdown renderer
-
-0.0.20
-- Clarify optional cloud-only TaHoma app scenes in docs and logs; empty cloud creds OK; no GV7 Failed when Activate skipped; region table with somfy_america default
-
-0.0.19
-- Fix cloud region keys: map somfy_america/somfy_europe/somfy_oceania and legacy Somfy (North America) display names for pyoverkiz SUPPORTED_SERVERS lookup
-
-0.0.18
-- Fix Somfy cloud scene Activate: import SUPPORTED_SERVERS (v0.0.17 NameError blocked cloud fallback); separate cloud HTTP session; optional tahoma_cloud_region (default somfy_america)
-
-0.0.17
-- Scene Activate: local actionGroups omit device commands; optional Somfy cloud credentials run TaHoma app scenes via exec/{oid}; try GET actionGroups/{oid} when list has no actions
-
-0.0.16
-- Scene Activate: use exec/apply with actionGroup actions (local Developer Mode API does not run persisted scenes via exec/{oid})
-
-0.0.15
-- Scene Activate Last Command: ignore spurious FAILED on scenario parent exec (TaHoma local API quirk); mark Completed ~5s after successful Activate
-
-0.0.14
-- Fix stale node cleanup crash: use Custom.delete() instead of del for custom data keys
-
-0.0.13
-- Remove stale scene/shade nodes from Polyglot DB during discovery cleanup (fixes orphan UUID scenes after v0.0.12)
-
-0.0.12
-- Skip unnamed actionGroups during scenario discovery (orphan/system records with no TaHoma label)
-
-0.0.11
-- Fix scene node addresses exceeding Polyglot 14-character limit (startup lockup)
-- Scene OID persisted in custom data; addNode wait timeout prevents infinite hang
-
-0.0.10
-- TaHoma scenario discovery via raw actionGroups API (fixes pyoverkiz model mismatch)
-- Scenario nodes: Activate plus Last Command (GV7), matching RTS shade feedback
-
-0.0.9
-- Startup connect retries with backoff (up to 10 min); health check and auto-reconnect while running
-
-0.0.8
-- TaHoma plugin branding: controller name TaHoma Controller; Applications docs (RTS/io/Zigbee)
-- Phantom Blinds documented as primary RTS application
-- Entry script renamed to udi-tahoma-pg3x (fresh Polyglot install required)
-
-0.0.7
-- Dedicated RTS Shade nodedef (Id, Battery, Last Command; Open/Close/Stop/MY only)
-- Startup success notice auto-clears after 30 seconds
-- User docs for RTS Last Command delay (TaHoma gateway timer)
-
-0.0.6
-- Shade GV7 Last Command driver (— / Pending / Completed / Failed) from TaHoma exec status
-- Execution events logged at INFO; poll fallback via get_current_execution
-
-0.0.5
-- Preserve config placeholder notice during startup; show success notice after discovery
-- Clearer Polyglot notice when TaHoma gateway is unreachable (offline/starting)
-
-0.0.4
-- Fix shade discovery when gateway returns CommandDefinition lists (EISY/pyoverkiz)
-- Default tahoma_token placeholder shortened to 20 zeros
-
-0.0.3
-- User docs consolidated to README.md and POLYGLOT_CONFIG.md; removed redundant install/YAML docs
-- Trimmed Somfy/ to developer reference; removed obsolete archive and PowerView-era API docs
-- Removed use_local_api parameter; default verify_ssl to false; clearer SSL verification errors
-- Dropped ISY994 and ISY Access references from user documentation
-- Polyglot placeholder defaults for gateway_pin, tahoma_token, and gateway_ip; ignored until user configures
-
-0.0.2
-- Generic full-UI shade nodes for all discovered blinds (field feedback refines behavior)
-- DeviceProfile from TaHoma discovery (protocol, commands, states); INFO summary per device
-- RTS: battery N/A (hardwired), position axes N/A when no feedback; SETPOS warns if unsupported
-- Skip gateway devices (Pod, WiFi, Zigbee transceiver) during discovery
-- Fix battery profile editor (255 = N/A Hardwired); GV5 labeled Protocol in NLS
-- Shade updateData/state sync fixes; discovery cleanup no longer drops controller node
-- Scene: guard missing controller attrs; replace removed updateAllFromServer call
-
-0.0.1
-NOTE set-up of repo
-
-previous updates:
-see VersionHistory.md
-
-"""
 
 if __name__ == "__main__":
     polyglot = None
     try:
-        """
-        Instantiates the Interface to Polyglot.
-
-        * Optionally pass list of class names
-          - PG2 had the controller node name here
-        """
         polyglot = udi_interface.Interface([])
-        """
-        Starts MQTT and connects to Polyglot.
-        """
         polyglot.start(VERSION)
-        polyglot.updateProfile()
-
-        """
-        Creates the Controller Node and passes in the Interface, the node's
-        parent address, node's address, and name/title
-
-        * address, parent address, and name/title are new for Polyglot
-          version 3
-        * use 'controller' for both parent and address and PG3 will be able
-          to automatically update node server status
-        """
-        control = Controller(
-            polyglot, "controller", "controller", "TaHoma Controller"
-        )
-
-        """
-        Sits around and does nothing forever, keeping your program running.
-
-        * runForever() moved from controller class to interface class in
-          Polyglot version 3
-        """
+        Controller(polyglot, "controller", "controller", "TaHoma Controller")
         polyglot.runForever()
     except (KeyboardInterrupt, SystemExit):
-        LOGGER.warning("Received interrupt or exit...")
-        """
-        Catch SIGTERM or Control-C and exit cleanly.
-        """
+        udi_interface.LOGGER.warning("Received interrupt or exit...")
         if polyglot is not None:
             polyglot.stop()
-    except Exception as err:
-        LOGGER.error(f"Excption: {err}", exc_info=True)
+    except Exception:
+        udi_interface.LOGGER.error("Fatal error starting plugin", exc_info=True)
     sys.exit(0)
