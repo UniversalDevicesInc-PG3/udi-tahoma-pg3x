@@ -1370,10 +1370,12 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "pre-commit" },
-    { name = "pyright", extra = ["nodejs"] },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
+]
+lint = [
+    { name = "pyright", extra = ["nodejs"] },
     { name = "ruff" },
 ]
 
@@ -1390,10 +1392,12 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "pre-commit" },
-    { name = "pyright", extras = ["nodejs"] },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
+]
+lint = [
+    { name = "pyright", extras = ["nodejs"] },
     { name = "ruff" },
 ]
 
