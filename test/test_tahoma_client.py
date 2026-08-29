@@ -146,7 +146,7 @@ async def test_tahoma_client_execute_scenario(mock_overkiz_client):
                 "actions": [
                     {
                         "deviceURL": "rts://1234-5678-9012/1",
-                        "commands": [{"name": "my", "parameters": []}],
+                        "commands": [{"name": "my", "parameters": [0]}],
                     }
                 ],
             }
@@ -164,7 +164,7 @@ async def test_tahoma_client_execute_scenario(mock_overkiz_client):
             "actions": [
                 {
                     "deviceURL": "rts://1234-5678-9012/1",
-                    "commands": [{"name": "my", "parameters": []}],
+                    "commands": [{"name": "my", "parameters": [0]}],
                 }
             ],
         },
