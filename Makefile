@@ -3,7 +3,7 @@ NAME = TaHoma
 ENTRY = udi-tahoma-pg3x.py
 XML_FILES = profile/*/*.xml
 
-.PHONY: all check clean format fulltest install lint test coverage coverage-html coverage-report zip sync-version
+.PHONY: all check clean format fulltest install install-eisy lint test coverage coverage-html coverage-report zip sync-version
 
 all: lint test
 
@@ -12,6 +12,9 @@ check:
 	xmllint --noout profile/nodedef/nodedefs.xml profile/editor/editors.xml
 
 install:
+	uv sync --dev --group lint
+
+install-eisy:
 	uv sync --dev
 
 lint:
