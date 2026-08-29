@@ -133,7 +133,7 @@ Enable debug logging in Polyglot for detailed diagnostics. Check the NodeServer 
 ## Documentation
 
 - **[POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md)** — Configuration, applications, TaHoma setup, troubleshooting
-- **[VersionHistory.md](VersionHistory.md)** — Release notes
+- **[CHANGELOG.md](CHANGELOG.md)** — Release notes
 
 ## Support
 

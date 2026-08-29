@@ -1,6 +1,6 @@
-# Version History
+# Changelog
 
-See `udi-tahoma-pg3x.py` for in-code release notes.
+
 
 ## 0.0.23
 

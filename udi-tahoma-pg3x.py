@@ -6,7 +6,7 @@ Phantom Blinds (RTS) is the primary application this project was built for.
 
 (C) 2025 Stephen Jenkins
 
-Version history: see VersionHistory.md
+Version history: see CHANGELOG.md
 """
 
 import sys
