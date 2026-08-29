@@ -354,6 +354,11 @@ class Controller(Node):
         self._last_gateway_ok = time.monotonic()
         self.eventTimer = 0
 
+    def _clear_gateway_error(self):
+        """Clear gateway error notice and restore Connected status."""
+        self.Notices.delete("error")
+        self.setDriver("ST", 1, report=True, force=True)
+
     async def _connect_with_backoff(self) -> bool:
         """Connect to TaHoma with exponential backoff (auth errors fail immediately)."""
         if not self.tahoma_client:
@@ -413,6 +418,8 @@ class Controller(Node):
                 if self.tahoma_client.is_connected:
                     if await self.tahoma_client.check_health():
                         self._mark_gateway_ok()
+                        if "error" in self.Notices:
+                            self._clear_gateway_error()
                         return True
 
                 LOGGER.warning("TaHoma gateway health check failed — reconnecting")
@@ -421,7 +428,7 @@ class Controller(Node):
                     "Open the TaHoma app if this persists."
                 )
                 if await self.tahoma_client.reconnect():
-                    self.Notices.delete("error")
+                    self._clear_gateway_error()
                     self._mark_gateway_ok()
                     LOGGER.info("TaHoma gateway reconnected")
                     await self.discover()

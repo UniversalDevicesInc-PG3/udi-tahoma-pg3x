@@ -2,6 +2,15 @@
 
 
 
+## 0.0.24
+
+- **Clear server error sooner when the TaHoma gateway recovers**: auto-reconnect restores controller Connection status (ST=1) and clears the Polyglot error notice without a NodeServer restart
+- **PG3 store manifest** (`server.json`) with executable `udi-tahoma-pg3x.py` — use **Update** from the store (validated on beta)
+- **Rename entry script** from `udi-tahoma-pg3x` (no extension) to `udi-tahoma-pg3x.py`
+- **Standard bootstrap** (error handling; version in `VERSION` / `profile/version.txt` / `server.json`)
+- **Rename** `VersionHistory.md` to `CHANGELOG.md` (template standard)
+- **Developer toolchain**: uv, pytest profile sync test, Makefile, CONTRIBUTING (runtime install unchanged: `install.sh` + `requirements.txt`)
+
 ## 0.0.23
 
 - **Fix intermittent discovery failure**: TaHoma `setup/devices` sometimes returns partial records missing `controllableName`, `definition`, or `type`. pyoverkiz then raises `TypeError` and discovery aborts even though the gateway is online. Device fetch now uses a tolerant parser (same pattern as scenario `actionGroups`) that fills defaults and logs skipped records instead of failing startup.
@@ -39,98 +48,75 @@
 
 ## 0.0.15
 
-- **Scene Last Command (GV7)**: TaHoma local API reports spurious `FAILED` on the parent exec when activating persisted action groups; scenes still run. Scenario exec tracking ignores that parent `FAILED` state and marks **Completed** ~5s after a successful Activate (or immediately on real `COMPLETED` / `NOT_TRANSMITTED`)
-- Fix execution watch timeout log referencing undefined `shade_address`
+- **Scene Activate Last Command**: ignore spurious FAILED on scenario parent exec (TaHoma local API quirk); mark Completed ~5s after successful Activate
 
 ## 0.0.14
 
-- **Fix startup error on stale scene cleanup**: custom data keys must be removed with `Custom.delete()`, not `del` — v0.0.13 crashed discovery with `KeyError` while purging orphan scenes
+- **Fix custom data purge crash**: use `Custom.delete()` instead of `del` for custom data keys during stale node cleanup
 
 ## 0.0.13
 
-- **Fix orphan scene cleanup**: discovery cleanup now compares against Polyglot DB nodes, not just in-memory nodes — stale UUID-named scenes from before v0.0.12 are removed on restart
-- Clears orphaned `scenario_oid_*` / `device_url_*` custom data when a node is deleted
+- **Remove stale scene/shade nodes** from Polyglot DB during discovery cleanup (fixes orphan UUID scenes after v0.0.12)
 
 ## 0.0.12
 
-- Skip **unnamed actionGroups** during scenario discovery — TaHoma API can return orphan/system records with no label; these no longer appear as UUID-named scene nodes
-- Skipped OIDs logged at INFO for troubleshooting
+- **Skip unnamed actionGroups** during scenario discovery (orphan/system records with no TaHoma label)
 
 ## 0.0.11
 
-- **Fix startup lockup**: scene node addresses used full UUIDs (~43 chars); Polyglot allows max 14 — addresses now use `sc` + 10 hex chars
-- Scene OID stored in custom data for restart; `wait_for_node_done` times out instead of hanging forever
+- **Fix scene node addresses** exceeding Polyglot 14-character limit (startup lockup)
+- Scene OID persisted in custom data; addNode wait timeout prevents infinite hang
 
 ## 0.0.10
 
-- **Scenario discovery** via raw `actionGroups` API (works when pyoverkiz `Scenario` model mismatches the gateway)
-- **Scenario nodes**: Activate command plus **Last Command (GV7)** — same feedback model as RTS shades
-- Startup success notice includes scenario count
+- **TaHoma scenario discovery** via raw actionGroups API (fixes pyoverkiz model mismatch)
+- Scenario nodes: Activate plus Last Command (GV7), matching RTS shade feedback
 
 ## 0.0.9
 
-- Startup connect retries with exponential backoff for up to 10 minutes (survives gateway wake-up delay)
-- Periodic TaHoma health check while running; automatic reconnect on local API failure
-- shortPoll watchdog as secondary reconnect trigger
+- **Startup connect retries** with backoff (up to 10 min); health check and auto-reconnect while running
 
 ## 0.0.8
 
-- **TaHoma plugin** branding: controller node **TaHoma Controller** (was Phantom Blinds TaHoma Controller)
-- User docs: **Applications** section (RTS / io / Zigbee / other); Phantom Blinds as RTS application
-- Entry script renamed to **`udi-tahoma-pg3x`** — delete old NodeServer on EISY/Polisy and install fresh
-- After upgrade: **Update Profile** in Polyglot so the Admin Console shows the new controller name
+- **TaHoma plugin branding**: controller name TaHoma Controller; Applications docs (RTS/io/Zigbee)
+- Phantom Blinds documented as primary RTS application
+- Entry script renamed to `udi-tahoma-pg3x` (fresh Polyglot install required)
 
 ## 0.0.7
 
-- **RTS Shade** nodedef (`shadertsid`): Id, Battery, Last Command only; Open/Close/Stop/MY commands (no position or tilt fields)
-- Discovery creates RTS Shade nodes for `rts://` devices; full Shade nodes for io/Zigbee
-- Startup success Polyglot notice clears after 30 seconds
-- User documentation for Last Command Pending delay on RTS (TaHoma gateway internal timer)
+- **Dedicated RTS Shade nodedef** (Id, Battery, Last Command; Open/Close/Stop/MY only)
+- Startup success notice auto-clears after 30 seconds
+- User docs for RTS Last Command delay (TaHoma gateway timer)
 
 ## 0.0.6
 
-- **GV7 Last Command** on shade nodes: — (none) until first command, then Pending / Completed / Failed from TaHoma execution status
-- Execution events logged at INFO; poll fallback when events are slow or missing
-- Includes v0.0.5 startup notices and gateway unreachable messaging
+- **Shade GV7 Last Command** driver (— / Pending / Completed / Failed) from TaHoma exec status
+- Execution events logged at INFO; poll fallback via get_current_execution
+- Preserve config placeholder notice during startup; show success notice after discovery
+- Clearer Polyglot notice when TaHoma gateway is unreachable (offline/starting)
 
 ## 0.0.5
 
-- Config placeholder notice survives startup (no longer cleared by `Notices.clear()`)
-- Success notice after connect/discovery (shade count and gateway PIN)
-- Clearer error when TaHoma gateway is unreachable (timeout/offline) vs auth failure
+- Preserve config placeholder notice during startup; show success notice after discovery
+- Clearer Polyglot notice when TaHoma gateway is unreachable (offline/starting)
 
 ## 0.0.4
 
-- Fix shade discovery when TaHoma returns `CommandDefinition` objects in device definitions (all 8 RTS shades failed on EISY with `unhashable type: 'CommandDefinition'`)
-- Default `tahoma_token` Polyglot placeholder shortened from 64 to 20 zeros
+- **Fix shade discovery** when gateway returns CommandDefinition lists (EISY/pyoverkiz)
+- Default `tahoma_token` placeholder shortened to 20 zeros
 
 ## 0.0.3
 
-- Consolidated user documentation into **README.md** and **POLYGLOT_CONFIG.md**; removed **INSTALLATION.md** and **exampleConfigFile.yaml**
-- Trimmed **Somfy/** to a small developer reference set; removed obsolete archive and PowerView-era API docs
-- Removed **ISY994** and **ISY Access** references from user docs
-- Removed unused **use_local_api** parameter; default **verify_ssl** to `false`
-- Clearer log and Polyglot notice when SSL verification fails with **verify_ssl** `true`
-- Polyglot **placeholder defaults** for `gateway_pin`, `tahoma_token`, and `gateway_ip`; ignored until replaced with real values
+- User docs consolidated to README.md and POLYGLOT_CONFIG.md
+- Removed use_local_api parameter; default verify_ssl to false; clearer SSL verification errors
+- Polyglot placeholder defaults for gateway_pin, tahoma_token, and gateway_ip
 
 ## 0.0.2
 
-- Generic full-UI shade nodes for all discovered blinds; behavior tightens from gateway data and user logs
-- Added `utils/device_capabilities.py` (`DeviceProfile`) built at discovery from protocol, commands, and states
-- Discovery logs one INFO line per shade (controllable, commands, states, position feedback, battery) for field diagnostics
-- RTS shades (e.g. `rts:ExteriorBlindRTSComponent`): protocol and hardwired battery display correctly; position fields show N/A instead of blank when there is no feedback; SETPOS logs a warning when the gateway reports no position commands (Open/Close/Stop/MY unchanged)
-- Do not create shade nodes for TaHoma infrastructure (internal Pod/WiFi, Zigbee transceiver)
-- Profile: `BATTERYST` editor includes 255; `SHADECAP` / GV5 renamed to Protocol (0–4)
-- Shade `updateData` and state sync fixes; position/battery drivers updated from `device.states` and SSE events
-- Discovery cleanup excludes controller node addresses (`controller`, `hdctrl`)
-- Scene: initialize active-scene tracking on controller; avoid call to removed `updateAllFromServer`
-
-**After upgrade:** Update Profile, then Discover.
+- Generic full-UI shade nodes for all discovered blinds (field feedback refines behavior)
+- DeviceProfile from TaHoma discovery (protocol, commands, states)
+- Skip gateway devices (Pod, WiFi, Zigbee transceiver) during discovery
 
 ## 0.0.1
 
-- Initial repository and TaHoma PG3 NodeServer setup
-
-## 0.0.0
-
-- START new repo
+- Initial repo setup
