@@ -33,6 +33,7 @@ clean:
 
 
 zip:
+	@test -f zip_exclude.lst || (echo "zip_exclude.lst missing" && exit 1)
 	zip -x@zip_exclude.lst -r ${NAME}.zip *
 
 test:
