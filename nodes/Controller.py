@@ -638,6 +638,8 @@ class Controller(Node):
         for param, default_value in defaults.items():
             if param not in self.Parameters:
                 self.Parameters[param] = default_value
+            elif default_value and not str(self.Parameters.get(param, "")).strip():
+                self.Parameters[param] = default_value
 
         if self.checkParams():
             self.handler_params_st = True
