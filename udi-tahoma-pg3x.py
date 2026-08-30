@@ -9,7 +9,11 @@ Phantom Blinds (RTS) is the primary application this project was built for.
 Version history: see CHANGELOG.md
 """
 
+import os
 import sys
+from pathlib import Path
+
+os.chdir(Path(__file__).resolve().parent)
 
 import udi_interface
 
