@@ -1,9 +1,7 @@
 <!-- markdownlint-disable MD022 MD013 -->
 # Somfy TaHoma NodeServer for PG3x
 
-NodeServer for Universal Devices **EISY** or **Polisy** (Polyglot V3) that controls shades and automations through a **Somfy TaHoma** gateway using the Developer Mode local API.
-
-This is a **TaHoma plugin**. Specific shade families (Phantom Blinds, io-homecontrol rollers, Zigbee motors, and others) are supported as **applications** on top of the same gateway connection — see [Applications](#applications) below.
+Polyglot V3 NodeServer for **EISY** or **Polisy** that connects to a **Somfy TaHoma** gateway over the local Developer Mode API (no Somfy cloud required). It discovers motorized shades (RTS, io-homecontrol, Zigbee, and related protocols) and TaHoma app scenes, then exposes them as ISY nodes with open/close/stop, position and tilt where supported, optional scene activation, and **Last Command** status for programs and scenes. Phantom Blinds and other shade families are supported as applications on the same gateway — see [Applications](#applications) below.
 
 Users also report compatibility with the Somfy Beecon, though I cannot guarantee
 with all features.
