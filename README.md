@@ -1,14 +1,14 @@
 <!-- markdownlint-disable MD022 MD013 -->
-# Somfy TaHoma NodeServer for PG3x
+# Somfy TaHoma Plugin
 
-Polyglot V3 NodeServer for **EISY** or **Polisy** that connects to a **Somfy TaHoma** gateway over the local Developer Mode API. **Shade control** is direct over your LAN — no Somfy cloud account required. It discovers motorized shades (RTS, io-homecontrol, Zigbee, and related protocols) and TaHoma app scenes, then exposes them as ISY nodes with open/close/stop, position and tilt where supported, and **Last Command** status for programs and scenes. **Scene Activate** is optional and requires a Somfy TaHoma cloud login (`tahoma_cloud_email` / `tahoma_cloud_password` in configuration); without cloud credentials, scene nodes may appear but Activate does not run. Phantom Blinds and other shade families are supported as applications on the same gateway — see [Applications](#applications) below.
+Plugin for **EISY/Polisy** (eisy-ui or PG3 environment) that connects to a **Somfy TaHoma** gateway over the local Developer Mode API. **Shade control** is direct over your LAN — no Somfy cloud account required. It discovers motorized shades (RTS, io-homecontrol, Zigbee, and related protocols) and TaHoma app scenes, then exposes them as ISY nodes with open/close/stop, position and tilt where supported, and **Last Command** status for programs and scenes. **Scene Activate** is optional and requires a Somfy TaHoma cloud login (`tahoma_cloud_email` / `tahoma_cloud_password` in configuration); without cloud credentials, scene nodes may appear but Activate does not run. Phantom Blinds and other shade families are supported as applications on the same gateway — see [Applications](#applications) below.
 
 Users also report compatibility with the Somfy Beecon, though I cannot guarantee
 with all features.
 
 ## Requirements
 
-- Universal Devices **EISY** or **Polisy** with Polyglot V3 (PG3x)
+- **EISY/Polisy** (eisy-ui or PG3 environment)
 - Somfy TaHoma RTS/Zigbee gateway (Item #1811731)
 - Shades paired and working in the TaHoma mobile app
 - TaHoma Developer Mode enabled with a Bearer token
@@ -55,42 +55,42 @@ If you only have Phantom Blinds or other RTS shades, you only need the RTS Shade
 
 ### 1. Prepare TaHoma
 
-Before installing the NodeServer:
+Before installing the plugin:
 
 1. Install and power the TaHoma gateway; confirm it is on your network (green LED).
 2. Pair your shades in the TaHoma mobile app.
 3. Enable Developer Mode and generate a Bearer token (see [POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md#generating-a-bearer-token)).
 4. Note your Gateway PIN (`XXXX-XXXX-XXXX`) from the device label or TaHoma app.
 
-### 2. Install the NodeServer
+### 2. Install the plugin
 
-**From the Polyglot Store (recommended)**
+**From the Plugin Store (recommended)**
 
-1. Open the Polyglot UI (`http://<polisy-or-eisy-ip>:3000`).
-2. Go to **NodeServer Store**.
+1. Open **Plugins** in **eisy-ui**, or the PG3 UI at `http://<eisy-or-polisy-ip>:3000` on Polisy or legacy setups.
+2. Go to the **Plugin Store**.
 3. Search for **TaHoma** (or your store listing name) and click **Install**.
 
 **From Git**
 
-1. In the NodeServer Store, choose **Install from GitHub** (or your Git host).
+1. In the Plugin Store, choose **Install from GitHub** (or your Git host).
 2. Enter the repository URL and select the `main` branch.
 3. Click **Install**.
 
 ### 3. Configure and start
 
-1. Open the NodeServer **Configuration** tab.
+1. Open the plugin **Configuration** page in eisy-ui or PG3.
 2. Enter your settings (see [POLYGLOT_CONFIG.md](POLYGLOT_CONFIG.md) for parameter details).
 3. Click **Save**, then **Start**, and check the **Log** tab for a successful TaHoma connection.
 
 ### 4. Discover devices
 
-1. In the ISY Admin Console, expand the NodeServer folder.
+1. In the ISY Admin Console, expand the **Plugins** folder.
 2. Right-click **TaHoma Controller** → **Discover**.
 3. Shade nodes should appear within about a minute. **Scene** nodes may also appear; they are optional — see [Scenes](#scenes-optional).
 
 ## Configuration
 
-All settings are entered in the Polyglot UI Configuration page (not a YAML file).
+All settings are entered on the plugin **Configuration** page in eisy-ui or PG3 (not a YAML file).
 
 - **`gateway_pin`** — Required. Default: `0000-0000-0000`. Your TaHoma PIN (`XXXX-XXXX-XXXX`)
 - **`tahoma_token`** — Required. Default: 20 zeros. Bearer token from Developer Mode
@@ -120,13 +120,13 @@ TaHoma **app scenes** appear as **Scenario** nodes with **Activate** and **Last 
 
 Details, region table, and troubleshooting: **[POLYGLOT_CONFIG.md — TaHoma app scenes](POLYGLOT_CONFIG.md#tahoma-app-scenes-optional)**
 
-After upgrading the NodeServer, **Update Profile** in Polyglot, then run **Discover** again.
+After upgrading the plugin, **Update Profile** in eisy-ui or PG3, then run **Discover** again.
 
 ## Troubleshooting
 
 Common issues (invalid PIN, token errors, connection failures, discovery, commands) are covered in [POLYGLOT_CONFIG.md — Troubleshooting](POLYGLOT_CONFIG.md#troubleshooting).
 
-Enable debug logging in Polyglot for detailed diagnostics. Check the NodeServer **Log** tab first.
+Enable debug logging in the plugin UI (eisy-ui or PG3) for detailed diagnostics. Check the **Log** tab first.
 
 ## Documentation
 
