@@ -483,14 +483,14 @@ class Shade(udi_interface.Node):
 
 
 class ShadeNoTilt(Shade):
-    """Backward-compatible nodedef; discovery uses generic Shade."""
+    """Shade without tilt commands (io/Zigbee devices without setOrientation)."""
 
     id = "shadenotiltid"
     drivers = SHADE_DRIVERS_FULL
 
 
 class ShadeOnlyPrimary(Shade):
-    """Backward-compatible nodedef; discovery uses generic Shade."""
+    """Shade with primary position only (no secondary or tilt)."""
 
     id = "shadeonlyprimid"
     drivers = SHADE_DRIVERS_FULL

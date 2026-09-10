@@ -83,6 +83,23 @@ class DeviceProfile:
         return self.protocol == "rts"
 
 
+SHADE_NODEDEF_RTS = "shadertsid"
+SHADE_NODEDEF_FULL = "shadeid"
+SHADE_NODEDEF_NO_TILT = "shadenotiltid"
+SHADE_NODEDEF_PRIMARY_ONLY = "shadeonlyprimid"
+
+
+def select_shade_nodedef_id(profile: DeviceProfile) -> str:
+    """Pick the ISY nodedef template that matches gateway capabilities."""
+    if profile.is_rts:
+        return SHADE_NODEDEF_RTS
+    if not profile.supports_set_deployment and not profile.supports_set_orientation:
+        return SHADE_NODEDEF_PRIMARY_ONLY
+    if not profile.supports_set_orientation:
+        return SHADE_NODEDEF_NO_TILT
+    return SHADE_NODEDEF_FULL
+
+
 def protocol_from_device_url(device_url: str) -> str:
     """Return protocol segment from a TaHoma device URL (e.g. rts, io)."""
     if "://" in device_url:
@@ -219,10 +236,9 @@ def build_device_profile(device: Any) -> DeviceProfile:
     elif protocol == "rts":
         profile.battery_gv6 = GV6_NA_HARDWIRED
 
-    # Generic UI: always show all position fields; use N/A when no feedback
     profile.show_primary = True
-    profile.show_secondary = True
-    profile.show_tilt = True
+    profile.show_secondary = profile.supports_set_deployment
+    profile.show_tilt = profile.supports_set_orientation
 
     return profile
 
@@ -245,6 +261,7 @@ def profile_to_map(profile: DeviceProfile) -> dict[str, Any]:
         "supports_set_deployment": profile.supports_set_deployment,
         "supports_set_orientation": profile.supports_set_orientation,
         "battery_gv6": profile.battery_gv6,
+        "nodedef_id": select_shade_nodedef_id(profile),
     }
 
 

@@ -8,6 +8,7 @@
     "shortPoll": "60",
     "longPoll": "300",
     "logLevel": "INFO",
+    "profile_version": "1",
     "customParams": {
         "gateway_pin": "0000-0000-0000",
         "tahoma_token": "",
@@ -21,7 +22,7 @@
         {
             "title": "Somfy TaHoma NodeServer",
             "author": "Stephen Jenkins",
-            "version": "0.0.27",
+            "version": "0.0.28",
             "date": "August 2026",
             "source": "https://github.com/UniversalDevicesInc-PG3/udi-tahoma-pg3x",
             "license": "https://github.com/UniversalDevicesInc-PG3/udi-tahoma-pg3x/blob/main/LICENSE"
