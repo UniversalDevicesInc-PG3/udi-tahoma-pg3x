@@ -43,8 +43,9 @@ SKIP_CONTROLLABLE_PREFIXES = (
     "zigbee:Transceiver",
     "internal:Pod",
     "internal:Wifi",
-    "ogp:Bridge",
+    "ogp:",
 )
+SKIP_UI_CLASSES = frozenset({"ProtocolGateway"})
 
 BATTERY_STATE_TO_GV6: dict[str, int] = {
     "normal": 3,
@@ -119,7 +120,11 @@ def protocol_to_gv5(protocol: str) -> int:
 def should_create_shade_node(device: Any) -> bool:
     """Return False for gateway infrastructure devices that are not shades."""
     device_url = getattr(device, "device_url", "") or ""
-    if device_url.startswith("internal://"):
+    if device_url.startswith("internal://") or device_url.startswith("ogp://"):
+        return False
+
+    ui_class = getattr(device, "ui_class", "") or ""
+    if ui_class in SKIP_UI_CLASSES:
         return False
 
     controllable = getattr(device, "controllable_name", "") or ""

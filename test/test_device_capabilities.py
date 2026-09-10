@@ -83,6 +83,31 @@ class TestShouldCreateShadeNode:
             is False
         )
 
+    def test_ogp_url_skipped_when_controllable_missing(self):
+        """Partial gateway records may omit controllableName on OGP devices."""
+        assert (
+            should_create_shade_node(
+                _device(
+                    url="ogp://2076-5923-5791/0003FEF4",
+                    controllable="",
+                    ui_class="ProtocolGateway",
+                )
+            )
+            is False
+        )
+
+    def test_ogp_variant_controllable_skipped(self):
+        assert (
+            should_create_shade_node(
+                _device(
+                    url="io://2076-5923-5791/99999999",
+                    controllable="ogp:SomeOtherComponent",
+                    ui_class="ProtocolGateway",
+                )
+            )
+            is False
+        )
+
 
 class TestBuildDeviceProfile:
     def test_rts_exterior_blind_from_logs(self):
