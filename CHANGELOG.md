@@ -6,6 +6,7 @@
 
 - **Dynamic JSON profiles**: push profile via `updateJsonProfile()` instead of static `profile/` zip — improves eisy-ui sync; requires IoX 6.0.6+, PG3x 3.4.5+, `udi_interface` 3.4.5+; `install.sh` renames `profile/` to `profile.static/` on the EISY so PG3 does not race static upload; `profile/` XML remains in the repo as source for `data/base_profile.json`; bump `profile_version` in `server.json` when the JSON base changes
 - **Per-device nodedef on Discover**: new shade nodes pick `shadertsid`, `shadenotiltid`, `shadeonlyprimid`, or `shadeid` from TaHoma capabilities — existing nodes are unchanged until the user runs **Discover** and a new node is created (removed nodes rediscovered, or manual delete + Discover)
+- **OGP skip hardened**: skip all `ogp://` devices and `ProtocolGateway` uiClass (not only `ogp:Bridge` controllableName) — fixes duplicate OGP nodes when the gateway returns partial records or multiple OGP entries; run **Discover** to remove stale OGP nodes
 
 ## 0.0.27
 
