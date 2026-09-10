@@ -3,7 +3,7 @@ NAME = TaHoma
 ENTRY = udi-tahoma-pg3x.py
 XML_FILES = profile/*/*.xml
 
-.PHONY: all check clean format fulltest install install-eisy lint test coverage coverage-html coverage-report zip sync-version
+.PHONY: all check clean format fulltest install install-eisy lint test coverage coverage-html coverage-report zip sync-version profile-json
 
 all: lint test
 
@@ -55,3 +55,6 @@ fulltest:
 
 sync-version:
 	uv run python scripts/sync_version.py --entry $(ENTRY)
+
+profile-json:
+	uv run python scripts/xml_profile_to_json.py

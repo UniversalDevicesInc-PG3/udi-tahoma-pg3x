@@ -9,14 +9,20 @@ from utils.device_capabilities import (
     GV6_NA_HARDWIRED,
     POSITION_NA,
     STATE_CLOSURE,
+    SHADE_NODEDEF_FULL,
+    SHADE_NODEDEF_NO_TILT,
+    SHADE_NODEDEF_PRIMARY_ONLY,
+    SHADE_NODEDEF_RTS,
     build_device_profile,
     battery_value_to_gv6,
     normalize_states,
     profile_from_map,
     profile_to_map,
     protocol_from_device_url,
+    select_shade_nodedef_id,
     should_create_shade_node,
 )
+from utils.device_capabilities import DeviceProfile
 
 
 def _device(
@@ -88,6 +94,9 @@ class TestBuildDeviceProfile:
         assert profile.show_primary is True
         assert profile.command_names == set()
         assert profile.supports_set_closure is False
+        assert profile.show_secondary is False
+        assert profile.show_tilt is False
+        assert select_shade_nodedef_id(profile) == SHADE_NODEDEF_RTS
 
     def test_command_definition_list_from_gateway(self):
         commands = [
@@ -110,6 +119,19 @@ class TestBuildDeviceProfile:
         )
         assert profile.protocol == "io"
         assert profile.has_position_feedback is True
+
+    def test_io_full_commands_selects_full_nodedef(self):
+        commands = {
+            "setClosure": CommandDefinition(command_name="setClosure", nparams=1),
+            "setDeployment": CommandDefinition(command_name="setDeployment", nparams=1),
+            "setOrientation": CommandDefinition(command_name="setOrientation", nparams=1),
+        }
+        profile = build_device_profile(
+            _device(url="io://gw/123", commands=commands),
+        )
+        assert select_shade_nodedef_id(profile) == SHADE_NODEDEF_FULL
+        assert profile.show_secondary is True
+        assert profile.show_tilt is True
 
     def test_battery_state_mapped(self):
         state = Mock(value="low")
@@ -141,3 +163,46 @@ class TestProfileRoundTrip:
 class TestProtocol:
     def test_rts_url(self):
         assert protocol_from_device_url("rts://2075-3852-5398/1") == "rts"
+
+
+class TestSelectShadeNodedef:
+    def test_rts(self):
+        profile = build_device_profile(_device())
+        assert select_shade_nodedef_id(profile) == SHADE_NODEDEF_RTS
+
+    def test_full_io_shade(self):
+        profile = DeviceProfile(
+            protocol="io",
+            controllable_name="io:Shade",
+            ui_class="Shade",
+            widget="Shade",
+            supports_set_deployment=True,
+            supports_set_orientation=True,
+        )
+        assert select_shade_nodedef_id(profile) == SHADE_NODEDEF_FULL
+
+    def test_no_tilt(self):
+        profile = DeviceProfile(
+            protocol="io",
+            controllable_name="io:Shade",
+            ui_class="Shade",
+            widget="Shade",
+            supports_set_deployment=True,
+            supports_set_orientation=False,
+        )
+        assert select_shade_nodedef_id(profile) == SHADE_NODEDEF_NO_TILT
+
+    def test_primary_only(self):
+        profile = DeviceProfile(
+            protocol="io",
+            controllable_name="io:Shade",
+            ui_class="Shade",
+            widget="Shade",
+            supports_set_deployment=False,
+            supports_set_orientation=False,
+        )
+        assert select_shade_nodedef_id(profile) == SHADE_NODEDEF_PRIMARY_ONLY
+
+    def test_profile_map_includes_nodedef_id(self):
+        profile = build_device_profile(_device())
+        assert profile_to_map(profile)["nodedef_id"] == SHADE_NODEDEF_RTS

@@ -47,6 +47,7 @@ from utils.device_capabilities import (
     build_device_profile,
     log_device_discovery,
     profile_to_map,
+    select_shade_nodedef_id,
     protocol_from_device_url,
     should_create_shade_node,
 )
@@ -59,6 +60,8 @@ from pyoverkiz.exceptions import (
 from nodes import (
     Scene,
     Shade,
+    ShadeNoTilt,
+    ShadeOnlyPrimary,
     ShadeRts,
 )
 
@@ -207,8 +210,10 @@ class Controller(Node):
         self.setDriver("ST", 1, report=True, force=True)
         self.update_last = 0.0
 
-        # Send the profile files to the ISY if neccessary or version changed.
-        self.poly.updateProfile()
+        # Push dynamic JSON profile (static profile/ must not be installed; see install.sh).
+        from utils.json_profile import push_json_profile
+
+        push_json_profile(self.poly, wait=True)
 
         # Send the default custom parameters documentation file to Polyglot
         self.poly.setCustomParamsDoc()
@@ -1177,7 +1182,9 @@ class Controller(Node):
             bool: The result of the profile update operation.
         """
         LOGGER.info(f"Enter {command}")
-        st = self.poly.updateProfile()
+        from utils.json_profile import push_json_profile
+
+        st = push_json_profile(self.poly, wait=True)
         LOGGER.debug("Exit")
         return st
 
@@ -1300,11 +1307,14 @@ class Controller(Node):
                 nodes_new.append(node_address)
 
                 if node_address not in nodes_existing:
-                    # Create new device node
-                    node = self._create_device_node(device, node_address)
+                    # Create new device node (nodedef template from capabilities)
+                    node = self._create_device_node(
+                        device, node_address, profile=profile
+                    )
                     if node:
                         LOGGER.info(
-                            f"Adding device node: {node_address} ({device.label})"
+                            f"Adding device node: {node_address} ({device.label}) "
+                            f"nodedef={select_shade_nodedef_id(profile)}"
                         )
                         self.poly.addNode(node)
                         self.wait_for_node_done()
@@ -1417,20 +1427,24 @@ class Controller(Node):
         elif db_addresses == nodes_new_set:
             LOGGER.info("Discovery NO NEW activity")
 
-    def _create_device_node(self, device, node_address):
-        """Create a shade node matched to the device protocol."""
+    def _create_device_node(self, device, node_address, profile=None):
+        """Create a shade node using the nodedef template for device capabilities."""
         label = device.label
         device_url = device.device_url
-        protocol = protocol_from_device_url(device_url)
-        if protocol == "rts":
-            LOGGER.info(
-                f"Creating RTS Shade node for {label} ({device.controllable_name})"
-            )
-            return ShadeRts(self.poly, self.address, node_address, label, device_url)
+        if profile is None:
+            profile = build_device_profile(device)
+        nodedef_id = select_shade_nodedef_id(profile)
+        shade_classes = {
+            "shadertsid": ShadeRts,
+            "shadenotiltid": ShadeNoTilt,
+            "shadeonlyprimid": ShadeOnlyPrimary,
+            "shadeid": Shade,
+        }
+        node_cls = shade_classes[nodedef_id]
         LOGGER.info(
-            f"Creating Shade node for {label} ({device.controllable_name})"
+            f"Creating {nodedef_id} node for {label} ({device.controllable_name})"
         )
-        return Shade(self.poly, self.address, node_address, label, device_url)
+        return node_cls(self.poly, self.address, node_address, label, device_url)
 
     def _device_url_to_address(self, device_url: str) -> str:
         """Convert TaHoma deviceURL to valid Polyglot node address.

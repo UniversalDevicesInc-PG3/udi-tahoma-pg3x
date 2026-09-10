@@ -274,13 +274,23 @@ Scene nodes list TaHoma app scenes from your gateway. **Activate** is optional a
 
 See [TaHoma app scenes (optional)](#tahoma-app-scenes-optional) for the cloud region list.
 
+### Dynamic profiles (0.0.28+)
+
+This plugin uses **dynamic JSON profiles** (`updateJsonProfile`) instead of a static `profile/` zip. On install, `install.sh` renames `profile/` to `profile.static/` on the EISY so Polyglot does not upload XML in parallel with the JSON push.
+
+**Requirements:** IoX 6.0.6+, PG3x 3.4.5+, `udi_interface` 3.4.5+ (installed via `requirements.txt`).
+
+**Update Profile** on the controller re-sends the JSON base profile. Bump `profile_version` in `server.json` when `data/base_profile.json` changes.
+
+Existing shade nodes keep their current nodedef until **Discover** adds a **new** node (e.g. after removing a stale node, or a newly paired shade). Running Discover alone does not change nodedefs on nodes that already exist.
+
 ### Easy UI after profile or NodeServer update
 
 The **Java Admin Console** and **UD Mobile** often pick up profile changes after **Update Profile** and a console restart. **Easy UI** (Safari on Mac/iPad/iPhone) can keep a **stale cached copy** of the node tree or profile even after an EISY reboot and Safari restart.
 
 If Easy UI shows errors like **Profiles loaded but nodedefs missing**, a blank node area, or **404** where nodes should appear — but Admin Console and UD Mobile look fine:
 
-1. Run **Update Profile** on the TaHoma Controller (Polyglot restart also pushes profile on version change).
+1. Run **Update Profile** on the TaHoma Controller (Polyglot restart also pushes the JSON profile on startup).
 2. Close Easy UI completely (all Safari tabs/windows for the EISY URL).
 3. **Clear Safari cache** for the EISY site (Safari → Settings → Privacy → Manage Website Data, or Develop → Empty Caches if enabled).
 4. Reopen Easy UI and sign in again.

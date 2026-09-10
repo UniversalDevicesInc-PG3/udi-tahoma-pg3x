@@ -1,0 +1,770 @@
+{
+  "editors": [
+    {
+      "id": "CTD",
+      "ranges": [
+        {
+          "uom": "25",
+          "subset": "0,1,2",
+          "names": {
+            "0": "Disconnected",
+            "1": "Connected",
+            "2": "Failed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "BOOL",
+      "ranges": [
+        {
+          "uom": "2",
+          "subset": "0,1"
+        }
+      ]
+    },
+    {
+      "id": "ID",
+      "ranges": [
+        {
+          "uom": "107",
+          "min": 0,
+          "max": 9999
+        }
+      ]
+    },
+    {
+      "id": "SHADECAP",
+      "ranges": [
+        {
+          "uom": "25",
+          "subset": "0,1,2,3,4",
+          "names": {
+            "0": "Unknown",
+            "1": "RTS (One-Way Radio)",
+            "2": "io-homecontrol (Two-Way)",
+            "3": "Zigbee",
+            "4": "Other"
+          }
+        }
+      ]
+    },
+    {
+      "id": "BATTERYST",
+      "ranges": [
+        {
+          "uom": "25",
+          "subset": "0,1,2,3,4,255",
+          "names": {
+            "0": "No Status",
+            "1": "Low",
+            "2": "Medium",
+            "3": "High",
+            "4": "Plugged In",
+            "255": "N/A (Hardwired)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "EXECSTAT",
+      "ranges": [
+        {
+          "uom": "25",
+          "subset": "0,1,2,3",
+          "names": {
+            "0": "\u2014",
+            "1": "Pending",
+            "2": "Completed",
+            "3": "Failed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "SHADECMDEXEC",
+      "ranges": [
+        {
+          "uom": "25",
+          "subset": "0,1,2,3,4,5",
+          "names": {
+            "0": "None",
+            "1": "Open",
+            "2": "Close",
+            "3": "Stop",
+            "4": "My Position",
+            "5": "Move By Percent"
+          }
+        }
+      ]
+    },
+    {
+      "id": "SPANSEC",
+      "ranges": [
+        {
+          "uom": "58",
+          "min": 1,
+          "max": 999,
+          "prec": 0,
+          "step": 1
+        }
+      ]
+    },
+    {
+      "id": "MOVPCT",
+      "ranges": [
+        {
+          "uom": "100",
+          "min": 1,
+          "max": 99
+        }
+      ]
+    },
+    {
+      "id": "MOVEDIR",
+      "ranges": [
+        {
+          "uom": "25",
+          "subset": "0,1",
+          "names": {
+            "0": "Up (Open)",
+            "1": "Down (Close)"
+          }
+        }
+      ]
+    },
+    {
+      "id": "POSITION",
+      "ranges": [
+        {
+          "uom": "2",
+          "subset": "0"
+        },
+        {
+          "uom": "100",
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "id": "TILT",
+      "ranges": [
+        {
+          "uom": "2",
+          "subset": "0"
+        },
+        {
+          "uom": "100",
+          "min": 0,
+          "max": 100
+        }
+      ]
+    }
+  ],
+  "nodedefs": [
+    {
+      "id": "hdctrl",
+      "name": "TaHoma Controller",
+      "icon": "GenericRspCtl",
+      "properties": [
+        {
+          "id": "ST",
+          "editor": "CTD",
+          "name": "Connection"
+        },
+        {
+          "id": "GV0",
+          "editor": "ID",
+          "name": "Number Of Nodes"
+        }
+      ],
+      "cmds": {
+        "sends": [
+          {
+            "id": "DON",
+            "name": "On"
+          },
+          {
+            "id": "DOF",
+            "name": "Off"
+          }
+        ],
+        "accepts": [
+          {
+            "id": "QUERY",
+            "name": "Query"
+          },
+          {
+            "id": "DISCOVER",
+            "name": "Discover"
+          },
+          {
+            "id": "UPDATE_PROFILE",
+            "name": "Update Profile"
+          },
+          {
+            "id": "REMOVE_NOTICES_ALL",
+            "name": "Remove All Notices"
+          }
+        ]
+      }
+    },
+    {
+      "id": "shadeid",
+      "name": "Shade",
+      "icon": "GenericRspCtl",
+      "properties": [
+        {
+          "id": "GV0",
+          "editor": "ID",
+          "name": "Id"
+        },
+        {
+          "id": "ST",
+          "editor": "BOOL",
+          "name": "Motion"
+        },
+        {
+          "id": "GV1",
+          "editor": "ID",
+          "name": "RoomID"
+        },
+        {
+          "id": "GV2",
+          "editor": "POSITION",
+          "name": "Primary"
+        },
+        {
+          "id": "GV3",
+          "editor": "POSITION",
+          "name": "Secondary"
+        },
+        {
+          "id": "GV4",
+          "editor": "TILT",
+          "name": "Tilt"
+        },
+        {
+          "id": "GV5",
+          "editor": "SHADECAP",
+          "name": "Protocol"
+        },
+        {
+          "id": "GV6",
+          "editor": "BATTERYST",
+          "name": "Battery"
+        },
+        {
+          "id": "GV7",
+          "editor": "EXECSTAT",
+          "name": "Last Command"
+        },
+        {
+          "id": "GV8",
+          "editor": "SHADECMDEXEC",
+          "name": "Last Command Executed"
+        }
+      ],
+      "cmds": {
+        "sends": [
+          {
+            "id": "DON",
+            "name": "On"
+          },
+          {
+            "id": "DOF",
+            "name": "Off"
+          },
+          {
+            "id": "OPEN",
+            "name": "Open"
+          },
+          {
+            "id": "CLOSE",
+            "name": "Close"
+          },
+          {
+            "id": "STOP",
+            "name": "Stop"
+          },
+          {
+            "id": "MY",
+            "name": "My Position"
+          },
+          {
+            "id": "TILTOPEN",
+            "name": "Tilt Open"
+          },
+          {
+            "id": "TILTCLOSE",
+            "name": "Tilt Close"
+          }
+        ],
+        "accepts": [
+          {
+            "id": "OPEN",
+            "name": "Open"
+          },
+          {
+            "id": "CLOSE",
+            "name": "Close"
+          },
+          {
+            "id": "STOP",
+            "name": "Stop"
+          },
+          {
+            "id": "MY",
+            "name": "My Position"
+          },
+          {
+            "id": "TILTOPEN",
+            "name": "Tilt Open"
+          },
+          {
+            "id": "TILTCLOSE",
+            "name": "Tilt Close"
+          },
+          {
+            "id": "QUERY",
+            "name": "Query"
+          },
+          {
+            "id": "SETPOS",
+            "name": "Set Shade Position",
+            "format": "/SETPRIM/${c}/->Primary to ${v} / /SETSECO//->Secondary to ${v} / /SETTILT//->Tilt to ${v} /",
+            "parameters": [
+              {
+                "id": "SETPRIM",
+                "editor": "POSITION",
+                "name": "Primary"
+              },
+              {
+                "id": "SETSECO",
+                "editor": "POSITION",
+                "name": "Secondary"
+              },
+              {
+                "id": "SETTILT",
+                "editor": "TILT",
+                "name": "Tilt"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "shadenotiltid",
+      "name": "Shade",
+      "icon": "GenericRspCtl",
+      "properties": [
+        {
+          "id": "GV0",
+          "editor": "ID",
+          "name": "Id"
+        },
+        {
+          "id": "ST",
+          "editor": "BOOL",
+          "name": "Motion"
+        },
+        {
+          "id": "GV1",
+          "editor": "ID",
+          "name": "RoomID"
+        },
+        {
+          "id": "GV2",
+          "editor": "POSITION",
+          "name": "Primary"
+        },
+        {
+          "id": "GV3",
+          "editor": "POSITION",
+          "name": "Secondary"
+        },
+        {
+          "id": "GV5",
+          "editor": "SHADECAP",
+          "name": "Protocol"
+        },
+        {
+          "id": "GV6",
+          "editor": "BATTERYST",
+          "name": "Battery"
+        },
+        {
+          "id": "GV7",
+          "editor": "EXECSTAT",
+          "name": "Last Command"
+        },
+        {
+          "id": "GV8",
+          "editor": "SHADECMDEXEC",
+          "name": "Last Command Executed"
+        }
+      ],
+      "cmds": {
+        "sends": [
+          {
+            "id": "DON",
+            "name": "On"
+          },
+          {
+            "id": "DOF",
+            "name": "Off"
+          },
+          {
+            "id": "OPEN",
+            "name": "Open"
+          },
+          {
+            "id": "CLOSE",
+            "name": "Close"
+          },
+          {
+            "id": "STOP",
+            "name": "Stop"
+          },
+          {
+            "id": "MY",
+            "name": "My Position"
+          }
+        ],
+        "accepts": [
+          {
+            "id": "OPEN",
+            "name": "Open"
+          },
+          {
+            "id": "CLOSE",
+            "name": "Close"
+          },
+          {
+            "id": "STOP",
+            "name": "Stop"
+          },
+          {
+            "id": "MY",
+            "name": "My Position"
+          },
+          {
+            "id": "QUERY",
+            "name": "Query"
+          },
+          {
+            "id": "SETPOS",
+            "name": "Set Shade Position",
+            "format": "/SETPRIM/${c}/->Primary to ${v} / /SETSECO//->Secondary to ${v} / /SETTILT//->Tilt to ${v} /",
+            "parameters": [
+              {
+                "id": "SETPRIM",
+                "editor": "POSITION",
+                "name": "Primary"
+              },
+              {
+                "id": "SETSECO",
+                "editor": "POSITION",
+                "name": "Secondary"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "shadeonlyprimid",
+      "name": "Shade",
+      "icon": "GenericRspCtl",
+      "properties": [
+        {
+          "id": "GV0",
+          "editor": "ID",
+          "name": "Id"
+        },
+        {
+          "id": "ST",
+          "editor": "BOOL",
+          "name": "Motion"
+        },
+        {
+          "id": "GV1",
+          "editor": "ID",
+          "name": "RoomID"
+        },
+        {
+          "id": "GV2",
+          "editor": "POSITION",
+          "name": "Primary"
+        },
+        {
+          "id": "GV5",
+          "editor": "SHADECAP",
+          "name": "Protocol"
+        },
+        {
+          "id": "GV6",
+          "editor": "BATTERYST",
+          "name": "Battery"
+        },
+        {
+          "id": "GV7",
+          "editor": "EXECSTAT",
+          "name": "Last Command"
+        },
+        {
+          "id": "GV8",
+          "editor": "SHADECMDEXEC",
+          "name": "Last Command Executed"
+        }
+      ],
+      "cmds": {
+        "sends": [
+          {
+            "id": "DON",
+            "name": "On"
+          },
+          {
+            "id": "DOF",
+            "name": "Off"
+          },
+          {
+            "id": "OPEN",
+            "name": "Open"
+          },
+          {
+            "id": "CLOSE",
+            "name": "Close"
+          },
+          {
+            "id": "STOP",
+            "name": "Stop"
+          },
+          {
+            "id": "MY",
+            "name": "My Position"
+          }
+        ],
+        "accepts": [
+          {
+            "id": "OPEN",
+            "name": "Open"
+          },
+          {
+            "id": "CLOSE",
+            "name": "Close"
+          },
+          {
+            "id": "STOP",
+            "name": "Stop"
+          },
+          {
+            "id": "MY",
+            "name": "My Position"
+          },
+          {
+            "id": "QUERY",
+            "name": "Query"
+          },
+          {
+            "id": "SETPOS",
+            "name": "Set Shade Position",
+            "format": "/SETPRIM/${c}/->Primary to ${v} / /SETSECO//->Secondary to ${v} / /SETTILT//->Tilt to ${v} /",
+            "parameters": [
+              {
+                "id": "SETPRIM",
+                "editor": "POSITION",
+                "name": "Primary"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "shadertsid",
+      "name": "RTS Shade",
+      "icon": "GenericRspCtl",
+      "properties": [
+        {
+          "id": "GV0",
+          "editor": "ID",
+          "name": "Id"
+        },
+        {
+          "id": "GV1",
+          "editor": "SPANSEC",
+          "name": "Total Span Move Time"
+        },
+        {
+          "id": "GV6",
+          "editor": "BATTERYST",
+          "name": "Battery"
+        },
+        {
+          "id": "GV7",
+          "editor": "EXECSTAT",
+          "name": "Last Command"
+        },
+        {
+          "id": "GV8",
+          "editor": "SHADECMDEXEC",
+          "name": "Last Command Executed"
+        }
+      ],
+      "cmds": {
+        "sends": [
+          {
+            "id": "DON",
+            "name": "On"
+          },
+          {
+            "id": "DOF",
+            "name": "Off"
+          },
+          {
+            "id": "OPEN",
+            "name": "Open"
+          },
+          {
+            "id": "CLOSE",
+            "name": "Close"
+          },
+          {
+            "id": "STOP",
+            "name": "Stop"
+          },
+          {
+            "id": "MY",
+            "name": "My Position"
+          },
+          {
+            "id": "MOVEPCT",
+            "name": "Move By Percent",
+            "format": "/PCT/${c}/->Move ${v}% / /DIR/${c}/->${n} /",
+            "parameters": [
+              {
+                "id": "PCT",
+                "editor": "MOVPCT",
+                "name": "Move Percent"
+              },
+              {
+                "id": "DIR",
+                "editor": "MOVEDIR",
+                "name": "Direction"
+              }
+            ]
+          },
+          {
+            "id": "SETSPAN",
+            "name": "Set Span Move Time",
+            "format": "/->Span ${v} sec/",
+            "parameters": [
+              {
+                "id": "",
+                "editor": "SPANSEC",
+                "init": "GV1"
+              }
+            ]
+          }
+        ],
+        "accepts": [
+          {
+            "id": "OPEN",
+            "name": "Open"
+          },
+          {
+            "id": "CLOSE",
+            "name": "Close"
+          },
+          {
+            "id": "STOP",
+            "name": "Stop"
+          },
+          {
+            "id": "MY",
+            "name": "My Position"
+          },
+          {
+            "id": "QUERY",
+            "name": "Query"
+          },
+          {
+            "id": "MOVEPCT",
+            "name": "Move By Percent",
+            "format": "/PCT/${c}/->Move ${v}% / /DIR/${c}/->${n} /",
+            "parameters": [
+              {
+                "id": "PCT",
+                "editor": "MOVPCT",
+                "name": "Move Percent"
+              },
+              {
+                "id": "DIR",
+                "editor": "MOVEDIR",
+                "name": "Direction"
+              }
+            ]
+          },
+          {
+            "id": "SETSPAN",
+            "name": "Set Span Move Time",
+            "format": "/->Span ${v} sec/",
+            "parameters": [
+              {
+                "id": "",
+                "editor": "SPANSEC",
+                "init": "GV1"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "sceneid",
+      "name": "Scenario",
+      "icon": "Output",
+      "properties": [
+        {
+          "id": "GV0",
+          "editor": "ID",
+          "name": "Id"
+        },
+        {
+          "id": "GV7",
+          "editor": "EXECSTAT",
+          "name": "Last Command"
+        }
+      ],
+      "cmds": {
+        "sends": [
+          {
+            "id": "DON",
+            "name": "On"
+          },
+          {
+            "id": "DOF",
+            "name": "Off"
+          },
+          {
+            "id": "ACTIVATE",
+            "name": "Activate"
+          }
+        ],
+        "accepts": [
+          {
+            "id": "ACTIVATE",
+            "name": "Activate"
+          },
+          {
+            "id": "QUERY",
+            "name": "Query"
+          }
+        ]
+      }
+    }
+  ]
+}
