@@ -2,6 +2,10 @@
 
 
 
+## 0.0.29
+
+- **Fix eisy-ui dynamic profile on migrate**: add empty `links.ctl` / `links.rsp` on every nodedef and `linkdefs: []` in `data/base_profile.json` so eisy-ui `updateprofile` validation passes (fixes “Profiles loaded but nodedefs missing” after PG3→eisy-ui migration); bump `profile_version` to 2
+
 ## 0.0.28
 
 - **Dynamic JSON profiles**: push profile via `updateJsonProfile()` instead of static `profile/` zip — improves eisy-ui sync; requires IoX 6.0.6+, PG3x 3.4.5+, `udi_interface` 3.4.5+; `install.sh` renames `profile/` to `profile.static/` on the EISY so PG3 does not race static upload; `profile/` XML remains in the repo as source for `data/base_profile.json`; bump `profile_version` in `server.json` when the JSON base changes

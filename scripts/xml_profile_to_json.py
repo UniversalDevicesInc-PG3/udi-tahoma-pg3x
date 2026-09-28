@@ -17,6 +17,9 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any
 
+# eisy-ui updateprofile validates nodedef.links (UD dynamic profile schema).
+EMPTY_NODE_LINKS: dict[str, list[Any]] = {"ctl": [], "rsp": []}
+
 
 def _parse_nls(path: Path) -> dict[str, str]:
     entries: dict[str, str] = {}
@@ -160,6 +163,7 @@ def _nodedefs(nodedefs_path: Path, nls: dict[str, str]) -> list[dict[str, Any]]:
             ]
         if cmds:
             node["cmds"] = cmds
+        node["links"] = dict(EMPTY_NODE_LINKS)
         nodedefs.append(node)
     return nodedefs
 
@@ -169,6 +173,7 @@ def build_profile(profile_dir: Path) -> dict[str, Any]:
     return {
         "editors": _editors(profile_dir / "editor" / "editors.xml", nls),
         "nodedefs": _nodedefs(profile_dir / "nodedef" / "nodedefs.xml", nls),
+        "linkdefs": [],
     }
 
 

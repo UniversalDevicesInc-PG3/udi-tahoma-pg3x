@@ -82,3 +82,12 @@ def test_rts_movepct_default_parameter(base_profile: dict):
     setspan = next(c for c in rts["cmds"]["accepts"] if c["id"] == "SETSPAN")
     assert setspan["parameters"][0]["id"] == ""
     assert setspan["parameters"][0]["init"] == "GV1"
+
+
+def test_base_profile_has_empty_linkdefs(base_profile: dict):
+    assert base_profile.get("linkdefs") == []
+
+
+def test_nodedefs_have_empty_links(base_profile: dict):
+    for node in base_profile["nodedefs"]:
+        assert node.get("links") == {"ctl": [], "rsp": []}, node["id"]
